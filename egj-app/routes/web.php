@@ -11,6 +11,7 @@ use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\EmailApprovalController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +40,11 @@ Route::post('/approve-email/{token}', [EmailApprovalController::class, 'approve'
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Profile
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     // Monitoring
     Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring.index');

@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import MainLayout from '../../Layouts/MainLayout';
 import { useState } from 'react';
-import { Eye, FileText, CheckCircle, Clock, XCircle, Download } from 'lucide-react';
+import { Eye, FileText, CheckCircle, Clock, XCircle, Download, Search, RotateCcw } from 'lucide-react';
 import FileModal from '../../Components/FileModal';
 import HistoryModal from '../../Components/HistoryModal';
 
@@ -12,21 +12,40 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
         date_to: filters?.date_to || '',
         requested_by: filters?.requested_by || '',
         search: filters?.search || '',
+        per_page: filters?.per_page || '10',
     });
     const [fileModal, setFileModal] = useState({ open: false, journalId: null });
     const [historyModal, setHistoryModal] = useState({ open: false, journalId: null });
 
-    const applyFilters = () => {
+    const buildCleanFilters = (overrides = {}) => {
+        const merged = { ...localFilters, ...overrides };
         const cleanFilters = {};
-        Object.entries(localFilters).forEach(([key, value]) => {
-            if (value) cleanFilters[key] = value;
+        Object.entries(merged).forEach(([key, value]) => {
+            if (value && value !== '') cleanFilters[key] = value;
         });
-        router.get('/monitoring', cleanFilters, { preserveState: true });
+        return cleanFilters;
+    };
+
+    const applyFilters = () => {
+        router.get('/monitoring', buildCleanFilters(), { preserveState: true });
     };
 
     const resetFilters = () => {
-        setLocalFilters({ status: '', date_from: '', date_to: '', requested_by: '', search: '' });
+        const reset = { status: '', date_from: '', date_to: '', requested_by: '', search: '', per_page: '10' };
+        setLocalFilters(reset);
         router.get('/monitoring', {}, { preserveState: true });
+    };
+
+    const handlePerPageChange = (value) => {
+        setLocalFilters(prev => ({ ...prev, per_page: value }));
+        router.get('/monitoring', buildCleanFilters({ per_page: value }), { preserveState: true });
+    };
+
+    const exportUrl = () => {
+        const params = buildCleanFilters();
+        delete params.per_page; // Export doesn't need pagination
+        const qs = new URLSearchParams(params).toString();
+        return `/monitoring/export${qs ? '?' + qs : ''}`;
     };
 
     const statusBadge = (status) => {
@@ -48,21 +67,6 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
             <Head title="Monitoring" />
 
             <div className="space-y-6">
-                {/* Header Actions */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-xl font-bold text-[var(--text-primary)]">Monitoring Jurnal</h2>
-                        <p className="text-sm text-[var(--text-secondary)] mt-1">Pantau seluruh dokumen dan status persetujuan</p>
-                    </div>
-                    <a
-                        href={`/monitoring/export?${new URLSearchParams(localFilters).toString()}`}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[var(--border)] hover:bg-gray-50 text-[var(--text-primary)] text-sm font-medium rounded-lg transition-colors shadow-sm"
-                    >
-                        <Download size={16} />
-                        Export Excel
-                    </a>
-                </div>
-
                 {/* Stat Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between">
@@ -103,61 +107,83 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                     </div>
                 </div>
 
-                {/* Filters */}
-                <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                        <input
-                            type="text"
-                            placeholder="Cari dokumen..."
-                            value={localFilters.search}
-                            onChange={e => setLocalFilters({ ...localFilters, search: e.target.value })}
-                            className="px-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                        <select
-                            value={localFilters.status}
-                            onChange={e => setLocalFilters({ ...localFilters, status: e.target.value })}
-                            className="px-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        >
-                            <option value="">Semua Status</option>
-                            <option value="Waiting Approval">Waiting Approval</option>
-                            <option value="Approved">Approved</option>
-                            <option value="Rejected">Rejected</option>
-                        </select>
-                        <input
-                            type="date"
-                            value={localFilters.date_from}
-                            onChange={e => setLocalFilters({ ...localFilters, date_from: e.target.value })}
-                            className="px-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                        <input
-                            type="date"
-                            value={localFilters.date_to}
-                            onChange={e => setLocalFilters({ ...localFilters, date_to: e.target.value })}
-                            className="px-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                        <select
-                            value={localFilters.requested_by}
-                            onChange={e => setLocalFilters({ ...localFilters, requested_by: e.target.value })}
-                            className="px-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        >
-                            <option value="">Semua User</option>
-                            {users?.map(u => (
-                                <option key={u.id} value={u.id}>{u.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                        <button onClick={applyFilters} className="px-5 py-1.5 bg-blue-600 text-white text-[13px] font-medium rounded-lg hover:bg-blue-700 transition-colors">
-                            Filter
-                        </button>
-                        <button onClick={resetFilters} className="px-5 py-1.5 bg-gray-100 text-gray-700 text-[13px] font-medium rounded-lg hover:bg-gray-200 transition-colors">
-                            Reset
-                        </button>
-                    </div>
-                </div>
-
-                {/* Table */}
+                {/* Combined Card: Header + Filters + Table + Pagination */}
                 <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] overflow-hidden">
+                    {/* Card Header */}
+                    <div className="px-5 py-4 flex items-center justify-between border-b-[0.5px] border-[var(--border)]">
+                        <div>
+                            <h2 className="text-base font-semibold text-[var(--text-primary)]">Daftar Dokumen</h2>
+                            <p className="text-xs text-[var(--text-secondary)] mt-0.5">Pantau seluruh dokumen dan status persetujuan</p>
+                        </div>
+                        <a
+                            href={exportUrl()}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+                        >
+                            <Download size={16} />
+                            Export Excel
+                        </a>
+                    </div>
+
+                    {/* Filters */}
+                    <div className="px-5 py-4 border-b-[0.5px] border-[var(--border)] bg-[#fafbfc]">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                            <div className="relative lg:col-span-1">
+                                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                                <input
+                                    type="text"
+                                    placeholder="Cari dokumen..."
+                                    value={localFilters.search}
+                                    onChange={e => setLocalFilters({ ...localFilters, search: e.target.value })}
+                                    onKeyDown={e => e.key === 'Enter' && applyFilters()}
+                                    className="w-full pl-9 pr-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                />
+                            </div>
+                            <select
+                                value={localFilters.status}
+                                onChange={e => setLocalFilters({ ...localFilters, status: e.target.value })}
+                                className="px-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                            >
+                                <option value="">Semua Status</option>
+                                <option value="Waiting Approval">Waiting Approval</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Rejected">Rejected</option>
+                            </select>
+                            <input
+                                type="date"
+                                value={localFilters.date_from}
+                                onChange={e => setLocalFilters({ ...localFilters, date_from: e.target.value })}
+                                className="px-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                placeholder="Dari tanggal"
+                            />
+                            <input
+                                type="date"
+                                value={localFilters.date_to}
+                                onChange={e => setLocalFilters({ ...localFilters, date_to: e.target.value })}
+                                className="px-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                placeholder="Sampai tanggal"
+                            />
+                            <select
+                                value={localFilters.requested_by}
+                                onChange={e => setLocalFilters({ ...localFilters, requested_by: e.target.value })}
+                                className="px-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                            >
+                                <option value="">Semua User</option>
+                                {users?.map(u => (
+                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                ))}
+                            </select>
+                            <div className="flex gap-2">
+                                <button onClick={applyFilters} className="flex-1 px-4 py-2 bg-blue-600 text-white text-[13px] font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                                    Filter
+                                </button>
+                                <button onClick={resetFilters} className="px-3 py-2 bg-white border-[0.5px] border-[var(--border)] text-gray-500 rounded-lg hover:bg-gray-50 transition-colors" title="Reset filter">
+                                    <RotateCcw size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Table */}
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm text-[var(--text-primary)]">
                             <thead className="bg-[#fafafa] border-b-[0.5px] border-[var(--border)] text-[11px] uppercase text-[var(--text-muted)] font-semibold">
@@ -225,12 +251,30 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                         </table>
                     </div>
 
-                    {/* Pagination */}
-                    {journals?.links && journals.links.length > 3 && (
-                        <div className="px-5 py-3 border-t-[0.5px] border-[var(--border)] flex items-center justify-between">
-                            <p className="text-[12px] text-[var(--text-secondary)]">
-                                Menampilkan <span className="font-medium text-[var(--text-primary)]">{journals.from}</span> - <span className="font-medium text-[var(--text-primary)]">{journals.to}</span> dari <span className="font-medium text-[var(--text-primary)]">{journals.total}</span> data
-                            </p>
+                    {/* Pagination Footer */}
+                    <div className="px-5 py-3 border-t-[0.5px] border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                                <span className="text-[12px] text-[var(--text-secondary)]">Tampilkan</span>
+                                <select
+                                    value={localFilters.per_page}
+                                    onChange={e => handlePerPageChange(e.target.value)}
+                                    className="px-2 py-1 border-[0.5px] border-[var(--border)] rounded-md text-[12px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                >
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                <span className="text-[12px] text-[var(--text-secondary)]">data</span>
+                            </div>
+                            {journals?.from && (
+                                <p className="text-[12px] text-[var(--text-secondary)]">
+                                    Menampilkan <span className="font-medium text-[var(--text-primary)]">{journals.from}</span> - <span className="font-medium text-[var(--text-primary)]">{journals.to}</span> dari <span className="font-medium text-[var(--text-primary)]">{journals.total}</span> data
+                                </p>
+                            )}
+                        </div>
+                        {journals?.links && journals.links.length > 3 && (
                             <div className="flex gap-1">
                                 {journals.links.map((link, i) => (
                                     <Link
@@ -248,8 +292,8 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                                     />
                                 ))}
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
 

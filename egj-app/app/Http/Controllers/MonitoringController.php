@@ -57,7 +57,13 @@ class MonitoringController extends Controller
 
         $query->orderBy('last_updated_at', 'desc');
 
-        $journals = $query->paginate(15)->withQueryString();
+        // Per page with allowed values
+        $allowedPerPage = [10, 25, 50, 100];
+        $perPage = in_array((int) $request->input('per_page', 10), $allowedPerPage)
+            ? (int) $request->input('per_page', 10)
+            : 10;
+
+        $journals = $query->paginate($perPage)->withQueryString();
 
         // Get all users for filter dropdown
         $users = \App\Models\User::where('is_active', true)
@@ -68,14 +74,14 @@ class MonitoringController extends Controller
 
         return Inertia::render('Monitoring/Index', [
             'journals' => $journals,
-            'filters' => $request->only(['status', 'date_from', 'date_to', 'requested_by', 'search']),
+            'filters' => $request->only(['status', 'date_from', 'date_to', 'requested_by', 'search', 'per_page']),
             'users' => $users,
             'stats' => $stats,
         ]);
     }
 
     /**
-     * Export monitoring data to Excel.
+     * Export monitoring data to Excel (all filtered data, no pagination).
      */
     public function export(Request $request)
     {

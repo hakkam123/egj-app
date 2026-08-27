@@ -31,11 +31,17 @@ class TrackingController extends Controller
 
         $query->orderBy('last_updated_at', 'desc');
 
-        $journals = $query->paginate(15)->withQueryString();
+        // Per page with allowed values
+        $allowedPerPage = [10, 25, 50, 100];
+        $perPage = in_array((int) $request->input('per_page', 10), $allowedPerPage)
+            ? (int) $request->input('per_page', 10)
+            : 10;
+
+        $journals = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('Tracking/Index', [
             'journals' => $journals,
-            'filters' => $request->only(['search', 'status']),
+            'filters' => $request->only(['search', 'status', 'per_page']),
         ]);
     }
 
