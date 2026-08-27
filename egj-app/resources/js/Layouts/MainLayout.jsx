@@ -1,16 +1,41 @@
-import { Link, usePage } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { Link, usePage, router } from '@inertiajs/react';
+import { useState, useEffect, useRef } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import { Monitor, CheckCircle, Clock, Plus, Users, Search, Bell, Download, ChevronLeft, ChevronRight, Menu, UserCog, LogOut } from 'lucide-react';
+import { 
+    LayoutDashboard, 
+    Monitor, 
+    CheckCircle, 
+    Clock, 
+    Plus, 
+    Users, 
+    Bell, 
+    UserCog, 
+    LogOut, 
+    Menu, 
+    X,
+    BookOpen,
+    CheckCheck,
+    ChevronDown,
+    AlertTriangle
+} from 'lucide-react';
 
 export default function MainLayout({ children, title }) {
     const { auth, flash } = usePage().props;
-    const user = auth.user;
-    const pendingCount = auth.pending_count || 0;
-    
-    // Default open on desktop, can be toggled
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const user = auth?.user;
+    const currentPath = window.location.pathname;
 
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+    const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [notifications, setNotifications] = useState([]);
+    const [loadingNotifs, setLoadingNotifs] = useState(false);
+
+    const userDropdownRef = useRef(null);
+    const notifDropdownRef = useRef(null);
+
+    // Flash message handling
     useEffect(() => {
         if (flash?.success) {
             toast.success(flash.success, { position: 'top-right' });
@@ -20,159 +45,341 @@ export default function MainLayout({ children, title }) {
         }
     }, [flash]);
 
-    const currentPath = window.location.pathname;
+    // Close dropdowns on click outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (userDropdownRef.current && !userDropdownRef.current.contains(e.target)) {
+                setUserDropdownOpen(false);
+            }
+            if (notifDropdownRef.current && !notifDropdownRef.current.contains(e.target)) {
+                setNotifDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
-    const navGroups = [
-        {
-            label: 'Main Menu',
-            items: [
-                { name: 'Monitoring', href: '/monitoring', icon: Monitor, roles: ['Admin', 'Staff', 'Section Head', 'Dept/Div Head'] },
-                { name: 'Buat Draft', href: '/general-journals/create', icon: Plus, roles: ['Staff', 'Section Head'] },
-            ]
-        },
-        {
-            label: 'Tasks',
-            items: [
-                { 
-                    name: 'Approval', 
-                    href: '/approval', 
-                    icon: CheckCircle, 
-                    roles: ['Section Head', 'Dept/Div Head'],
-                    badge: pendingCount > 0 ? pendingCount : null
-                },
-                { name: 'Tracking', href: '/tracking', icon: Clock, roles: ['Staff', 'Section Head', 'Dept/Div Head'] },
-            ]
-        },
-        {
-            label: 'Settings',
-            items: [
-                { name: 'User Management', href: '/users', icon: Users, roles: ['Admin'] },
-            ]
+    // Polling for unread notification count
+    const fetchUnreadCount = () => {
+        fetch('/notifications/unread-count', {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data && typeof data.unread_count === 'number') {
+                    setUnreadCount(data.unread_count);
+                }
+            })
+            .catch(() => {});
+    };
+
+    useEffect(() => {
+        fetchUnreadCount();
+        const interval = setInterval(fetchUnreadCount, 30000); // Poll every 30 seconds
+        return () => clearInterval(interval);
+    }, []);
+
+    // Fetch notifications list when dropdown opens
+    const toggleNotifications = () => {
+        const nextState = !notifDropdownOpen;
+        setNotifDropdownOpen(nextState);
+        setUserDropdownOpen(false);
+
+        if (nextState) {
+            setLoadingNotifs(true);
+            fetch('/notifications', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    setNotifications(data.notifications || []);
+                    setLoadingNotifs(false);
+                })
+                .catch(() => setLoadingNotifs(false));
         }
+    };
+
+    const handleMarkAsRead = (id, journalId) => {
+        fetch(`/notifications/${id}/read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(() => {
+            fetchUnreadCount();
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+        });
+
+        if (journalId) {
+            setNotifDropdownOpen(false);
+            if (user?.role === 'Section Head' || user?.role === 'Dept/Div Head') {
+                router.get(`/approval/${journalId}`);
+            } else {
+                router.get(`/general-journals/${journalId}`);
+            }
+        }
+    };
+
+    const handleMarkAllRead = () => {
+        fetch('/notifications/read-all', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(() => {
+            setUnreadCount(0);
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+            toast.success('Semua notifikasi ditandai dibaca.');
+        });
+    };
+
+    // Navigation Menu Items
+    const navItems = [
+        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['Admin', 'Staff', 'Section Head', 'Dept/Div Head'] },
+        { name: 'Monitoring', href: '/monitoring', icon: Monitor, roles: ['Admin', 'Staff', 'Section Head', 'Dept/Div Head'] },
+        { name: 'Approval', href: '/approval', icon: CheckCircle, roles: ['Section Head', 'Dept/Div Head'] },
+        { name: 'Tracking', href: '/tracking', icon: Clock, roles: ['Admin', 'Staff', 'Section Head', 'Dept/Div Head'] },
+        { name: 'Buat Draft', href: '/general-journals/create', icon: Plus, roles: ['Staff', 'Section Head'] },
+        { name: 'Error Monitoring', href: '/error-monitoring', icon: AlertTriangle, roles: ['Admin'] },
+        { name: 'Kelola User', href: '/users', icon: Users, roles: ['Admin'] },
     ];
 
+    const visibleNavItems = navItems.filter(item => item.roles.includes(user?.role));
+
     return (
-        <div className="flex h-screen w-full bg-(--page-bg) overflow-hidden font-sans">
-            {/* Sidebar */}
-            <aside 
-                className={`flex flex-col bg-(--sidebar-bg) transition-all duration-300 shrink-0 z-20 ${sidebarOpen ? 'w-55' : 'w-18'}`}
-            >
+        <div className="min-h-screen bg-[var(--page-bg)] bg-dashboard flex flex-col font-sans relative">
+            <Toaster />
 
-                {/* Navigation */}
-                <nav className="flex-1 overflow-y-auto py-4 scrollbar-thin">
-                    {navGroups.map((group, idx) => {
-                        const visibleItems = group.items.filter(item => item.roles.includes(user?.role));
-                        if (visibleItems.length === 0) return null;
+            {/* Top Navbar */}
+            <header className="bg-[var(--sidebar-bg)] border-b border-gray-800 text-white sticky top-0 z-30 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-16">
 
-                        return (
-                            <div key={idx} className="mb-6 px-3">
-                                {sidebarOpen && (
-                                    <p className="px-3 mb-2 text-[10px] font-semibold tracking-wider text-(--sidebar-section-label) uppercase">
-                                        {group.label}
-                                    </p>
-                                )}
-                                <div className="space-y-1">
-                                    {visibleItems.map(item => {
-                                        const isActive = currentPath.startsWith(item.href);
-                                        const Icon = item.icon;
-                                        return (
-                                            <Link
-                                                key={item.name}
-                                                href={item.href}
-                                                className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors ${
-                                                    isActive 
-                                                        ? 'bg-(--sidebar-active-bg) text-(--sidebar-active-text)' 
-                                                        : 'text-white/75 hover:bg-white/5 hover:text-white'
-                                                } ${!sidebarOpen ? 'justify-center' : ''}`}
-                                                title={!sidebarOpen ? item.name : undefined}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-                                                    {sidebarOpen && <span className="truncate">{item.name}</span>}
-                                                </div>
-                                                {sidebarOpen && item.badge && (
-                                                    <span className="flex items-center justify-center min-w-5 h-5 px-1.5 text-[10px] font-bold text-white bg-red-500 rounded-full">
-                                                        {item.badge}
-                                                    </span>
-                                                )}
-                                                {!sidebarOpen && item.badge && (
-                                                    <span className="absolute right-2 -mt-4 flex items-center justify-center w-2 h-2 bg-red-500 rounded-full"></span>
-                                                )}
-                                            </Link>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </nav>
+                        {/* Brand & Left Navigation */}
+                        <div className="flex items-center gap-8">
+                            
 
-                {/* User Info */}
-                <div className="p-3 border-t border-(--sidebar-section-label)/20">
-                    <Link
-                        href="/profile"
-                        className={`flex items-center gap-3 rounded-lg px-2 py-2 transition-colors ${
-                            currentPath === '/profile'
-                                ? 'bg-(--sidebar-active-bg)'
-                                : 'hover:bg-white/5'
-                        } ${!sidebarOpen && 'justify-center'}`}
-                        title={!sidebarOpen ? user?.name : undefined}
-                    >
-                        <div className="w-9 h-9 rounded-full bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm">
-                            {user?.name?.charAt(0).toUpperCase()}
+                            {/* Desktop Nav Items */}
+                            <nav className="hidden md:flex items-center gap-1">
+                                {visibleNavItems.map(item => {
+                                    const isActive = currentPath.startsWith(item.href) && (item.href !== '/dashboard' || currentPath === '/dashboard');
+                                    const Icon = item.icon;
+                                    return (
+                                        <Link
+                                            key={item.name}
+                                            href={item.href}
+                                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                                                isActive
+                                                    ? 'bg-white/15 text-white font-semibold'
+                                                    : 'text-white/75 hover:bg-white/10 hover:text-white'
+                                            }`}
+                                        >
+                                            <Icon size={16} />
+                                            <span>{item.name}</span>
+                                        </Link>
+                                    );
+                                })}
+                            </nav>
                         </div>
-                        {sidebarOpen && (
-                            <div className="flex-1 min-w-0">
-                                <p className="text-[13px] font-medium text-white truncate">{user?.name}</p>
-                                <p className="text-[11px] text-(--sidebar-text) truncate">{user?.role}</p>
+
+                        {/* Right Section: Notifications + User Menu */}
+                        <div className="flex items-center gap-3">
+
+                            {/* Notifications Dropdown */}
+                            <div className="relative" ref={notifDropdownRef}>
+                                <button
+                                    onClick={toggleNotifications}
+                                    className="p-2 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors relative"
+                                    title="Notifikasi"
+                                >
+                                    <Bell size={20} />
+                                    {unreadCount > 0 && (
+                                        <span className="absolute top-1 right-1 flex items-center justify-center min-w-4.5 h-4.5 px-1 text-[10px] font-bold text-white bg-red-500 rounded-full border-2 border-[var(--sidebar-bg)] animate-pulse">
+                                            {unreadCount > 99 ? '99+' : unreadCount}
+                                        </span>
+                                    )}
+                                </button>
+
+                                {notifDropdownOpen && (
+                                    <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 text-gray-800 z-50 overflow-hidden animate-in fade-in zoom-in duration-150">
+                                        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                                            <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                                                <Bell size={16} className="text-blue-600" /> Notifikasi
+                                            </h4>
+                                            {unreadCount > 0 && (
+                                                <button
+                                                    onClick={handleMarkAllRead}
+                                                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                                >
+                                                    <CheckCheck size={14} /> Tandai dibaca
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+                                            {loadingNotifs ? (
+                                                <div className="py-8 text-center text-xs text-gray-400">
+                                                    Memuat notifikasi...
+                                                </div>
+                                            ) : notifications.length === 0 ? (
+                                                <div className="py-8 text-center text-xs text-gray-400">
+                                                    Tidak ada notifikasi.
+                                                </div>
+                                            ) : (
+                                                notifications.map(n => (
+                                                    <div
+                                                        key={n.id}
+                                                        onClick={() => handleMarkAsRead(n.id, n.general_journal_id)}
+                                                        className={`p-3.5 text-xs cursor-pointer hover:bg-blue-50/50 transition-colors ${
+                                                            !n.is_read ? 'bg-blue-50/30 font-medium' : ''
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <p className="text-gray-800 leading-snug">{n.message}</p>
+                                                            {!n.is_read && (
+                                                                <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0 mt-1"></span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[10px] text-gray-400 mt-1">
+                                                            {n.created_at ? new Date(n.created_at).toLocaleString('id-ID') : ''}
+                                                        </p>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </Link>
-                    {sidebarOpen && (
-                        <div className="mt-2 px-1 space-y-1">
+
+                            {/* User Profile Dropdown */}
+                            <div className="relative" ref={userDropdownRef}>
+                                <button
+                                    onClick={() => { setUserDropdownOpen(!userDropdownOpen); setNotifDropdownOpen(false); }}
+                                    className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                                >
+                                    <div className="hidden sm:flex flex-col text-left">
+                                        <span className="text-[13px] font-semibold text-white leading-tight">{user?.name}</span>
+                                        <span className="text-[10px] text-gray-300">{user?.role}</span>
+                                    </div>
+                                    <ChevronDown size={14} className="text-gray-300 hidden sm:block" />
+                                </button>
+
+                                {userDropdownOpen && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 py-1 text-gray-800 z-50 animate-in fade-in zoom-in duration-150">
+                                        <div className="px-4 py-2 border-b border-gray-100 sm:hidden">
+                                            <p className="text-xs font-bold text-gray-800 truncate">{user?.name}</p>
+                                            <p className="text-[10px] text-gray-500">{user?.role}</p>
+                                        </div>
+                                        <Link
+                                            href="/profile"
+                                            onClick={() => setUserDropdownOpen(false)}
+                                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                                        >
+                                            <UserCog size={15} className="text-gray-500" />
+                                            Account
+                                        </Link>
+                                        <Link
+                                            href="/tutorial"
+                                            onClick={() => setUserDropdownOpen(false)}
+                                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                                        >
+                                            <BookOpen size={15} className="text-gray-500" />
+                                            Tutorial
+                                        </Link>
+                                        <div className="border-t border-gray-100 my-1"></div>
+                                        <Link
+                                            href="/logout"
+                                            method="post"
+                                            as="button"
+                                            className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
+                                        >
+                                            <LogOut size={15} />
+                                            Logout
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Mobile Hamburger Toggle */}
+                            <button
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="md:hidden p-2 rounded-lg text-white hover:bg-white/10 transition-colors"
+                            >
+                                {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+                            </button>
+
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mobile Menu Dropdown */}
+                {mobileMenuOpen && (
+                    <div className="md:hidden border-t border-gray-800 bg-[var(--sidebar-bg)] px-4 pt-2 pb-4 space-y-1">
+                        {visibleNavItems.map(item => {
+                            const isActive = currentPath.startsWith(item.href) && (item.href !== '/dashboard' || currentPath === '/dashboard');
+                            const Icon = item.icon;
+                            return (
+                                <Link
+                                    key={item.name}
+                                    href={item.href}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                                        isActive
+                                            ? 'bg-white/20 text-white font-semibold'
+                                            : 'text-white/80 hover:bg-white/10 hover:text-white'
+                                    }`}
+                                >
+                                    <Icon size={18} />
+                                    <span>{item.name}</span>
+                                </Link>
+                            );
+                        })}
+
+                        <div className="border-t border-gray-800 pt-2 mt-2 space-y-1">
                             <Link
                                 href="/profile"
-                                className="w-full text-left text-[12px] text-white/75 hover:text-white transition-colors flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white/5"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
                             >
-                                <UserCog className="w-4 h-4" />
-                                Akun Saya
+                                <UserCog size={18} />
+                                <span>Account</span>
+                            </Link>
+                            <Link
+                                href="/tutorial"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white rounded-lg transition-colors"
+                            >
+                                <BookOpen size={18} />
+                                <span>Tutorial</span>
                             </Link>
                             <Link
                                 href="/logout"
                                 method="post"
                                 as="button"
-                                className="w-full text-left text-[12px] text-white/75 hover:text-white transition-colors flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-white/5"
+                                className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                             >
-                                <LogOut className="w-4 h-4" />
-                                Keluar Sistem
+                                <LogOut size={18} />
+                                <span>Logout</span>
                             </Link>
                         </div>
-                    )}
-                </div>
-            </aside>
-
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 bg-(--page-bg)">
-                {/* Topbar */}
-                <header className="h-13 bg-(--topbar-bg) border-b-[0.5px] border-(--border) flex items-center justify-between px-6 hrink-0 z-10">
-                    <div className="flex items-center gap-4">
-                        <button 
-                            onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="p-1.5 rounded-md text-(--text-secondary) hover:text-(--text-primary) hover:bg-gray-100 transition-colors"
-                        >
-                            <Menu size={18} />
-                        </button>
                     </div>
-                    
-                </header>
+                )}
+            </header>
 
-                <Toaster />
-
-                {/* Page Content */}
-                <main className="flex-1 overflow-auto p-5 md:p-6">
-                    {children}
-                </main>
-            </div>
+            {/* Main Content Body */}
+            <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:px-6 lg:px-8 py-6 relative z-10">
+                {children}
+            </main>
         </div>
     );
 }

@@ -61,7 +61,7 @@ export default function PreviewShow({ journal, token }) {
                             </div>
                             <div className="h-[600px]">
                                 <iframe
-                                    src={`/files/${f.id}/preview`}
+                                    src={`/files/${f.id}/preview?v=${f.file_size}`}
                                     className="w-full h-full"
                                     title={f.file_name}
                                 />
@@ -86,7 +86,7 @@ export default function PreviewShow({ journal, token }) {
                                             </div>
                                         </div>
                                         {f.mime_type?.startsWith('image/') && (
-                                            <img src={`/files/${f.id}/preview`} alt={f.file_name} className="w-20 h-20 object-cover rounded-lg" />
+                                            <img src={`/files/${f.id}/preview?v=${f.file_size}`} alt={f.file_name} className="w-20 h-20 object-cover rounded-lg" />
                                         )}
                                     </div>
                                 ))}
@@ -119,3 +119,4 @@ export default function PreviewShow({ journal, token }) {
         </>
     );
 }
+

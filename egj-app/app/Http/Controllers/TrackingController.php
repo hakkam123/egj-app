@@ -13,7 +13,20 @@ class TrackingController extends Controller
      */
     public function index(Request $request)
     {
-        $query = GeneralJournal::with(['requester', 'assignee']);
+        $query = GeneralJournal::with(['requester', 'assignee', 'lastApproveHistory.actor']);
+
+        // Filter by date range
+        if ($request->filled('date_from')) {
+            $query->whereDate('journal_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('journal_date', '<=', $request->date_to);
+        }
+
+        // Filter by requester
+        if ($request->filled('requested_by')) {
+            $query->where('requested_by', $request->requested_by);
+        }
 
         // Search by document number or reference
         if ($request->filled('search')) {
@@ -39,9 +52,17 @@ class TrackingController extends Controller
 
         $journals = $query->paginate($perPage)->withQueryString();
 
+        // Get users for requester dropdown
+        $users = \App\Models\User::where('is_active', true)
+            ->whereIn('role', ['Staff', 'Section Head', 'Dept/Div Head'])
+            ->select('id', 'name', 'role')
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Tracking/Index', [
             'journals' => $journals,
-            'filters' => $request->only(['search', 'status', 'per_page']),
+            'filters' => $request->only(['search', 'status', 'date_from', 'date_to', 'requested_by', 'per_page']),
+            'users' => $users,
         ]);
     }
 

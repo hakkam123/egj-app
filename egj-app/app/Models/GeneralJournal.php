@@ -79,6 +79,14 @@ class GeneralJournal extends Model
     }
 
     /**
+     * Get the latest approve action history.
+     */
+    public function lastApproveHistory()
+    {
+        return $this->hasOne(ApprovalHistory::class)->where('action', 'approve')->latestOfMany('created_at');
+    }
+
+    /**
      * Email tokens for this journal.
      */
     public function emailTokens()

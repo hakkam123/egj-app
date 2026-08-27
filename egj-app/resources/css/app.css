@@ -43,14 +43,36 @@
         /* Border */
         --border: rgba(0,0,0,0.08);
 
-        /* Status badge colors */
-        --badge-waiting-bg: #fff8e1;
-        --badge-waiting-text: #8a6500;
-        --badge-approved-bg: #e6f4ea;
-        --badge-approved-text: #1a6e35;
-        --badge-rejected-bg: #fce8e8;
-        --badge-rejected-text: #8b1f1f;
-        --badge-draft-bg: #f0f2f5;
-        --badge-draft-text: #5f6368;
+        /* Status badge colors (Toned-down palette matching navy header) */
+        --badge-waiting-bg: #faf1e2;
+        --badge-waiting-text: #b8791f;
+        --badge-approved-bg: #e6f2ef;
+        --badge-approved-text: #2b6b5c;
+        --badge-rejected-bg: #fbeceb;
+        --badge-rejected-text: #b8433c;
+        --badge-draft-bg: #f1f5f9;
+        --badge-draft-text: #475569;
+    }
+}
+
+@layer utilities {
+    .bg-dashboard {
+        position: relative;
+        background-color: var(--page-bg);
+    }
+
+    .bg-dashboard::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background-image: 
+            radial-gradient(ellipse 70% 50% at 50% 115%, rgba(37, 99, 235, 0.14) 0%, rgba(59, 130, 246, 0.05) 50%, transparent 75%),
+            radial-gradient(rgba(148, 163, 184, 0.45) 1.2px, transparent 1.2px);
+        background-size: 100% 100%, 20px 20px;
+        background-position: center bottom, 0 0;
+        -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 15%, rgba(0, 0, 0, 0.3) 35%, rgba(0, 0, 0, 0) 55%);
+        mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 15%, rgba(0, 0, 0, 0.3) 35%, rgba(0, 0, 0, 0) 55%);
     }
 }

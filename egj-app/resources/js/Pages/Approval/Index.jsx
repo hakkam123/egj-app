@@ -1,33 +1,136 @@
 import { Head, Link, router } from '@inertiajs/react';
 import MainLayout from '../../Layouts/MainLayout';
-import { CheckCircle, XCircle, Search, Eye } from 'lucide-react';
+import PageHeader from '../../Components/PageHeader';
+import { useState, useEffect, useRef } from 'react';
+import { Eye, CheckCircle, Search, RotateCcw, XCircle, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-export default function ApprovalIndex({ journals }) {
-    const handleApprove = (id) => {
-        if (confirm('Apakah Anda yakin ingin menyetujui dokumen ini?')) {
-            router.post(`/approval/${id}/approve`, { notes: 'Approved from list' }, { preserveScroll: true });
-        }
+export default function ApprovalIndex({ journals, filters, users }) {
+    const [searchQuery, setSearchQuery] = useState(filters?.search || '');
+    const [status, setStatus] = useState(filters?.status || '');
+    const [dateFrom, setDateFrom] = useState(filters?.date_from || '');
+    const [dateTo, setDateTo] = useState(filters?.date_to || '');
+    const [requestedBy, setRequestedBy] = useState(filters?.requested_by || filters?.requester_id || '');
+    const [perPage, setPerPage] = useState(filters?.per_page || 10);
+
+    // Modal state for Approve & Reject without using window.confirm/prompt/alert
+    const [approveModal, setApproveModal] = useState({ open: false, journalId: null });
+    const [rejectModal, setRejectModal] = useState({ open: false, journalId: null, notes: '', error: '' });
+
+    const isInitialMount = useRef(true);
+
+    const updateFilters = (overrides = {}) => {
+        const queryParams = {
+            search: searchQuery,
+            status,
+            date_from: dateFrom,
+            date_to: dateTo,
+            requested_by: requestedBy,
+            per_page: perPage,
+            ...overrides,
+        };
+
+        const cleaned = {};
+        Object.entries(queryParams).forEach(([k, v]) => {
+            if (v !== undefined && v !== null && v !== '') {
+                cleaned[k] = v;
+            }
+        });
+
+        router.get('/approval', cleaned, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
     };
 
-    const handleReject = (id) => {
-        const notes = prompt('Masukkan alasan penolakan (minimal 5 karakter):');
-        if (notes === null) return; // cancelled
-        if (notes.length < 5) {
-            alert('Alasan penolakan harus minimal 5 karakter.');
+    // Debounce search input
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
             return;
         }
-        router.post(`/approval/${id}/reject`, { notes }, { preserveScroll: true });
+
+        const timer = setTimeout(() => {
+            if (searchQuery !== (filters?.search || '')) {
+                updateFilters({ search: searchQuery });
+            }
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const handleStatusChange = (e) => {
+        const val = e.target.value;
+        setStatus(val);
+        updateFilters({ status: val });
     };
 
-    const statusBadge = (status) => {
+    const handleDateFromChange = (e) => {
+        const val = e.target.value;
+        setDateFrom(val);
+        updateFilters({ date_from: val });
+    };
+
+    const handleDateToChange = (e) => {
+        const val = e.target.value;
+        setDateTo(val);
+        updateFilters({ date_to: val });
+    };
+
+    const handleRequestedByChange = (e) => {
+        const val = e.target.value;
+        setRequestedBy(val);
+        updateFilters({ requested_by: val });
+    };
+
+    const handlePerPageChange = (e) => {
+        const val = e.target.value;
+        setPerPage(val);
+        updateFilters({ per_page: val });
+    };
+
+    const handleReset = () => {
+        setSearchQuery('');
+        setStatus('');
+        setDateFrom('');
+        setDateTo('');
+        setRequestedBy('');
+        setPerPage(10);
+        router.get('/approval', {}, { preserveState: true, preserveScroll: true, replace: true });
+    };
+
+    const confirmApprove = () => {
+        if (!approveModal.journalId) return;
+        router.post(`/approval/${approveModal.journalId}/approve`, { notes: 'Approved from list' }, {
+            preserveScroll: true,
+            onSuccess: () => setApproveModal({ open: false, journalId: null }),
+        });
+    };
+
+    const confirmReject = () => {
+        if (!rejectModal.journalId) return;
+        if (!rejectModal.notes || rejectModal.notes.trim().length < 5) {
+            setRejectModal(prev => ({ ...prev, error: 'Alasan penolakan minimal 5 karakter.' }));
+            toast.error('Alasan penolakan minimal 5 karakter.');
+            return;
+        }
+
+        router.post(`/approval/${rejectModal.journalId}/reject`, { notes: rejectModal.notes }, {
+            preserveScroll: true,
+            onSuccess: () => setRejectModal({ open: false, journalId: null, notes: '', error: '' }),
+        });
+    };
+
+    const statusBadge = (s) => {
         const styleMap = {
             'Waiting Approval': 'bg-[var(--badge-waiting-bg)] text-[var(--badge-waiting-text)]',
             'Approved': 'bg-[var(--badge-approved-bg)] text-[var(--badge-approved-text)]',
             'Rejected': 'bg-[var(--badge-rejected-bg)] text-[var(--badge-rejected-text)]',
         };
         return (
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${styleMap[status] || 'bg-gray-100 text-gray-700'}`}>
-                {status}
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${styleMap[s] || 'bg-gray-100 text-gray-700'}`}>
+                {s}
             </span>
         );
     };
@@ -37,12 +140,96 @@ export default function ApprovalIndex({ journals }) {
             <Head title="Approval" />
 
             <div className="space-y-6">
-                <div>
-                    <h2 className="text-xl font-bold text-[var(--text-primary)]">Approval Dokumen</h2>
-                    <p className="text-sm text-[var(--text-secondary)] mt-1">Antrean dokumen yang menunggu persetujuan Anda</p>
-                </div>
+                <PageHeader
+                    title="Approval General Journal"
+                    subtitle="Tinjau dan proses persetujuan dokumen General Journal yang memerlukan tindakan Anda"
+                />
 
-                <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] overflow-hidden">
+                <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] overflow-hidden shadow-xs">
+                    {/* Header */}
+                    <div className="px-5 py-4 border-b-[0.5px] border-[var(--border)]">
+                        <h3 className="text-base font-semibold text-[var(--text-primary)]">Antrean Dokumen Approval</h3>
+                        <p className="text-xs text-[var(--text-secondary)] mt-0.5">Daftar pengajuan dokumen yang menunggu persetujuan Anda</p>
+                    </div>
+
+                    {/* Filters */}
+                    <div className="p-5 border-b-[0.5px] border-[var(--border)] bg-gray-50/50">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+                            <div className="lg:col-span-2">
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Pencarian</label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Cari No. Dokumen / Reference..."
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                        className="w-full pl-9 pr-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                    />
+                                    <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Status</label>
+                                <select
+                                    value={status}
+                                    onChange={handleStatusChange}
+                                    className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                >
+                                    <option value="">Semua Status</option>
+                                    <option value="Waiting Approval">Waiting Approval</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Rejected">Rejected</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Dari Tanggal</label>
+                                <input
+                                    type="date"
+                                    value={dateFrom}
+                                    onChange={handleDateFromChange}
+                                    className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Sampai Tanggal</label>
+                                <input
+                                    type="date"
+                                    value={dateTo}
+                                    onChange={handleDateToChange}
+                                    className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">User / Requester</label>
+                                <div className="flex gap-2">
+                                    <select
+                                        value={requestedBy}
+                                        onChange={handleRequestedByChange}
+                                        className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                    >
+                                        <option value="">Semua User</option>
+                                        {users?.map(u => (
+                                            <option key={u.id} value={u.id}>{u.name}</option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={handleReset}
+                                        className="px-3 py-2 bg-white border-[0.5px] border-[var(--border)] text-[var(--text-secondary)] text-[13px] font-semibold rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center shrink-0"
+                                        title="Reset Filter"
+                                    >
+                                        <RotateCcw size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Table */}
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm text-[var(--text-primary)]">
                             <thead className="bg-[#fafafa] border-b-[0.5px] border-[var(--border)] text-[11px] uppercase text-[var(--text-muted)] font-semibold">
@@ -50,18 +237,19 @@ export default function ApprovalIndex({ journals }) {
                                     <th className="px-5 py-3 whitespace-nowrap">No. Dokumen</th>
                                     <th className="px-5 py-3 whitespace-nowrap">Tanggal</th>
                                     <th className="px-5 py-3">Reference</th>
-                                    <th className="px-5 py-3 whitespace-nowrap">Person Request</th>
                                     <th className="px-5 py-3 whitespace-nowrap">Status</th>
+                                    <th className="px-5 py-3 whitespace-nowrap">Person Request</th>
+                                    <th className="px-5 py-3 whitespace-nowrap">Assign To</th>
                                     <th className="px-5 py-3 text-center whitespace-nowrap">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--border)]">
                                 {journals?.data?.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-5 py-12 text-center text-[var(--text-muted)] text-[13px]">
+                                        <td colSpan={7} className="px-5 py-12 text-center text-[var(--text-muted)] text-[13px]">
                                             <div className="flex flex-col items-center">
                                                 <CheckCircle className="w-10 h-10 text-gray-300 mb-3" />
-                                                Tidak ada dokumen yang menunggu approval.
+                                                Tidak ada dokumen yang ditemukan.
                                             </div>
                                         </td>
                                     </tr>
@@ -80,6 +268,9 @@ export default function ApprovalIndex({ journals }) {
                                                 {journal.reference || '-'}
                                             </td>
                                             <td className="px-5 py-3 whitespace-nowrap">
+                                                {statusBadge(journal.status)}
+                                            </td>
+                                            <td className="px-5 py-3 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
                                                     {journal.requester ? (
                                                         <>
@@ -94,7 +285,18 @@ export default function ApprovalIndex({ journals }) {
                                                 </div>
                                             </td>
                                             <td className="px-5 py-3 whitespace-nowrap">
-                                                {statusBadge(journal.status)}
+                                                <div className="flex items-center gap-2">
+                                                    {journal.assignee ? (
+                                                        <>
+                                                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-600">
+                                                                {journal.assignee.name.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <span className="text-[13px]">{journal.assignee.name}</span>
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-[13px] text-[var(--text-muted)]">-</span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-5 py-3">
                                                 <div className="flex items-center justify-center gap-2">
@@ -105,18 +307,22 @@ export default function ApprovalIndex({ journals }) {
                                                     >
                                                         <Eye size={14} /> Lihat
                                                     </Link>
-                                                    <button
-                                                        onClick={() => handleApprove(journal.id)}
-                                                        className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--badge-approved-bg)] text-[var(--badge-approved-text)] rounded-full text-[12px] font-semibold hover:brightness-95 transition-all"
-                                                    >
-                                                        Approve
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleReject(journal.id)}
-                                                        className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--badge-rejected-bg)] text-[var(--badge-rejected-text)] rounded-full text-[12px] font-semibold hover:brightness-95 transition-all"
-                                                    >
-                                                        Reject
-                                                    </button>
+                                                    {journal.status === 'Waiting Approval' && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => setApproveModal({ open: true, journalId: journal.id })}
+                                                                className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--badge-approved-bg)] text-[var(--badge-approved-text)] rounded-full text-[12px] font-semibold hover:brightness-95 transition-all"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setRejectModal({ open: true, journalId: journal.id, notes: '', error: '' })}
+                                                                className="flex items-center gap-1.5 px-4 py-1.5 bg-[var(--badge-rejected-bg)] text-[var(--badge-rejected-text)] rounded-full text-[12px] font-semibold hover:brightness-95 transition-all"
+                                                            >
+                                                                Reject
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -126,28 +332,131 @@ export default function ApprovalIndex({ journals }) {
                         </table>
                     </div>
 
-                    {journals?.links && journals.links.length > 3 && (
-                        <div className="px-5 py-3 border-t-[0.5px] border-[var(--border)] flex items-center justify-between">
-                            <p className="text-[12px] text-[var(--text-secondary)]">
-                                Menampilkan <span className="font-medium text-[var(--text-primary)]">{journals.from}</span> - <span className="font-medium text-[var(--text-primary)]">{journals.to}</span> dari <span className="font-medium text-[var(--text-primary)]">{journals.total}</span> data
-                            </p>
-                            <div className="flex gap-1">
+                    {/* Pagination Footer */}
+                    <div className="px-5 py-3 border-t-[0.5px] border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                                <span className="text-[12px] text-[var(--text-secondary)]">Tampilkan</span>
+                                <select
+                                    value={perPage}
+                                    onChange={handlePerPageChange}
+                                    className="px-2 py-1 border-[0.5px] border-[var(--border)] rounded-md text-[12px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                >
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                <span className="text-[12px] text-[var(--text-secondary)]">data</span>
+                            </div>
+                            {journals?.from && (
+                                <p className="text-[12px] text-[var(--text-secondary)]">
+                                    Menampilkan <span className="font-medium text-[var(--text-primary)]">{journals.from}</span> - <span className="font-medium text-[var(--text-primary)]">{journals.to}</span> dari <span className="font-medium text-[var(--text-primary)]">{journals.total}</span> data
+                                </p>
+                            )}
+                        </div>
+                        {journals?.links && journals.links.length > 3 && (
+                            <div className="flex gap-1 flex-wrap">
                                 {journals.links.map((link, i) => (
                                     <Link
                                         key={i}
                                         href={link.url || '#'}
                                         className={`px-3 py-1.5 text-[12px] rounded-md transition-colors ${
-                                            link.active ? 'bg-blue-600 text-white font-medium' : link.url ? 'text-[var(--text-secondary)] hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'
+                                            link.active
+                                                ? 'bg-blue-600 text-white font-medium'
+                                                : link.url
+                                                    ? 'text-[var(--text-secondary)] hover:bg-gray-100'
+                                                    : 'text-gray-300 cursor-not-allowed'
                                         }`}
                                         dangerouslySetInnerHTML={{ __html: link.label }}
                                         preserveState
                                     />
                                 ))}
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
+
+            {/* Approve Modal Confirmation */}
+            {approveModal.open && (
+                <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+                    <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl relative animate-in fade-in zoom-in duration-150">
+                        <button
+                            onClick={() => setApproveModal({ open: false, journalId: null })}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                        >
+                            <X size={18} />
+                        </button>
+                        <div className="flex items-center gap-3 text-green-600 mb-3">
+                            <CheckCircle size={24} />
+                            <h3 className="text-lg font-bold text-gray-800">Konfirmasi Approval</h3>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-6">
+                            Apakah Anda yakin ingin menyetujui dokumen General Journal ini?
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setApproveModal({ open: false, journalId: null })}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={confirmApprove}
+                                className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                                Ya, Disetujui
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Reject Modal */}
+            {rejectModal.open && (
+                <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+                    <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl relative animate-in fade-in zoom-in duration-150">
+                        <button
+                            onClick={() => setRejectModal({ open: false, journalId: null, notes: '', error: '' })}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                        >
+                            <X size={18} />
+                        </button>
+                        <div className="flex items-center gap-3 text-red-600 mb-3">
+                            <XCircle size={24} />
+                            <h3 className="text-lg font-bold text-gray-800">Penolakan Dokumen</h3>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-4">
+                            Masukkan alasan penolakan untuk dokumen ini (minimal 5 karakter):
+                        </p>
+                        <textarea
+                            value={rejectModal.notes}
+                            onChange={e => setRejectModal(prev => ({ ...prev, notes: e.target.value, error: '' }))}
+                            placeholder="Alasan penolakan..."
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 mb-2"
+                        />
+                        {rejectModal.error && (
+                            <p className="text-xs text-red-600 mb-4 font-medium">{rejectModal.error}</p>
+                        )}
+                        <div className="flex justify-end gap-3 mt-4">
+                            <button
+                                onClick={() => setRejectModal({ open: false, journalId: null, notes: '', error: '' })}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={confirmReject}
+                                className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                                Reject Dokumen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </MainLayout>
     );
 }

@@ -70,7 +70,7 @@ export default function FileModal({ open, journalId, onClose }) {
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-1 flex-shrink-0 ml-2">
-                                                    <a href={`/files/${f.id}/preview`} target="_blank" rel="noreferrer" className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-white border border-blue-200 rounded-md hover:bg-blue-50">Preview</a>
+                                                    <a href={`/files/${f.id}/preview?v=${f.file_size}`} target="_blank" rel="noreferrer" className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-white border border-blue-200 rounded-md hover:bg-blue-50">Preview</a>
                                                     <a href={`/files/${f.id}/download`} download target="_blank" rel="noreferrer" className="px-2.5 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50">Download</a>
                                                 </div>
                                             </div>
@@ -92,7 +92,7 @@ export default function FileModal({ open, journalId, onClose }) {
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-1 flex-shrink-0 ml-2">
-                                                    <a href={`/files/${f.id}/preview`} target="_blank" rel="noreferrer" className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-white border border-blue-200 rounded-md hover:bg-blue-50">Preview</a>
+                                                    <a href={`/files/${f.id}/preview?v=${f.file_size}`} target="_blank" rel="noreferrer" className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-white border border-blue-200 rounded-md hover:bg-blue-50">Preview</a>
                                                     <a href={`/files/${f.id}/download`} download target="_blank" rel="noreferrer" className="px-2.5 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50">Download</a>
                                                 </div>
                                             </div>
@@ -111,3 +111,4 @@ export default function FileModal({ open, journalId, onClose }) {
         </div>
     );
 }
+

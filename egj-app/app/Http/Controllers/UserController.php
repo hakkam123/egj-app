@@ -11,24 +11,49 @@ use Inertia\Inertia;
 class UserController extends Controller
 {
     /**
-     * Show user management list.
+     * Show user management list with filtering and pagination.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::orderBy('name')
-            ->paginate(15);
+        $query = User::query();
+
+        // Search by name, email, or NPK
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('npk', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by role
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+
+        // Filter by active status
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
+        $query->orderBy('name');
+
+        $allowedPerPage = [10, 25, 50, 100];
+        $perPage = in_array((int) $request->input('per_page', 10), $allowedPerPage)
+            ? (int) $request->input('per_page', 10)
+            : 10;
+
+        $users = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('Users/Index', [
             'users' => $users,
+            'filters' => $request->only(['search', 'role', 'status', 'per_page']),
         ]);
-    }
-
-    /**
-     * Show create user form.
-     */
-    public function create()
-    {
-        return Inertia::render('Users/Create');
     }
 
     /**
@@ -39,6 +64,7 @@ class UserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'npk' => ['nullable', 'string', 'max:50', 'unique:users,npk'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => ['required', Rule::in(['Staff', 'Section Head', 'Dept/Div Head', 'Admin'])],
             'is_active' => ['required', 'boolean'],
@@ -47,25 +73,14 @@ class UserController extends Controller
         User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => $request->password,
+            'npk' => $request->npk,
+            'password' => Hash::make($request->password),
             'role' => $request->role,
             'is_active' => $request->is_active,
         ]);
 
         return redirect()->route('users.index')
             ->with('success', 'User berhasil ditambahkan.');
-    }
-
-    /**
-     * Show edit user form.
-     */
-    public function edit(string $id)
-    {
-        $user = User::findOrFail($id);
-
-        return Inertia::render('Users/Edit', [
-            'user' => $user,
-        ]);
     }
 
     /**
@@ -78,6 +93,7 @@ class UserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'npk' => ['nullable', 'string', 'max:50', Rule::unique('users', 'npk')->ignore($user->id)],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'role' => ['required', Rule::in(['Staff', 'Section Head', 'Dept/Div Head', 'Admin'])],
             'is_active' => ['required', 'boolean'],
@@ -86,18 +102,19 @@ class UserController extends Controller
         $data = [
             'name' => $request->name,
             'email' => $request->email,
+            'npk' => $request->npk,
             'role' => $request->role,
             'is_active' => $request->is_active,
         ];
 
         if ($request->filled('password')) {
-            $data['password'] = $request->password;
+            $data['password'] = Hash::make($request->password);
         }
 
         $user->update($data);
 
         return redirect()->route('users.index')
-            ->with('success', 'User berhasil diupdate.');
+            ->with('success', 'User berhasil diperbarui.');
     }
 
     /**
@@ -107,7 +124,7 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
-        // Deactivate instead of hard delete to preserve data integrity
+        // Deactivate instead of hard delete to preserve historical integrity
         $user->update(['is_active' => false]);
 
         return redirect()->route('users.index')

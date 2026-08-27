@@ -12,6 +12,9 @@ use App\Http\Controllers\EmailApprovalController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\TutorialController;
+use App\Http\Controllers\ErrorMonitoringController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,7 +42,19 @@ Route::post('/approve-email/{token}', [EmailApprovalController::class, 'approve'
 */
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('home');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Notifications
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+
+    // Tutorial / Manual Book (View, Preview, Download for all authenticated users)
+    Route::get('/tutorial', [TutorialController::class, 'index'])->name('tutorial.index');
+    Route::get('/tutorial/download/{id?}', [TutorialController::class, 'download'])->name('tutorial.download');
+    Route::get('/tutorial/{id}/preview', [TutorialController::class, 'preview'])->name('tutorial.preview');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -65,7 +80,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/approval/{id}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
     });
 
-    // Tracking
+    // Tracking (Available to all authenticated roles)
     Route::get('/tracking', [TrackingController::class, 'index'])->name('tracking.index');
     Route::get('/tracking/{id}', [TrackingController::class, 'show'])->name('tracking.show');
 
@@ -73,13 +88,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/files/{id}/download', [FileController::class, 'download'])->name('files.download');
     Route::get('/files/{id}/preview', [FileController::class, 'preview'])->name('files.preview');
 
-    // User Management (Admin only)
+    // Admin Only: User Management, Error Monitoring, Tutorial Management
     Route::middleware('role:Admin')->group(function () {
+        // Users
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
-        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
-        Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        // Error Monitoring
+        Route::get('/error-monitoring', [ErrorMonitoringController::class, 'index'])->name('error-monitoring.index');
+        Route::patch('/error-monitoring/{id}/status', [ErrorMonitoringController::class, 'updateStatus'])->name('error-monitoring.update-status');
+        Route::delete('/error-monitoring/{id}', [ErrorMonitoringController::class, 'destroy'])->name('error-monitoring.destroy');
+
+        // Tutorial Upload & Delete
+        Route::post('/tutorial', [TutorialController::class, 'store'])->name('tutorial.store');
+        Route::delete('/tutorial/{id}', [TutorialController::class, 'destroy'])->name('tutorial.destroy');
     });
 });

@@ -231,7 +231,7 @@ export default function ApprovalShow({ journal }) {
                         <div className="flex-1 p-6 bg-gray-50">
                             {gjFiles.length > 0 ? (
                                 <iframe 
-                                    src={`/files/${gjFiles[0].id}/preview`} 
+                                    src={`/files/${gjFiles[0].id}/preview?v=${gjFiles[0].file_size}`} 
                                     className="w-full h-full min-h-[600px] border-[0.5px] border-[var(--border)] rounded-lg bg-white"
                                     title="PDF Preview"
                                 ></iframe>
@@ -259,7 +259,7 @@ export default function ApprovalShow({ journal }) {
                                             </div>
                                         </div>
                                         <div className="flex gap-2 flex-shrink-0">
-                                            <a href={`/files/${f.id}/preview`} target="_blank" className="px-3 py-1 text-[11px] font-medium text-blue-700 bg-white border-[0.5px] border-[var(--border)] rounded-md hover:bg-gray-50">Preview</a>
+                                            <a href={`/files/${f.id}/preview?v=${f.file_size}`} target="_blank" className="px-3 py-1 text-[11px] font-medium text-blue-700 bg-white border-[0.5px] border-[var(--border)] rounded-md hover:bg-gray-50">Preview</a>
                                             <a href={`/files/${f.id}/download`} className="px-3 py-1 text-[11px] font-medium text-[var(--text-secondary)] bg-white border-[0.5px] border-[var(--border)] rounded-md hover:bg-gray-50">Download</a>
                                         </div>
                                     </div>
@@ -283,3 +283,4 @@ export default function ApprovalShow({ journal }) {
         </MainLayout>
     );
 }
+

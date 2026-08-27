@@ -30,7 +30,7 @@ class LoginController extends Controller
         if (Auth::attempt(array_merge($credentials, ['is_active' => true]))) {
             $request->session()->regenerate();
 
-            return redirect()->intended('/monitoring');
+            return redirect()->intended('/dashboard');
         }
 
         return back()->withErrors([

@@ -1,54 +1,124 @@
 import { Head, Link, router } from '@inertiajs/react';
 import MainLayout from '../../Layouts/MainLayout';
-import { useState } from 'react';
+import PageHeader from '../../Components/PageHeader';
+import { useState, useEffect, useRef } from 'react';
 import { Eye, FileText, CheckCircle, Clock, XCircle, Download, Search, RotateCcw } from 'lucide-react';
 import FileModal from '../../Components/FileModal';
 import HistoryModal from '../../Components/HistoryModal';
 
 export default function MonitoringIndex({ journals, filters, users, stats }) {
-    const [localFilters, setLocalFilters] = useState({
-        status: filters?.status || '',
-        date_from: filters?.date_from || '',
-        date_to: filters?.date_to || '',
-        requested_by: filters?.requested_by || '',
-        search: filters?.search || '',
-        per_page: filters?.per_page || '10',
-    });
+    const [searchQuery, setSearchQuery] = useState(filters?.search || '');
+    const [status, setStatus] = useState(filters?.status || '');
+    const [dateFrom, setDateFrom] = useState(filters?.date_from || '');
+    const [dateTo, setDateTo] = useState(filters?.date_to || '');
+    const [requestedBy, setRequestedBy] = useState(filters?.requested_by || '');
+    const [perPage, setPerPage] = useState(filters?.per_page || 10);
+
     const [fileModal, setFileModal] = useState({ open: false, journalId: null });
     const [historyModal, setHistoryModal] = useState({ open: false, journalId: null });
 
-    const buildCleanFilters = (overrides = {}) => {
-        const merged = { ...localFilters, ...overrides };
-        const cleanFilters = {};
-        Object.entries(merged).forEach(([key, value]) => {
-            if (value && value !== '') cleanFilters[key] = value;
+    const isInitialMount = useRef(true);
+
+    const updateFilters = (overrides = {}) => {
+        const queryParams = {
+            search: searchQuery,
+            status,
+            date_from: dateFrom,
+            date_to: dateTo,
+            requested_by: requestedBy,
+            per_page: perPage,
+            ...overrides,
+        };
+
+        const cleaned = {};
+        Object.entries(queryParams).forEach(([k, v]) => {
+            if (v !== undefined && v !== null && v !== '') {
+                cleaned[k] = v;
+            }
         });
-        return cleanFilters;
+
+        router.get('/monitoring', cleaned, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
     };
 
-    const applyFilters = () => {
-        router.get('/monitoring', buildCleanFilters(), { preserveState: true });
+    // Debounce for search input
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            if (searchQuery !== (filters?.search || '')) {
+                updateFilters({ search: searchQuery });
+            }
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const handleStatusChange = (e) => {
+        const val = e.target.value;
+        setStatus(val);
+        updateFilters({ status: val });
     };
 
-    const resetFilters = () => {
-        const reset = { status: '', date_from: '', date_to: '', requested_by: '', search: '', per_page: '10' };
-        setLocalFilters(reset);
-        router.get('/monitoring', {}, { preserveState: true });
+    const handleDateFromChange = (e) => {
+        const val = e.target.value;
+        setDateFrom(val);
+        updateFilters({ date_from: val });
     };
 
-    const handlePerPageChange = (value) => {
-        setLocalFilters(prev => ({ ...prev, per_page: value }));
-        router.get('/monitoring', buildCleanFilters({ per_page: value }), { preserveState: true });
+    const handleDateToChange = (e) => {
+        const val = e.target.value;
+        setDateTo(val);
+        updateFilters({ date_to: val });
+    };
+
+    const handleRequestedByChange = (e) => {
+        const val = e.target.value;
+        setRequestedBy(val);
+        updateFilters({ requested_by: val });
+    };
+
+    const handlePerPageChange = (e) => {
+        const val = e.target.value;
+        setPerPage(val);
+        updateFilters({ per_page: val });
+    };
+
+    const handleReset = () => {
+        setSearchQuery('');
+        setStatus('');
+        setDateFrom('');
+        setDateTo('');
+        setRequestedBy('');
+        setPerPage(10);
+        router.get('/monitoring', {}, { preserveState: true, preserveScroll: true, replace: true });
     };
 
     const exportUrl = () => {
-        const params = buildCleanFilters();
-        delete params.per_page; // Export doesn't need pagination
-        const qs = new URLSearchParams(params).toString();
+        const params = {
+            search: searchQuery,
+            status,
+            date_from: dateFrom,
+            date_to: dateTo,
+            requested_by: requestedBy,
+        };
+        const cleaned = {};
+        Object.entries(params).forEach(([k, v]) => {
+            if (v !== undefined && v !== null && v !== '') {
+                cleaned[k] = v;
+            }
+        });
+        const qs = new URLSearchParams(cleaned).toString();
         return `/monitoring/export${qs ? '?' + qs : ''}`;
     };
 
-    const statusBadge = (status) => {
+    const statusBadge = (s) => {
         const styleMap = {
             'Draft': 'bg-[var(--badge-draft-bg)] text-[var(--badge-draft-text)]',
             'Waiting Approval': 'bg-[var(--badge-waiting-bg)] text-[var(--badge-waiting-text)]',
@@ -56,8 +126,8 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
             'Rejected': 'bg-[var(--badge-rejected-bg)] text-[var(--badge-rejected-text)]',
         };
         return (
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${styleMap[status] || styleMap['Draft']}`}>
-                {status}
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${styleMap[s] || styleMap['Draft']}`}>
+                {s}
             </span>
         );
     };
@@ -67,27 +137,41 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
             <Head title="Monitoring" />
 
             <div className="space-y-6">
+                <PageHeader
+                    title="Monitoring General Journal"
+                    subtitle="Pantau status persetujuan dan riwayat seluruh dokumen General Journal"
+                    actions={
+                        <a
+                            href={exportUrl()}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs"
+                        >
+                            <Download size={15} />
+                            Export Excel
+                        </a>
+                    }
+                />
+
                 {/* Stat Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between">
+                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
                         <div>
                             <p className="text-xs font-medium text-[var(--text-secondary)] uppercase">Total Dokumen</p>
                             <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{stats?.total || 0}</p>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
                             <FileText size={20} />
                         </div>
                     </div>
-                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between">
+                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
                         <div>
-                            <p className="text-xs font-medium text-[var(--text-secondary)] uppercase">Menunggu Approval</p>
+                            <p className="text-xs font-medium text-[var(--text-secondary)] uppercase">Waiting Approval</p>
                             <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{stats?.waiting || 0}</p>
                         </div>
                         <div className="w-10 h-10 rounded-full bg-[var(--badge-waiting-bg)] flex items-center justify-center text-[var(--badge-waiting-text)]">
                             <Clock size={20} />
                         </div>
                     </div>
-                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between">
+                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
                         <div>
                             <p className="text-xs font-medium text-[var(--text-secondary)] uppercase">Disetujui</p>
                             <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{stats?.approved || 0}</p>
@@ -96,7 +180,7 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                             <CheckCircle size={20} />
                         </div>
                     </div>
-                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between">
+                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
                         <div>
                             <p className="text-xs font-medium text-[var(--text-secondary)] uppercase">Ditolak</p>
                             <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{stats?.rejected || 0}</p>
@@ -108,77 +192,88 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                 </div>
 
                 {/* Combined Card: Header + Filters + Table + Pagination */}
-                <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] overflow-hidden">
+                <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] overflow-hidden shadow-xs">
                     {/* Card Header */}
                     <div className="px-5 py-4 flex items-center justify-between border-b-[0.5px] border-[var(--border)]">
                         <div>
-                            <h2 className="text-base font-semibold text-[var(--text-primary)]">Daftar Dokumen</h2>
-                            <p className="text-xs text-[var(--text-secondary)] mt-0.5">Pantau seluruh dokumen dan status persetujuan</p>
+                            <h3 className="text-base font-semibold text-[var(--text-primary)]">Daftar Dokumen</h3>
+                            <p className="text-xs text-[var(--text-secondary)] mt-0.5">Filter dan kelola dokumen General Journal</p>
                         </div>
-                        <a
-                            href={exportUrl()}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
-                        >
-                            <Download size={16} />
-                            Export Excel
-                        </a>
                     </div>
 
                     {/* Filters */}
-                    <div className="px-5 py-4 border-b-[0.5px] border-[var(--border)] bg-[#fafbfc]">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-                            <div className="relative lg:col-span-1">
-                                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                    <div className="p-5 border-b-[0.5px] border-[var(--border)] bg-gray-50/50">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+                            <div className="lg:col-span-2">
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Pencarian</label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Cari No. Dokumen / Reference..."
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                        className="w-full pl-9 pr-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                    />
+                                    <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Status</label>
+                                <select
+                                    value={status}
+                                    onChange={handleStatusChange}
+                                    className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                >
+                                    <option value="">Semua Status</option>
+                                    <option value="Waiting Approval">Waiting Approval</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Rejected">Rejected</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Dari Tanggal</label>
                                 <input
-                                    type="text"
-                                    placeholder="Cari dokumen..."
-                                    value={localFilters.search}
-                                    onChange={e => setLocalFilters({ ...localFilters, search: e.target.value })}
-                                    onKeyDown={e => e.key === 'Enter' && applyFilters()}
-                                    className="w-full pl-9 pr-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                    type="date"
+                                    value={dateFrom}
+                                    onChange={handleDateFromChange}
+                                    className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                                 />
                             </div>
-                            <select
-                                value={localFilters.status}
-                                onChange={e => setLocalFilters({ ...localFilters, status: e.target.value })}
-                                className="px-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                            >
-                                <option value="">Semua Status</option>
-                                <option value="Waiting Approval">Waiting Approval</option>
-                                <option value="Approved">Approved</option>
-                                <option value="Rejected">Rejected</option>
-                            </select>
-                            <input
-                                type="date"
-                                value={localFilters.date_from}
-                                onChange={e => setLocalFilters({ ...localFilters, date_from: e.target.value })}
-                                className="px-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                                placeholder="Dari tanggal"
-                            />
-                            <input
-                                type="date"
-                                value={localFilters.date_to}
-                                onChange={e => setLocalFilters({ ...localFilters, date_to: e.target.value })}
-                                className="px-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                                placeholder="Sampai tanggal"
-                            />
-                            <select
-                                value={localFilters.requested_by}
-                                onChange={e => setLocalFilters({ ...localFilters, requested_by: e.target.value })}
-                                className="px-3 py-2 border-[0.5px] border-[var(--border)] rounded-lg text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                            >
-                                <option value="">Semua User</option>
-                                {users?.map(u => (
-                                    <option key={u.id} value={u.id}>{u.name}</option>
-                                ))}
-                            </select>
-                            <div className="flex gap-2">
-                                <button onClick={applyFilters} className="flex-1 px-4 py-2 bg-blue-600 text-white text-[13px] font-medium rounded-lg hover:bg-blue-700 transition-colors">
-                                    Filter
-                                </button>
-                                <button onClick={resetFilters} className="px-3 py-2 bg-white border-[0.5px] border-[var(--border)] text-gray-500 rounded-lg hover:bg-gray-50 transition-colors" title="Reset filter">
-                                    <RotateCcw size={14} />
-                                </button>
+
+                            <div>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Sampai Tanggal</label>
+                                <input
+                                    type="date"
+                                    value={dateTo}
+                                    onChange={handleDateToChange}
+                                    className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">User / Requester</label>
+                                <div className="flex gap-2">
+                                    <select
+                                        value={requestedBy}
+                                        onChange={handleRequestedByChange}
+                                        className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                    >
+                                        <option value="">Semua User</option>
+                                        {users?.map(u => (
+                                            <option key={u.id} value={u.id}>{u.name}</option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={handleReset}
+                                        className="px-3 py-2 bg-white border-[0.5px] border-[var(--border)] text-[var(--text-secondary)] text-[13px] font-semibold rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center shrink-0"
+                                        title="Reset Filter"
+                                    >
+                                        <RotateCcw size={16} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -240,7 +335,7 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                                                         onClick={() => setFileModal({ open: true, journalId: journal.id })}
                                                         className="flex items-center gap-1.5 px-3 py-1.5 border-[0.5px] border-[var(--border)] rounded-md text-[12px] font-medium text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
                                                     >
-                                                        <Eye size={14} /> Lihat
+                                                        <Eye size={14} />
                                                     </button>
                                                 </div>
                                             </td>
@@ -257,8 +352,8 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                             <div className="flex items-center gap-2">
                                 <span className="text-[12px] text-[var(--text-secondary)]">Tampilkan</span>
                                 <select
-                                    value={localFilters.per_page}
-                                    onChange={e => handlePerPageChange(e.target.value)}
+                                    value={perPage}
+                                    onChange={handlePerPageChange}
                                     className="px-2 py-1 border-[0.5px] border-[var(--border)] rounded-md text-[12px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                                 >
                                     <option value="10">10</option>
@@ -275,7 +370,7 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                             )}
                         </div>
                         {journals?.links && journals.links.length > 3 && (
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 flex-wrap">
                                 {journals.links.map((link, i) => (
                                     <Link
                                         key={i}

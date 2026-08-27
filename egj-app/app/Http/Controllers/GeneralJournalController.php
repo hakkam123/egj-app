@@ -6,6 +6,7 @@ use App\Models\GeneralJournal;
 use App\Models\GeneralJournalFile;
 use App\Models\GeneralJournalApproval;
 use App\Models\ApprovalHistory;
+use App\Models\Notification;
 use App\Models\EmailToken;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -176,6 +177,17 @@ class GeneralJournalController extends Controller
                 'target_level' => $user->hasRole('Staff') ? 'superior' : 'superior_of_superior',
                 'created_at' => now(),
             ]);
+
+            // Create notification for approver
+            if ($currentAssignTo) {
+                Notification::create([
+                    'user_id' => $currentAssignTo,
+                    'general_journal_id' => $journal->id,
+                    'type' => 'approval_request',
+                    'message' => "Dokumen {$journal->document_number} membutuhkan persetujuan Anda.",
+                    'created_at' => now(),
+                ]);
+            }
 
             return $journal;
         });
@@ -372,6 +384,17 @@ class GeneralJournalController extends Controller
                 'target_level' => $user->hasRole('Staff') ? 'superior' : 'superior_of_superior',
                 'created_at' => now(),
             ]);
+
+            // Create notification for approver
+            if ($journal->current_assign_to) {
+                Notification::create([
+                    'user_id' => $journal->current_assign_to,
+                    'general_journal_id' => $journal->id,
+                    'type' => 'approval_request',
+                    'message' => "Dokumen {$journal->document_number} telah di-resubmit dan membutuhkan persetujuan Anda.",
+                    'created_at' => now(),
+                ]);
+            }
 
             return $journal;
         });

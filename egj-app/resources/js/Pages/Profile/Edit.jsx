@@ -1,12 +1,16 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import MainLayout from '../../Layouts/MainLayout';
-import { User, Lock, Save } from 'lucide-react';
+import PageHeader from '../../Components/PageHeader';
+import { User, Lock, Save, ShieldCheck } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-export default function ProfileEdit({ user }) {
+export default function EditProfile({ user }) {
+    const { flash } = usePage().props;
+
     const profileForm = useForm({
-        name: user.name || '',
-        email: user.email || '',
-        npk: user.npk || '',
+        name: user?.name || '',
+        email: user?.email || '',
+        npk: user?.npk || '',
     });
 
     const passwordForm = useForm({
@@ -17,7 +21,10 @@ export default function ProfileEdit({ user }) {
 
     const handleProfileSubmit = (e) => {
         e.preventDefault();
-        profileForm.put('/profile', { preserveScroll: true });
+        profileForm.put('/profile', {
+            preserveScroll: true,
+            onSuccess: () => toast.success('Profil berhasil diperbarui.'),
+        });
     };
 
     const handlePasswordSubmit = (e) => {
@@ -26,158 +33,213 @@ export default function ProfileEdit({ user }) {
             preserveScroll: true,
             onSuccess: () => {
                 passwordForm.reset();
+                toast.success('Password berhasil diubah.');
             },
         });
     };
 
+    const inputClass = "w-full px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white rounded-[7px]";
+    const inputStyle = { border: '0.5px solid var(--border)', color: 'var(--text-primary)' };
+    const labelClass = "block text-[11px] font-medium uppercase tracking-wide mb-1.5";
+    const labelStyle = { color: 'var(--text-muted)' };
+
     return (
-        <MainLayout title="Profil Saya">
-            <Head title="Profil" />
+        <MainLayout title="Akun Saya">
+            <Head title="Akun Saya" />
 
-            <div className="max-w-3xl mx-auto space-y-6">
-                <div>
-                    <h2 className="text-xl font-bold text-[var(--text-primary)]">Pengaturan Akun</h2>
-                    <p className="text-sm text-[var(--text-secondary)] mt-1">Kelola informasi profil dan keamanan akun Anda</p>
-                </div>
+            <div className="max-w-5xl mx-auto space-y-6">
+                <PageHeader
+                    title="Akun Saya"
+                    subtitle="Kelola data diri dan keamanan kata sandi akun Anda"
+                />
 
-                {/* Edit Profile Card */}
-                <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] overflow-hidden">
-                    <div className="px-6 py-4 border-b-[0.5px] border-[var(--border)] flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-                            <User size={16} className="text-blue-600" />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+
+                    {/* Kiri: Informasi Profil */}
+                    <div
+                        className="rounded-[10px] p-6"
+                        style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border)' }}
+                    >
+                        {/* Card header */}
+                        <div className="flex items-center gap-3 pb-4 mb-5" style={{ borderBottom: '0.5px solid var(--border)' }}>
+                            <div
+                                className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                                style={{ background: '#1a2540' }}
+                            >
+                                <User size={15} color="#ffffff" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Informasi Profil</p>
+                                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Perbarui nama, email, dan NPK Anda</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-[14px] font-bold text-[var(--text-primary)]">Informasi Profil</h3>
-                            <p className="text-[11px] text-[var(--text-secondary)]">Perbarui nama, email, dan NPK Anda</p>
-                        </div>
+
+                        <form onSubmit={handleProfileSubmit} className="space-y-4">
+                            <div>
+                                <label className={labelClass} style={labelStyle}>
+                                    Nama Lengkap <span style={{ color: '#e05c5c' }}>*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={profileForm.data.name}
+                                    onChange={e => profileForm.setData('name', e.target.value)}
+                                    className={inputClass}
+                                    style={inputStyle}
+                                    required
+                                />
+                                {profileForm.errors.name && (
+                                    <p className="mt-1 text-[12px]" style={{ color: '#e05c5c' }}>{profileForm.errors.name}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className={labelClass} style={labelStyle}>
+                                    Alamat Email <span style={{ color: '#e05c5c' }}>*</span>
+                                </label>
+                                <input
+                                    type="email"
+                                    value={profileForm.data.email}
+                                    onChange={e => profileForm.setData('email', e.target.value)}
+                                    className={inputClass}
+                                    style={inputStyle}
+                                    required
+                                />
+                                {profileForm.errors.email && (
+                                    <p className="mt-1 text-[12px]" style={{ color: '#e05c5c' }}>{profileForm.errors.email}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className={labelClass} style={labelStyle}>
+                                    NPK (Nomor Pokok Karyawan)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={profileForm.data.npk}
+                                    onChange={e => profileForm.setData('npk', e.target.value)}
+                                    placeholder="Contoh: 123456"
+                                    className={inputClass}
+                                    style={inputStyle}
+                                />
+                                {profileForm.errors.npk && (
+                                    <p className="mt-1 text-[12px]" style={{ color: '#e05c5c' }}>{profileForm.errors.npk}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className={labelClass} style={labelStyle}>
+                                    Role / Jabatan
+                                </label>
+                                <div
+                                    className="flex items-center gap-2 px-3 py-2 text-[13px] rounded-[7px]"
+                                    style={{ background: '#f5f6f8', border: '0.5px solid var(--border)', color: 'var(--text-secondary)' }}
+                                >
+                                    <ShieldCheck size={15} style={{ color: 'var(--text-muted)' }} />
+                                    <span>{user?.role}</span>
+                                </div>
+                            </div>
+
+                            <div className="pt-3 flex justify-end" style={{ borderTop: '0.5px solid var(--border)' }}>
+                                <button
+                                    type="submit"
+                                    disabled={profileForm.processing}
+                                    className="inline-flex items-center gap-2 px-4 py-2 text-[13px] rounded-lg transition-colors disabled:opacity-50"
+                                    style={{ background: '#1a2540', color: '#ffffff' }}
+                                    onMouseEnter={e => !profileForm.processing && (e.currentTarget.style.background = '#243355')}
+                                    onMouseLeave={e => e.currentTarget.style.background = '#1a2540'}
+                                >
+                                    <Save size={14} />
+                                    {profileForm.processing ? 'Menyimpan...' : 'Simpan Profil'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
 
-                    <form onSubmit={handleProfileSubmit} className="p-6 space-y-5">
-                        <div>
-                            <label className="block text-[12px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">
-                                Nama Lengkap <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={profileForm.data.name}
-                                onChange={e => profileForm.setData('name', e.target.value)}
-                                className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-[7px] text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="Masukkan nama lengkap"
-                            />
-                            {profileForm.errors.name && <p className="mt-1 text-[12px] text-red-500">{profileForm.errors.name}</p>}
-                        </div>
-
-                        <div>
-                            <label className="block text-[12px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">
-                                Email <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="email"
-                                value={profileForm.data.email}
-                                onChange={e => profileForm.setData('email', e.target.value)}
-                                className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-[7px] text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="contoh@email.com"
-                            />
-                            {profileForm.errors.email && <p className="mt-1 text-[12px] text-red-500">{profileForm.errors.email}</p>}
-                        </div>
-
-                        <div>
-                            <label className="block text-[12px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">
-                                NPK (Nomor Pokok Karyawan)
-                            </label>
-                            <input
-                                type="text"
-                                value={profileForm.data.npk}
-                                onChange={e => profileForm.setData('npk', e.target.value)}
-                                className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-[7px] text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="Masukkan NPK"
-                            />
-                            {profileForm.errors.npk && <p className="mt-1 text-[12px] text-red-500">{profileForm.errors.npk}</p>}
-                        </div>
-
-                        <div className="flex items-center gap-2 text-[12px] text-[var(--text-secondary)] bg-gray-50 px-3 py-2 rounded-lg border-[0.5px] border-[var(--border)]">
-                            <span className="font-medium text-[var(--text-primary)]">Role:</span>
-                            <span>{user.role}</span>
-                        </div>
-
-                        <div className="flex justify-end pt-4 border-t-[0.5px] border-[var(--border)]">
-                            <button
-                                type="submit"
-                                disabled={profileForm.processing}
-                                className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 text-white text-[13px] font-bold rounded-full hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
+                    {/* Kanan: Ubah Password */}
+                    <div
+                        className="rounded-[10px] p-6"
+                        style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border)' }}
+                    >
+                        {/* Card header */}
+                        <div className="flex items-center gap-3 pb-4 mb-5" style={{ borderBottom: '0.5px solid var(--border)' }}>
+                            <div
+                                className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                                style={{ background: '#1a2540' }}
                             >
-                                <Save size={14} />
-                                {profileForm.processing ? 'Menyimpan...' : 'Simpan Profil'}
-                            </button>
+                                <Lock size={15} color="#ffffff" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Ubah Password</p>
+                                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Ganti kata sandi untuk mengamankan akun</p>
+                            </div>
                         </div>
-                    </form>
-                </div>
 
-                {/* Change Password Card */}
-                <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] overflow-hidden">
-                    <div className="px-6 py-4 border-b-[0.5px] border-[var(--border)] flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center">
-                            <Lock size={16} className="text-amber-600" />
-                        </div>
-                        <div>
-                            <h3 className="text-[14px] font-bold text-[var(--text-primary)]">Ganti Password</h3>
-                            <p className="text-[11px] text-[var(--text-secondary)]">Pastikan akun Anda menggunakan password yang kuat</p>
-                        </div>
+                        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                            <div>
+                                <label className={labelClass} style={labelStyle}>
+                                    Password Saat Ini <span style={{ color: '#e05c5c' }}>*</span>
+                                </label>
+                                <input
+                                    type="password"
+                                    value={passwordForm.data.current_password}
+                                    onChange={e => passwordForm.setData('current_password', e.target.value)}
+                                    className={inputClass}
+                                    style={inputStyle}
+                                    required
+                                />
+                                {passwordForm.errors.current_password && (
+                                    <p className="mt-1 text-[12px]" style={{ color: '#e05c5c' }}>{passwordForm.errors.current_password}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className={labelClass} style={labelStyle}>
+                                    Password Baru <span style={{ color: '#e05c5c' }}>*</span>
+                                </label>
+                                <input
+                                    type="password"
+                                    value={passwordForm.data.new_password}
+                                    onChange={e => passwordForm.setData('new_password', e.target.value)}
+                                    placeholder="Minimal 8 karakter"
+                                    className={inputClass}
+                                    style={inputStyle}
+                                    required
+                                />
+                                {passwordForm.errors.new_password && (
+                                    <p className="mt-1 text-[12px]" style={{ color: '#e05c5c' }}>{passwordForm.errors.new_password}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className={labelClass} style={labelStyle}>
+                                    Konfirmasi Password Baru <span style={{ color: '#e05c5c' }}>*</span>
+                                </label>
+                                <input
+                                    type="password"
+                                    value={passwordForm.data.new_password_confirmation}
+                                    onChange={e => passwordForm.setData('new_password_confirmation', e.target.value)}
+                                    className={inputClass}
+                                    style={inputStyle}
+                                    required
+                                />
+                            </div>
+
+                            <div className="pt-3 flex justify-end" style={{ borderTop: '0.5px solid var(--border)' }}>
+                                <button
+                                    type="submit"
+                                    disabled={passwordForm.processing}
+                                    className="inline-flex items-center gap-2 px-4 py-2 text-[13px] rounded-lg transition-colors disabled:opacity-50"
+                                    style={{ background: '#1a2540', color: '#ffffff' }}
+                                    onMouseEnter={e => !passwordForm.processing && (e.currentTarget.style.background = '#243355')}
+                                    onMouseLeave={e => e.currentTarget.style.background = '#1a2540'}
+                                >
+                                    <Lock size={14} />
+                                    {passwordForm.processing ? 'Memproses...' : 'Ubah Password'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
 
-                    <form onSubmit={handlePasswordSubmit} className="p-6 space-y-5">
-                        <div>
-                            <label className="block text-[12px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">
-                                Password Saat Ini <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="password"
-                                value={passwordForm.data.current_password}
-                                onChange={e => passwordForm.setData('current_password', e.target.value)}
-                                className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-[7px] text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="Masukkan password saat ini"
-                            />
-                            {passwordForm.errors.current_password && <p className="mt-1 text-[12px] text-red-500">{passwordForm.errors.current_password}</p>}
-                        </div>
-
-                        <div>
-                            <label className="block text-[12px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">
-                                Password Baru <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="password"
-                                value={passwordForm.data.new_password}
-                                onChange={e => passwordForm.setData('new_password', e.target.value)}
-                                className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-[7px] text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="Minimal 8 karakter"
-                            />
-                            {passwordForm.errors.new_password && <p className="mt-1 text-[12px] text-red-500">{passwordForm.errors.new_password}</p>}
-                        </div>
-
-                        <div>
-                            <label className="block text-[12px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">
-                                Konfirmasi Password Baru <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="password"
-                                value={passwordForm.data.new_password_confirmation}
-                                onChange={e => passwordForm.setData('new_password_confirmation', e.target.value)}
-                                className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-[7px] text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="Ketik ulang password baru"
-                            />
-                        </div>
-
-                        <div className="flex justify-end pt-4 border-t-[0.5px] border-[var(--border)]">
-                            <button
-                                type="submit"
-                                disabled={passwordForm.processing}
-                                className="inline-flex items-center gap-2 px-5 py-2 bg-amber-600 text-white text-[13px] font-bold rounded-full hover:bg-amber-700 disabled:opacity-50 transition-colors shadow-sm"
-                            >
-                                <Lock size={14} />
-                                {passwordForm.processing ? 'Menyimpan...' : 'Ubah Password'}
-                            </button>
-                        </div>
-                    </form>
                 </div>
             </div>
         </MainLayout>

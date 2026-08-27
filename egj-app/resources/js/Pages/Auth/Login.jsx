@@ -1,4 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
+import { LogIn, User, Lock } from 'lucide-react';
 
 export default function Login() {
     const { data, setData, post, processing, errors } = useForm({
@@ -11,26 +12,36 @@ export default function Login() {
         post('/login');
     };
 
+    // Style konsisten dengan halaman lain
+    const inputClass = "w-full px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white rounded-[7px]";
+    const inputStyle = { border: '0.5px solid var(--border)', color: 'var(--text-primary)' };
+    const labelClass = "block text-[11px] font-medium uppercase tracking-wide mb-1.5";
+    const labelStyle = { color: 'var(--text-muted)' };
+
     return (
         <>
             <Head title="Login" />
 
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="w-full max-w-md px-6">
-                    {/* Card */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-8">
+            <div className="min-h-screen flex items-center justify-center bg-dashboard px-4 relative">
+                <div className="w-full max-w-md relative z-10">
+                    {/* Card utama */}
+                    <div
+                        className="rounded-[10px] p-8"
+                        style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border)' }}
+                    >
                         {/* Logo + Brand */}
                         <div className="text-center mb-8">
                             <div className="flex justify-center mb-4">
-                                {/* Logo */}
                                 <img
                                     src="/images/egj-png.png"
                                     alt="Company Logo"
-                                    className="h-32 w-auto"
+                                    className="h-24 w-auto"
                                 />
                             </div>
-                            <h1 className="text-xl font-semibold text-gray-900">GJAS</h1>
-                            <p className="text-sm text-gray-500 mt-0.5">
+                            <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                                GJAS
+                            </h1>
+                            <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                                 General Journal Approval System
                             </p>
                         </div>
@@ -39,46 +50,52 @@ export default function Login() {
                         <form onSubmit={handleSubmit} className="space-y-5">
                             {/* Email */}
                             <div>
-                                <label
-                                    htmlFor="email"
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                >
-                                    Email
+                                <label htmlFor="email" className={labelClass} style={labelStyle}>
+                                    Email <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
-                                <input
-                                    id="email"
-                                    type="email"
-                                    value={data.email}
-                                    onChange={(e) => setData('email', e.target.value)}
-                                    className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                                    placeholder="nama@astra-visteon.com"
-                                    required
-                                    autoFocus
-                                />
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <User size={15} style={{ color: 'var(--text-muted)' }} />
+                                    </div>
+                                    <input
+                                        id="email"
+                                        type="email"
+                                        value={data.email}
+                                        onChange={(e) => setData('email', e.target.value)}
+                                        className={`${inputClass} pl-10`}
+                                        style={inputStyle}
+                                        placeholder="nama@astra-visteon.com"
+                                        required
+                                        autoFocus
+                                    />
+                                </div>
                                 {errors.email && (
-                                    <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>
+                                    <p className="mt-1.5 text-[12px]" style={{ color: '#e05c5c' }}>{errors.email}</p>
                                 )}
                             </div>
 
                             {/* Password */}
                             <div>
-                                <label
-                                    htmlFor="password"
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                >
-                                    Password
+                                <label htmlFor="password" className={labelClass} style={labelStyle}>
+                                    Password <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
-                                <input
-                                    id="password"
-                                    type="password"
-                                    value={data.password}
-                                    onChange={(e) => setData('password', e.target.value)}
-                                    className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-                                    placeholder="••••••••"
-                                    required
-                                />
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Lock size={15} style={{ color: 'var(--text-muted)' }} />
+                                    </div>
+                                    <input
+                                        id="password"
+                                        type="password"
+                                        value={data.password}
+                                        onChange={(e) => setData('password', e.target.value)}
+                                        className={`${inputClass} pl-10`}
+                                        style={inputStyle}
+                                        placeholder="••••••••"
+                                        required
+                                    />
+                                </div>
                                 {errors.password && (
-                                    <p className="mt-1.5 text-sm text-red-600">{errors.password}</p>
+                                    <p className="mt-1.5 text-[12px]" style={{ color: '#e05c5c' }}>{errors.password}</p>
                                 )}
                             </div>
 
@@ -86,7 +103,10 @@ export default function Login() {
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
+                                className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg text-white font-medium text-[13px] transition-colors disabled:opacity-50"
+                                style={{ background: '#1a2540' }}
+                                onMouseEnter={e => !processing && (e.currentTarget.style.background = '#243355')}
+                                onMouseLeave={e => e.currentTarget.style.background = '#1a2540'}
                             >
                                 {processing ? 'Masuk...' : 'Masuk'}
                             </button>
@@ -94,7 +114,7 @@ export default function Login() {
                     </div>
 
                     {/* Footer */}
-                    <p className="text-center text-xs text-gray-400 mt-6">
+                    <p className="text-center text-xs mt-6" style={{ color: 'var(--text-muted)' }}>
                         © {new Date().getFullYear()} PT Astra Visteon Indonesia
                     </p>
                 </div>

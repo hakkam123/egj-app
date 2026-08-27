@@ -23,18 +23,63 @@ class ApprovalController extends Controller
     /**
      * Show approval queue for the current user.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
-        $journals = GeneralJournal::with(['requester', 'assignee'])
-            ->where('current_assign_to', $user->id)
-            ->where('status', 'Waiting Approval')
-            ->orderBy('last_updated_at', 'desc')
-            ->paginate(15);
+        $query = GeneralJournal::with(['requester', 'assignee'])
+            ->where('current_assign_to', $user->id);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('document_number', 'like', "%{$search}%")
+                  ->orWhere('reference', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('journal_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('journal_date', '<=', $request->date_to);
+        }
+
+        $requestedBy = $request->input('requested_by', $request->input('requester_id'));
+        if (!empty($requestedBy)) {
+            $query->where('requested_by', $requestedBy);
+        }
+
+        $query->orderBy('last_updated_at', 'desc');
+
+        $allowedPerPage = [10, 25, 50, 100];
+        $perPage = in_array((int) $request->input('per_page', 10), $allowedPerPage)
+            ? (int) $request->input('per_page', 10)
+            : 10;
+
+        $journals = $query->paginate($perPage)->withQueryString();
+
+        $users = User::where('is_active', true)
+            ->whereIn('role', ['Staff', 'Section Head', 'Dept/Div Head'])
+            ->select('id', 'name', 'role')
+            ->orderBy('name')
+            ->get();
 
         return Inertia::render('Approval/Index', [
             'journals' => $journals,
+            'filters' => [
+                'search' => $request->search,
+                'status' => $request->status,
+                'date_from' => $request->date_from,
+                'date_to' => $request->date_to,
+                'requested_by' => $requestedBy,
+                'per_page' => $perPage,
+            ],
+            'users' => $users,
         ]);
     }
 
