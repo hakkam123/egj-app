@@ -41,8 +41,7 @@ class PdfStampRenderService
         }
 
         // 2. Ambil data approval dari general_journal_approvals untuk journal ini
-        $journal->loadMissing(['approvals.approvedByUser', 'approvals.assignedUser']);
-        $approvals = $journal->approvals;
+        $approvals = $journal->approvals()->with(['approvedByUser', 'assignedUser'])->get();
 
         // Koordinat stamp yang sudah diverifikasi akurat untuk semua halaman (satuan mm)
         $stampCoords = [
@@ -54,9 +53,8 @@ class PdfStampRenderService
         // 3. Inisialisasi mPDF dengan format landscape A4 dan margin 0
         $mpdf = new Mpdf([
             'mode'          => 'utf-8',
-            'format'        => [297, 210], // landscape A4 dalam mm
+            'format'        => 'A4-L',
             'unit'          => 'mm',
-            'orientation'   => 'L',
             'margin_top'    => 0,
             'margin_bottom' => 0,
             'margin_left'   => 0,
@@ -67,25 +65,23 @@ class PdfStampRenderService
         $pageCount = $mpdf->SetSourceFile($sourceFilePath);
 
         for ($i = 1; $i <= $pageCount; $i++) {
-            $tplId = $mpdf->ImportPage($i);
+            $tplId   = $mpdf->ImportPage($i);
             $tplSize = $mpdf->GetTemplateSize($tplId);
 
-            // Tentukan orientasi berdasarkan dimensi template
-            $isLandscape = $tplSize['width'] > $tplSize['height'];
-            $pageW = $isLandscape ? max($tplSize['width'], $tplSize['height']) : min($tplSize['width'], $tplSize['height']);
-            $pageH = $isLandscape ? min($tplSize['width'], $tplSize['height']) : max($tplSize['width'], $tplSize['height']);
+            // Selalu paksa landscape — ambil sisi terpanjang sebagai width
+            $pageW = max($tplSize['width'], $tplSize['height']);
+            $pageH = min($tplSize['width'], $tplSize['height']);
 
-            $mpdf->AddPage('L', '', '', '', '', 0, 0, 0, 0, 0, 0);
+            if ($i > 1) {
+                $mpdf->AddPage('L', '', '', '', '', 0, 0, 0, 0, 0, 0);
+            }
 
-            // Render template full page
             $mpdf->UseTemplate($tplId, 0, 0, $pageW, $pageH);
 
-            // Overlay stamp di setiap halaman (karena tabel signature ada di semua halaman)
-            foreach (['accounting', 'superior', 'superior_of_superior'] as $level) {
-                $approval = $approvals->firstWhere('approval_level', $level);
-
-                if ($approval && $approval->status === 'Approved') {
-                    $coords = $stampCoords[$level];
+            // Overlay stamp di setiap halaman untuk semua level yang berstatus Approved
+            foreach ($approvals as $approval) {
+                if ($approval->status === 'Approved' && isset($stampCoords[$approval->approval_level])) {
+                    $coords = $stampCoords[$approval->approval_level];
 
                     $approvedDate = $approval->approved_at 
                         ? $approval->approved_at->format('Y-m-d') 

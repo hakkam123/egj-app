@@ -254,14 +254,19 @@ class ApprovalController extends Controller
                     }
                 }
 
-                // Send email with approve button to Dept/Div Head (Only 1 email to Dept Head)
+                // Send email with approve & reject buttons to Dept/Div Head (Only 1 email to Dept Head)
                 if ($nextUser) {
                     try {
                         $approvalToken = $this->createEmailToken($journal, $nextUser->email, 'approval');
-                        $previewToken = $this->createEmailToken($journal, $nextUser->email, 'preview');
+                        $rejectToken = $this->createEmailToken($journal, $nextUser->email, 'rejection');
 
                         Mail::to($nextUser->email)->send(
-                            new DeptHeadApprovalMail($journal, $nextUser, $approvalToken, $previewToken)
+                            new DeptHeadApprovalMail(
+                                $journal,
+                                $nextUser,
+                                url('/approve-email/' . $approvalToken->token),
+                                url('/reject-email/' . $rejectToken->token)
+                            )
                         );
                     } catch (\Throwable $e) {
                         Log::error("Failed sending DeptHeadApprovalMail for journal {$journal->id}: " . $e->getMessage());

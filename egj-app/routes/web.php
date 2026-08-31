@@ -32,8 +32,10 @@ Route::middleware('guest')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::get('/preview/{token}', [PreviewController::class, 'show'])->name('preview.token');
-Route::get('/approve-email/{token}', [EmailApprovalController::class, 'show'])->name('email-approval.show');
-Route::post('/approve-email/{token}', [EmailApprovalController::class, 'approve'])->name('email-approval.approve');
+Route::get('/approve-email/{token}', [EmailApprovalController::class, 'show'])->name('email.approve');
+Route::post('/approve-email/{token}', [EmailApprovalController::class, 'approve'])->name('email.approve.process');
+Route::get('/reject-email/{token}', [EmailApprovalController::class, 'showReject'])->name('email.reject');
+Route::post('/reject-email/{token}', [EmailApprovalController::class, 'reject'])->name('email.reject.process');
 
 /*
 |--------------------------------------------------------------------------

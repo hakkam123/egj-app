@@ -47,6 +47,7 @@ export default function UsersIndex({ users, filters }) {
         password_confirmation: '',
         role: 'Staff',
         is_active: true,
+        is_default_approver: false,
     });
 
     const updateFilters = (overrides = {}) => {
@@ -128,6 +129,7 @@ export default function UsersIndex({ users, filters }) {
             password_confirmation: '',
             role: 'Staff',
             is_active: true,
+            is_default_approver: false,
         });
         setShowModal(true);
     };
@@ -145,6 +147,7 @@ export default function UsersIndex({ users, filters }) {
             password_confirmation: '',
             role: user.role || 'Staff',
             is_active: Boolean(user.is_active),
+            is_default_approver: Boolean(user.is_default_approver),
         });
         setShowModal(true);
     };
@@ -337,9 +340,16 @@ export default function UsersIndex({ users, filters }) {
                                                 {user.npk || <span className="text-gray-400">-</span>}
                                             </td>
                                             <td className="px-5 py-3 whitespace-nowrap">
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
-                                                    {user.role}
-                                                </span>
+                                                <div className="flex flex-col items-start gap-1">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+                                                        {user.role}
+                                                    </span>
+                                                    {user.role === 'Section Head' && user.is_default_approver && (
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                                            ★ Default Approver
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-5 py-3 whitespace-nowrap">
                                                 {user.is_active ? (
@@ -575,18 +585,40 @@ export default function UsersIndex({ users, filters }) {
                                 </div>
                             </div>
 
-                            {/* Status Aktif */}
-                            <div className="flex items-center gap-3 pt-3 border-t-[0.5px] border-[var(--border)]">
-                                <input
-                                    type="checkbox"
-                                    id="modal_is_active"
-                                    checked={userForm.data.is_active}
-                                    onChange={e => userForm.setData('is_active', e.target.checked)}
-                                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                                />
-                                <label htmlFor="modal_is_active" className="text-[13px] font-medium text-[var(--text-primary)] cursor-pointer">
-                                    Akun Aktif (Dapat login ke sistem)
-                                </label>
+                            {/* Status Aktif & Default Approver */}
+                            <div className="space-y-3 pt-3 border-t-[0.5px] border-[var(--border)]">
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="checkbox"
+                                        id="modal_is_active"
+                                        checked={userForm.data.is_active}
+                                        onChange={e => userForm.setData('is_active', e.target.checked)}
+                                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                    />
+                                    <label htmlFor="modal_is_active" className="text-[13px] font-medium text-[var(--text-primary)] cursor-pointer">
+                                        Akun Aktif (Dapat login ke sistem)
+                                    </label>
+                                </div>
+
+                                {userForm.data.role === 'Section Head' && (
+                                    <div className="flex items-start gap-3 p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+                                        <input
+                                            type="checkbox"
+                                            id="modal_is_default_approver"
+                                            checked={userForm.data.is_default_approver}
+                                            onChange={e => userForm.setData('is_default_approver', e.target.checked)}
+                                            className="w-4 h-4 mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <div>
+                                            <label htmlFor="modal_is_default_approver" className="text-[13px] font-semibold text-blue-900 cursor-pointer">
+                                                Default Approver Section Head
+                                            </label>
+                                            <p className="text-[11px] text-blue-700 mt-0.5">
+                                                Jika dicentang, dokumen General Journal baru dari Staff akan otomatis ditugaskan ke Section Head ini untuk approval tingkat pertama.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Modal Actions */}

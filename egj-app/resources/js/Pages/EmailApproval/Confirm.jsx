@@ -1,56 +1,99 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 
 export default function Confirm({ journal, token }) {
+    const { flash } = usePage().props;
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (flash?.success || isSuccess) {
+            const timer = setTimeout(() => { window.close(); }, 2500);
+            return () => clearTimeout(timer);
+        }
+    }, [flash, isSuccess]);
+
     const handleApprove = () => {
-        router.post(`/approve-email/${token}`);
+        setIsSubmitting(true);
+        router.post(`/approve-email/${token}`, {}, {
+            onSuccess: () => setIsSuccess(true),
+            onFinish: () => setIsSubmitting(false),
+        });
     };
+
+    if (flash?.success || isSuccess) {
+        return (
+            <>
+                <Head title="Dokumen Berhasil Disetujui" />
+                <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f2f5', padding: '16px' }}>
+                    <div style={{ background: '#fff', borderRadius: 10, padding: '40px 40px', border: '0.5px solid #e0e0e0', textAlign: 'center', maxWidth: 400, width: '100%' }}>
+                        <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#e6f4ea', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                            <span style={{ fontSize: 22, color: '#1a6e35', fontWeight: 'bold' }}>✓</span>
+                        </div>
+                        <p style={{ fontSize: 15, fontWeight: 600, color: '#1a1a2e', margin: '0 0 6px' }}>Dokumen Berhasil Disetujui</p>
+                        <p style={{ fontSize: 13, color: '#5f6368', margin: '0 0 4px' }}>{journal?.document_number}</p>
+                        <p style={{ fontSize: 12, color: '#9aa0a6', margin: 0 }}>Tab ini akan tertutup otomatis...</p>
+                    </div>
+                </div>
+            </>
+        );
+    }
 
     return (
         <>
             <Head title="Konfirmasi Approval" />
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-4">
-                <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-8 py-6 text-center">
-                        <h1 className="text-xl font-bold text-white">Konfirmasi Approval</h1>
-                        <p className="text-sm text-emerald-100 mt-1">General Journal Approval System</p>
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f2f5', padding: '16px' }}>
+                <div style={{ background: '#fff', borderRadius: 10, border: '0.5px solid #e0e0e0', width: '100%', maxWidth: 480, overflow: 'hidden' }}>
+
+                    {/* Header navy */}
+                    <div style={{ background: '#1a2540', padding: '20px 28px' }}>
+                        <p style={{ margin: 0, color: '#fff', fontSize: 15, fontWeight: 600 }}>Konfirmasi Persetujuan</p>
                     </div>
 
-                    {/* Content */}
-                    <div className="p-8">
-                        <p className="text-sm text-gray-600 mb-6">
-                            Anda akan menyetujui General Journal berikut:
+                    {/* Body */}
+                    <div style={{ padding: '24px 28px' }}>
+                        <p style={{ margin: '0 0 16px', fontSize: 13, color: '#5f6368', lineHeight: 1.6 }}>
+                            Anda akan menyetujui dokumen General Journal berikut:
                         </p>
 
-                        <div className="bg-gray-50 rounded-xl p-4 space-y-3 mb-6">
-                            <div className="flex justify-between">
-                                <span className="text-sm text-gray-500">Document Number</span>
-                                <span className="text-sm font-semibold text-gray-800">{journal.document_number}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-sm text-gray-500">Tanggal Journal</span>
-                                <span className="text-sm text-gray-800">{journal.journal_date?.split('T')[0]}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-sm text-gray-500">Reference</span>
-                                <span className="text-sm text-gray-800">{journal.reference || '-'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-sm text-gray-500">Diajukan oleh</span>
-                                <span className="text-sm text-gray-800">{journal.requester?.name}</span>
-                            </div>
+                        {/* Info dokumen */}
+                        <div style={{ border: '0.5px solid #e8eaed', borderRadius: 8, overflow: 'hidden', marginBottom: 20 }}>
+                            {[
+                                { label: 'No. Dokumen', value: journal?.document_number, mono: true },
+                                { label: 'Tanggal Journal', value: journal?.journal_date?.split('T')[0] },
+                                { label: 'Reference', value: journal?.reference || '-' },
+                                { label: 'Diajukan Oleh', value: journal?.requester?.name },
+                            ].map((row, i) => (
+                                <div key={i} style={{ padding: '9px 14px', background: i % 2 === 0 ? '#f5f6f8' : '#ffffff', borderTop: i > 0 ? '0.5px solid #e8eaed' : 'none' }}>
+                                    <p style={{ margin: '0 0 2px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: '#9aa0a6' }}>{row.label}</p>
+                                    <p style={{ margin: 0, fontSize: 13, color: '#1a1a2e', fontFamily: row.mono ? 'monospace' : 'inherit', fontWeight: row.mono ? 600 : 400 }}>{row.value}</p>
+                                </div>
+                            ))}
                         </div>
 
+                        {/* Tombol */}
                         <button
                             onClick={handleApprove}
-                            className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/30 transition-all duration-200 hover:shadow-emerald-500/40 hover:scale-[1.01] active:scale-[0.99]"
+                            disabled={isSubmitting}
+                            style={{
+                                width: '100%', padding: '11px 16px', background: isSubmitting ? '#6b7d9f' : '#1a2540',
+                                color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, fontWeight: 600,
+                                cursor: isSubmitting ? 'not-allowed' : 'pointer', transition: 'background 0.15s',
+                            }}
+                            onMouseEnter={e => !isSubmitting && (e.currentTarget.style.background = '#243355')}
+                            onMouseLeave={e => !isSubmitting && (e.currentTarget.style.background = '#1a2540')}
                         >
-                            ✓ Approve
+                            {isSubmitting ? 'Memproses...' : 'Setujui'}
                         </button>
 
-                        <p className="text-xs text-gray-400 text-center mt-4">
+                        <p style={{ margin: '12px 0 0', fontSize: 11, color: '#9aa0a6', textAlign: 'center' }}>
                             Dengan menekan tombol di atas, Anda menyetujui General Journal ini.
                         </p>
+                    </div>
+
+                    {/* Footer */}
+                    <div style={{ background: '#f5f6f8', padding: '12px 28px', borderTop: '0.5px solid #e8eaed' }}>
+                        <p style={{ margin: 0, fontSize: 11, color: '#9aa0a6', textAlign: 'center' }}>© {new Date().getFullYear()} PT Astra Visteon Indonesia</p>
                     </div>
                 </div>
             </div>

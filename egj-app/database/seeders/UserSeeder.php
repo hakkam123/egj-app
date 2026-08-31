@@ -20,6 +20,7 @@ class UserSeeder extends Seeder
                 'password' => 'password123',
                 'role' => 'Admin',
                 'is_active' => true,
+                'is_default_approver' => false,
             ],
             [
                 'name' => 'Budi Santoso',
@@ -28,6 +29,7 @@ class UserSeeder extends Seeder
                 'password' => 'password123',
                 'role' => 'Staff',
                 'is_active' => true,
+                'is_default_approver' => false,
             ],
             [
                 'name' => 'Siti Rahayu',
@@ -36,6 +38,7 @@ class UserSeeder extends Seeder
                 'password' => 'password123',
                 'role' => 'Staff',
                 'is_active' => true,
+                'is_default_approver' => false,
             ],
             [
                 'name' => 'Ahmad Hidayat',
@@ -44,14 +47,16 @@ class UserSeeder extends Seeder
                 'password' => 'password123',
                 'role' => 'Section Head',
                 'is_active' => true,
+                'is_default_approver' => true,
             ],
             [
                 'name' => 'Alisa Wijaya',
-                'email' => 'alisa.wijaya@astra-visteon.com',
+                'email' => 'cokotbara@gmail.com',
                 'npk' => '10005',
                 'password' => 'password123',
                 'role' => 'Dept/Div Head',
                 'is_active' => true,
+                'is_default_approver' => true,
             ],
         ];
 

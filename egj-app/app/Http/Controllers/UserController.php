@@ -68,7 +68,14 @@ class UserController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => ['required', Rule::in(['Staff', 'Section Head', 'Dept/Div Head', 'Admin'])],
             'is_active' => ['required', 'boolean'],
+            'is_default_approver' => ['nullable', 'boolean'],
         ]);
+
+        $isDefault = $request->role === 'Section Head' && (bool) $request->is_default_approver;
+
+        if ($isDefault) {
+            User::where('role', 'Section Head')->update(['is_default_approver' => false]);
+        }
 
         User::create([
             'name' => $request->name,
@@ -77,6 +84,7 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
             'role' => $request->role,
             'is_active' => $request->is_active,
+            'is_default_approver' => $isDefault,
         ]);
 
         return redirect()->route('users.index')
@@ -97,7 +105,16 @@ class UserController extends Controller
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'role' => ['required', Rule::in(['Staff', 'Section Head', 'Dept/Div Head', 'Admin'])],
             'is_active' => ['required', 'boolean'],
+            'is_default_approver' => ['nullable', 'boolean'],
         ]);
+
+        $isDefault = $request->role === 'Section Head' && (bool) $request->is_default_approver;
+
+        if ($isDefault) {
+            User::where('role', 'Section Head')
+                ->where('id', '!=', $user->id)
+                ->update(['is_default_approver' => false]);
+        }
 
         $data = [
             'name' => $request->name,
@@ -105,6 +122,7 @@ class UserController extends Controller
             'npk' => $request->npk,
             'role' => $request->role,
             'is_active' => $request->is_active,
+            'is_default_approver' => $isDefault,
         ];
 
         if ($request->filled('password')) {

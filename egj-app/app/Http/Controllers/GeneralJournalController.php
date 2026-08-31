@@ -59,8 +59,15 @@ class GeneralJournalController extends Controller
         ]);
 
         $journal = DB::transaction(function () use ($request, $user) {
-            $sectionHead = User::where('role', 'Section Head')->where('is_active', true)->first();
-            $deptHead = User::where('role', 'Dept/Div Head')->where('is_active', true)->first();
+            $sectionHead = User::where('role', 'Section Head')
+                ->where('is_active', true)
+                ->where('is_default_approver', true)
+                ->first()
+                ?? User::where('role', 'Section Head')->where('is_active', true)->first();
+
+            $deptHead = User::where('role', 'Dept/Div Head')
+                ->where('is_active', true)
+                ->first();
             
             $currentAssignTo = $user->hasRole('Staff') ? $sectionHead?->id : $deptHead?->id;
 
@@ -248,16 +255,21 @@ class GeneralJournalController extends Controller
     }
 
     /**
-     * Send approval notification email to Dept/Div Head with approve button.
+     * Send approval notification email to Dept/Div Head with approve and reject buttons.
      */
     private function sendDeptHeadApprovalEmail(GeneralJournal $journal, User $deptHead): void
     {
         try {
             $approvalToken = $this->createEmailToken($journal, $deptHead->email, 'approval');
-            $previewToken = $this->createEmailToken($journal, $deptHead->email, 'preview');
+            $rejectToken = $this->createEmailToken($journal, $deptHead->email, 'rejection');
 
             Mail::to($deptHead->email)->send(
-                new DeptHeadApprovalMail($journal, $deptHead, $approvalToken, $previewToken)
+                new DeptHeadApprovalMail(
+                    $journal,
+                    $deptHead,
+                    url('/approve-email/' . $approvalToken->token),
+                    url('/reject-email/' . $rejectToken->token)
+                )
             );
         } catch (\Throwable $e) {
             \Log::error("Failed sending DeptHeadApprovalMail to Dept/Div Head: " . $e->getMessage());

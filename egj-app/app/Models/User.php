@@ -18,6 +18,7 @@ class User extends Authenticatable
         'password',
         'role',
         'is_active',
+        'is_default_approver',
     ];
 
     protected $hidden = [
@@ -34,6 +35,7 @@ class User extends Authenticatable
         return [
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'is_default_approver' => 'boolean',
         ];
     }
 
