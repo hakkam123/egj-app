@@ -20,6 +20,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use App\Mail\ApprovalRequestMail;
 use App\Mail\DeptHeadApprovalMail;
+use Illuminate\Validation\Rule;
 
 class GeneralJournalController extends Controller
 {
@@ -50,12 +51,21 @@ class GeneralJournalController extends Controller
         }
 
         $request->validate([
-            'document_number' => ['required', 'string', 'max:50', 'unique:general_journals,document_number'],
+            'document_number' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('general_journals', 'document_number')->where(function ($query) {
+                    return $query->whereIn('status', ['Waiting Approval', 'Approved']);
+                }),
+            ],
             'journal_date' => ['required', 'date'],
             'reference' => ['nullable', 'string'],
             'general_journal_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
             'supporting_documents' => ['nullable', 'array'],
             'supporting_documents.*' => ['file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,xlsx,xls'],
+        ], [
+            'document_number.unique' => 'Nomor dokumen ini sudah digunakan dan sedang dalam proses approval atau telah disetujui.',
         ]);
 
         $journal = DB::transaction(function () use ($request, $user) {

@@ -43,12 +43,8 @@ class PdfStampRenderService
         // 2. Ambil data approval dari general_journal_approvals untuk journal ini
         $approvals = $journal->approvals()->with(['approvedByUser', 'assignedUser'])->get();
 
-        // Koordinat stamp yang sudah diverifikasi akurat untuk semua halaman (satuan mm)
-        $stampCoords = [
-            'accounting'           => ['x' => 10.55, 'topY' => 176.3, 'w' => 23.21, 'topH' => 7, 'nameY' => 187.57, 'nameH' => 3.77],
-            'superior'             => ['x' => 33.76, 'topY' => 176.3, 'w' => 25.89, 'topH' => 7, 'nameY' => 187.57, 'nameH' => 3.77],
-            'superior_of_superior' => ['x' => 59.65, 'topY' => 176.3, 'w' => 29.35, 'topH' => 7, 'nameY' => 187.57, 'nameH' => 3.77],
-        ];
+        // Koordinat stamp dinamis berdasarkan deteksi / fallback jumlah halaman
+        $stampCoords = $this->getFallbackCoords($sourceFilePath);
 
         // 3. Inisialisasi mPDF dengan format landscape A4 dan margin 0
         $mpdf = new Mpdf([
@@ -109,5 +105,34 @@ class PdfStampRenderService
 
         // 5. Return string PDF binary
         return $mpdf->Output('', Destination::STRING_RETURN);
+    }
+
+    /**
+     * Detect or get fallback coordinates based on PDF page count.
+     *
+     * @param string $pdfPath
+     * @return array
+     */
+    public function getFallbackCoords(string $pdfPath): array
+    {
+        $mpdfCheck = new Mpdf(['mode' => 'utf-8', 'format' => 'A4-L']);
+        $pageCount = $mpdfCheck->SetSourceFile($pdfPath);
+        unset($mpdfCheck);
+
+        if ($pageCount === 1) {
+            // PDF 1 halaman — kolom lebih lebar
+            return [
+                'accounting'           => ['x' => 10.62, 'topY' => 176.3, 'w' => 25.82, 'topH' => 7, 'nameY' => 187.57, 'nameH' => 3.77],
+                'superior'             => ['x' => 36.44, 'topY' => 176.3, 'w' => 25.86, 'topH' => 7, 'nameY' => 187.57, 'nameH' => 3.77],
+                'superior_of_superior' => ['x' => 62.30, 'topY' => 176.3, 'w' => 28.29, 'topH' => 7, 'nameY' => 187.57, 'nameH' => 3.77],
+            ];
+        } else {
+            // PDF multi halaman — kolom lebih sempit
+            return [
+                'accounting'           => ['x' => 10.55, 'topY' => 176.3, 'w' => 23.21, 'topH' => 7, 'nameY' => 187.57, 'nameH' => 3.77],
+                'superior'             => ['x' => 33.76, 'topY' => 176.3, 'w' => 25.89, 'topH' => 7, 'nameY' => 187.57, 'nameH' => 3.77],
+                'superior_of_superior' => ['x' => 59.65, 'topY' => 176.3, 'w' => 29.35, 'topH' => 7, 'nameY' => 187.57, 'nameH' => 3.77],
+            ];
+        }
     }
 }
