@@ -59,5 +59,17 @@ class NotificationController extends Controller
 
         return response()->json(['success' => true]);
     }
-}
 
+    /**
+     * Mark all notifications for a specific journal as read.
+     */
+    public function markReadByJournal(string $journalId)
+    {
+        Notification::where('user_id', Auth::id())
+            ->where('general_journal_id', $journalId)
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        return response()->json(['success' => true]);
+    }
+}

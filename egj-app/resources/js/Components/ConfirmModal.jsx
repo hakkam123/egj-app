@@ -1,70 +1,87 @@
 import React from 'react';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, X } from 'lucide-react';
 
 export default function ConfirmModal({ 
-    open, 
+    open,
+    isOpen, 
     title = 'Konfirmasi', 
     message = 'Apakah Anda yakin?', 
     confirmText = 'Ya, Lanjutkan', 
     cancelText = 'Batal', 
     onConfirm, 
     onClose,
-    isDanger = false
+    onCancel,
+    type = 'danger',
+    isDanger = false,
+    loading = false
 }) {
-    if (!open) return null;
+    const isVisible = open ?? isOpen ?? false;
+    const handleClose = onClose ?? onCancel ?? (() => {});
+
+    if (!isVisible) return null;
+
+    const isSuccessType = type === 'success';
+    const isDangerType = isDanger || type === 'danger';
 
     return (
-        <div className="fixed inset-0 z-50 overflow-y-auto" onClick={onClose}>
-            <div className="flex items-center justify-center min-h-screen px-4 text-center sm:p-0">
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
-                <div 
-                    className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm mx-auto text-left overflow-hidden transform transition-all sm:my-8"
-                    onClick={e => e.stopPropagation()}
-                >
-                    <div className="px-6 py-5">
-                        <div className="flex items-start">
-                            <div className={`mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10 ${isDanger ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-                                <AlertTriangle className="w-6 h-6" />
-                            </div>
-                            <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1">
-                                <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                    {title}
-                                </h3>
-                                <div className="mt-2">
-                                    <p className="text-sm text-gray-500">
-                                        {message}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="ml-4 flex-shrink-0 flex">
-                                <button onClick={onClose} className="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none">
-                                    <span className="sr-only">Close</span>
-                                    <X className="h-5 w-5" />
-                                </button>
-                            </div>
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs" onClick={handleClose}>
+            <div 
+                className="relative bg-white rounded-xl shadow-2xl w-full max-w-sm mx-auto overflow-hidden animate-in fade-in zoom-in duration-150"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="px-6 py-5">
+                    <div className="flex items-start gap-4">
+                        <div className={`shrink-0 flex items-center justify-center h-10 w-10 rounded-full ${
+                            isSuccessType 
+                                ? 'bg-emerald-100 text-emerald-700' 
+                                : isDangerType 
+                                ? 'bg-red-100 text-red-600' 
+                                : 'bg-blue-100 text-blue-600'
+                        }`}>
+                            {isSuccessType ? (
+                                <CheckCircle2 className="w-5 h-5" />
+                            ) : (
+                                <AlertTriangle className="w-5 h-5" />
+                            )}
                         </div>
-                    </div>
-                    <div className="bg-gray-50 px-6 py-4 flex flex-row-reverse gap-3">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                onConfirm();
-                                onClose();
-                            }}
-                            className={`w-full inline-flex justify-center rounded-lg border border-transparent px-4 py-2 text-base font-medium text-white shadow-sm focus:outline-none sm:w-auto sm:text-sm ${
-                                isDanger ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
-                            }`}
-                        >
-                            {confirmText}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="w-full inline-flex justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none sm:w-auto sm:text-sm"
-                        >
-                            {cancelText}
+                        <div className="flex-1">
+                            <h3 className="text-base font-bold text-gray-900" id="modal-title">
+                                {title}
+                            </h3>
+                            <p className="text-xs text-gray-600 mt-1.5 leading-relaxed">
+                                {message}
+                            </p>
+                        </div>
+                        <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                            <X className="h-4 w-4" />
                         </button>
                     </div>
+                </div>
+                <div className="bg-gray-50 px-6 py-3.5 flex justify-end gap-2 border-t border-gray-100">
+                    <button
+                        type="button"
+                        onClick={handleClose}
+                        disabled={loading}
+                        className="px-3.5 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        {cancelText}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (onConfirm) onConfirm();
+                        }}
+                        disabled={loading}
+                        className={`px-4 py-2 text-xs font-semibold text-white rounded-lg transition-colors shadow-xs ${
+                            isSuccessType 
+                                ? 'bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50' 
+                                : isDangerType 
+                                ? 'bg-red-600 hover:bg-red-700 disabled:opacity-50' 
+                                : 'bg-blue-600 hover:bg-blue-700 disabled:opacity-50'
+                        }`}
+                    >
+                        {loading ? 'Memproses...' : confirmText}
+                    </button>
                 </div>
             </div>
         </div>

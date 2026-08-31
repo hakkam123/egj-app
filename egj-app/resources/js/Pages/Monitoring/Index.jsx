@@ -331,12 +331,13 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                                             </td>
                                             <td className="px-5 py-3">
                                                 <div className="flex items-center justify-center gap-2">
-                                                    <button
-                                                        onClick={() => setFileModal({ open: true, journalId: journal.id })}
+                                                    <Link
+                                                        href={`/general-journals/${journal.id}`}
+                                                        title="Lihat Detail"
                                                         className="flex items-center gap-1.5 px-3 py-1.5 border-[0.5px] border-[var(--border)] rounded-md text-[12px] font-medium text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
                                                     >
                                                         <Eye size={14} />
-                                                    </button>
+                                                    </Link>
                                                 </div>
                                             </td>
                                         </tr>

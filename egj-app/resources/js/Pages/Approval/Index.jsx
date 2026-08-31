@@ -2,7 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import MainLayout from '../../Layouts/MainLayout';
 import PageHeader from '../../Components/PageHeader';
 import { useState, useEffect, useRef } from 'react';
-import { Eye, CheckCircle, Search, RotateCcw, XCircle, X } from 'lucide-react';
+import { Eye, Search, RotateCcw, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ApprovalIndex({ journals, filters, users }) {
@@ -100,8 +100,21 @@ export default function ApprovalIndex({ journals, filters, users }) {
         router.get('/approval', {}, { preserveState: true, preserveScroll: true, replace: true });
     };
 
+    const markNotifRead = (journalId) => {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+        fetch(`/notifications/mark-read-by-journal/${journalId}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrf || '',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+    };
+
     const confirmApprove = () => {
         if (!approveModal.journalId) return;
+        markNotifRead(approveModal.journalId);
         router.post(`/approval/${approveModal.journalId}/approve`, { notes: 'Approved from list' }, {
             preserveScroll: true,
             onSuccess: () => setApproveModal({ open: false, journalId: null }),
@@ -116,6 +129,7 @@ export default function ApprovalIndex({ journals, filters, users }) {
             return;
         }
 
+        markNotifRead(rejectModal.journalId);
         router.post(`/approval/${rejectModal.journalId}/reject`, { notes: rejectModal.notes }, {
             preserveScroll: true,
             onSuccess: () => setRejectModal({ open: false, journalId: null, notes: '', error: '' }),
@@ -248,7 +262,6 @@ export default function ApprovalIndex({ journals, filters, users }) {
                                     <tr>
                                         <td colSpan={7} className="px-5 py-12 text-center text-[var(--text-muted)] text-[13px]">
                                             <div className="flex flex-col items-center">
-                                                <CheckCircle className="w-10 h-10 text-gray-300 mb-3" />
                                                 Tidak ada dokumen yang ditemukan.
                                             </div>
                                         </td>
@@ -389,7 +402,6 @@ export default function ApprovalIndex({ journals, filters, users }) {
                             <X size={18} />
                         </button>
                         <div className="flex items-center gap-3 text-green-600 mb-3">
-                            <CheckCircle size={24} />
                             <h3 className="text-lg font-bold text-gray-800">Konfirmasi Approval</h3>
                         </div>
                         <p className="text-sm text-gray-600 mb-6">
@@ -424,7 +436,7 @@ export default function ApprovalIndex({ journals, filters, users }) {
                             <X size={18} />
                         </button>
                         <div className="flex items-center gap-3 text-red-600 mb-3">
-                            <XCircle size={24} />
+                            
                             <h3 className="text-lg font-bold text-gray-800">Penolakan Dokumen</h3>
                         </div>
                         <p className="text-sm text-gray-600 mb-4">
@@ -435,8 +447,11 @@ export default function ApprovalIndex({ journals, filters, users }) {
                             onChange={e => setRejectModal(prev => ({ ...prev, notes: e.target.value, error: '' }))}
                             placeholder="Alasan penolakan..."
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 mb-2"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 mb-1"
                         />
+                        <p className="mb-2 text-right text-[11px]" style={{ color: (rejectModal.notes?.length || 0) < 5 ? '#e05c5c' : 'var(--text-muted)' }}>
+                            {rejectModal.notes?.length || 0} / 5 karakter minimum
+                        </p>
                         {rejectModal.error && (
                             <p className="text-xs text-red-600 mb-4 font-medium">{rejectModal.error}</p>
                         )}

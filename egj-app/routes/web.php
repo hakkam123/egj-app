@@ -50,6 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::post('/notifications/mark-read-by-journal/{journalId}', [NotificationController::class, 'markReadByJournal'])->name('notifications.mark-read-by-journal');
 
     // Tutorial / Manual Book (View, Preview, Download for all authenticated users)
     Route::get('/tutorial', [TutorialController::class, 'index'])->name('tutorial.index');
@@ -69,8 +70,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/general-journals/create', [GeneralJournalController::class, 'create'])->name('general-journals.create');
     Route::post('/general-journals', [GeneralJournalController::class, 'store'])->name('general-journals.store');
     Route::get('/general-journals/{id}', [GeneralJournalController::class, 'show'])->name('general-journals.show');
-    Route::get('/general-journals/{id}/resubmit', [GeneralJournalController::class, 'resubmitForm'])->name('general-journals.resubmit');
-    Route::post('/general-journals/{id}/resubmit', [GeneralJournalController::class, 'resubmit'])->name('general-journals.resubmit.store');
 
     // Approval (Section Head & Dept/Div Head only)
     Route::middleware('role:Section Head,Dept/Div Head')->group(function () {
@@ -87,6 +86,7 @@ Route::middleware('auth')->group(function () {
     // Files
     Route::get('/files/{id}/download', [FileController::class, 'download'])->name('files.download');
     Route::get('/files/{id}/preview', [FileController::class, 'preview'])->name('files.preview');
+    Route::get('/files/{id}/verify', [FileController::class, 'verify'])->name('files.verify');
 
     // Admin Only: User Management, Error Monitoring, Tutorial Management
     Route::middleware('role:Admin')->group(function () {

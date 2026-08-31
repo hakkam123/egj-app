@@ -1,7 +1,8 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import MainLayout from '../../Layouts/MainLayout';
 import PageHeader from '../../Components/PageHeader';
-import { User, Lock, Save, ShieldCheck } from 'lucide-react';
+import { User, Lock, Save, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function EditProfile({ user }) {
@@ -18,6 +19,11 @@ export default function EditProfile({ user }) {
         new_password: '',
         new_password_confirmation: '',
     });
+
+    // State untuk toggle show/hide password
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmationPassword, setShowConfirmationPassword] = useState(false);
 
     const handleProfileSubmit = (e) => {
         e.preventDefault();
@@ -175,53 +181,101 @@ export default function EditProfile({ user }) {
                         </div>
 
                         <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                            {/* Password Saat Ini */}
                             <div>
                                 <label className={labelClass} style={labelStyle}>
                                     Password Saat Ini <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
-                                <input
-                                    type="password"
-                                    value={passwordForm.data.current_password}
-                                    onChange={e => passwordForm.setData('current_password', e.target.value)}
-                                    className={inputClass}
-                                    style={inputStyle}
-                                    required
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showCurrentPassword ? 'text' : 'password'}
+                                        value={passwordForm.data.current_password}
+                                        onChange={e => passwordForm.setData('current_password', e.target.value)}
+                                        className={`${inputClass} pr-10`}
+                                        style={inputStyle}
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCurrentPassword(prev => !prev)}
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                        tabIndex={-1}
+                                    >
+                                        {showCurrentPassword ? (
+                                            <EyeOff size={15} style={{ color: 'var(--text-muted)' }} />
+                                        ) : (
+                                            <Eye size={15} style={{ color: 'var(--text-muted)' }} />
+                                        )}
+                                    </button>
+                                </div>
                                 {passwordForm.errors.current_password && (
                                     <p className="mt-1 text-[12px]" style={{ color: '#e05c5c' }}>{passwordForm.errors.current_password}</p>
                                 )}
                             </div>
 
+                            {/* Password Baru */}
                             <div>
                                 <label className={labelClass} style={labelStyle}>
                                     Password Baru <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
-                                <input
-                                    type="password"
-                                    value={passwordForm.data.new_password}
-                                    onChange={e => passwordForm.setData('new_password', e.target.value)}
-                                    placeholder="Minimal 8 karakter"
-                                    className={inputClass}
-                                    style={inputStyle}
-                                    required
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showNewPassword ? 'text' : 'password'}
+                                        value={passwordForm.data.new_password}
+                                        onChange={e => passwordForm.setData('new_password', e.target.value)}
+                                        placeholder="Minimal 8 karakter"
+                                        className={`${inputClass} pr-10`}
+                                        style={inputStyle}
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowNewPassword(prev => !prev)}
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                        tabIndex={-1}
+                                    >
+                                        {showNewPassword ? (
+                                            <EyeOff size={15} style={{ color: 'var(--text-muted)' }} />
+                                        ) : (
+                                            <Eye size={15} style={{ color: 'var(--text-muted)' }} />
+                                        )}
+                                    </button>
+                                </div>
+                                <p className="mt-1 text-right text-[11px]" style={{ color: (passwordForm.data.new_password?.length || 0) < 8 ? '#e05c5c' : 'var(--text-muted)' }}>
+                                    {passwordForm.data.new_password?.length || 0} / 8 karakter minimum
+                                </p>
                                 {passwordForm.errors.new_password && (
                                     <p className="mt-1 text-[12px]" style={{ color: '#e05c5c' }}>{passwordForm.errors.new_password}</p>
                                 )}
                             </div>
 
+                            {/* Konfirmasi Password Baru */}
                             <div>
                                 <label className={labelClass} style={labelStyle}>
                                     Konfirmasi Password Baru <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
-                                <input
-                                    type="password"
-                                    value={passwordForm.data.new_password_confirmation}
-                                    onChange={e => passwordForm.setData('new_password_confirmation', e.target.value)}
-                                    className={inputClass}
-                                    style={inputStyle}
-                                    required
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showConfirmationPassword ? 'text' : 'password'}
+                                        value={passwordForm.data.new_password_confirmation}
+                                        onChange={e => passwordForm.setData('new_password_confirmation', e.target.value)}
+                                        className={`${inputClass} pr-10`}
+                                        style={inputStyle}
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmationPassword(prev => !prev)}
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                        tabIndex={-1}
+                                    >
+                                        {showConfirmationPassword ? (
+                                            <EyeOff size={15} style={{ color: 'var(--text-muted)' }} />
+                                        ) : (
+                                            <Eye size={15} style={{ color: 'var(--text-muted)' }} />
+                                        )}
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="pt-3 flex justify-end" style={{ borderTop: '0.5px solid var(--border)' }}>

@@ -545,6 +545,11 @@ export default function UsersIndex({ users, filters }) {
                                         placeholder={isEditing ? 'Kosongkan jika tidak diubah' : 'Minimal 8 karakter'}
                                         required={!isEditing}
                                     />
+                                    {(!isEditing || Boolean(userForm.data.password?.length)) && (
+                                        <p className="mt-1 text-right text-[11px]" style={{ color: (userForm.data.password?.length || 0) < 8 ? '#e05c5c' : 'var(--text-muted)' }}>
+                                            {userForm.data.password?.length || 0} / 8 karakter minimum
+                                        </p>
+                                    )}
                                     {userForm.errors.password && (
                                         <p className="mt-1 text-[12px]" style={{ color: '#e05c5c' }}>{userForm.errors.password}</p>
                                     )}

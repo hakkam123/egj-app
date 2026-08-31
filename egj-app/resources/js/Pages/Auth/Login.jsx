@@ -1,18 +1,19 @@
 import { Head, useForm } from '@inertiajs/react';
-import { LogIn, User, Lock } from 'lucide-react';
+import { useState } from 'react';
+import { User, Lock, Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
     const { data, setData, post, processing, errors } = useForm({
         email: '',
         password: '',
     });
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         post('/login');
     };
 
-    // Style konsisten dengan halaman lain
     const inputClass = "w-full px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white rounded-[7px]";
     const inputStyle = { border: '0.5px solid var(--border)', color: 'var(--text-primary)' };
     const labelClass = "block text-[11px] font-medium uppercase tracking-wide mb-1.5";
@@ -22,27 +23,51 @@ export default function Login() {
         <>
             <Head title="Login" />
 
-            <div className="min-h-screen flex items-center justify-center bg-dashboard px-4 relative">
-                <div className="w-full max-w-md relative z-10">
-                    {/* Card utama */}
+            <div className="min-h-screen flex items-center justify-center bg-dashboard px-4">
+                <div
+                    className="w-full max-w-3xl flex flex-col lg:flex-row overflow-hidden rounded-[12px]"
+                    style={{ border: '0.5px solid var(--border)' }}
+                >
+                    {/* Kolom kiri: Logo + Deskripsi */}
                     <div
-                        className="rounded-[10px] p-8"
-                        style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border)' }}
+                        className="w-full lg:w-[45%] flex flex-col"
+                        style={{ background: '#ffffff', borderRight: '0.5px solid var(--border)' }}
                     >
-                        {/* Logo + Brand */}
-                        <div className="text-center mb-8">
-                            <div className="flex justify-center mb-4">
-                                <img
-                                    src="/images/egj-png.png"
-                                    alt="Company Logo"
-                                    className="h-24 w-auto"
-                                />
-                            </div>
+                        {/* Atas: Logo */}
+                        <div className="flex-1 flex flex-col items-center justify-center gap-5 p-8 pb-4">
+                            <img
+                                src="/images/egj-png.png"
+                                alt="EGJ Logo"
+                                className="w-60 sm:w-66 h-auto"
+                            />
+                        </div>
+
+                        {/* Divider */}
+                        <div style={{ height: '0.5px', background: 'var(--border)', margin: '0 24px' }} />
+
+                        {/* Bawah: Deskripsi */}
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 pt-5 text-center">
+                            <p className="text-[11px] font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
+                                Tentang Aplikasi
+                            </p>
+                            <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                                Electronic General Journal Approval adalah sistem persetujuan jurnal digital untuk PT Astra Visteon Indonesia.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Kolom kanan: Form */}
+                    <div
+                        className="w-full lg:w-[55%] flex flex-col justify-center p-8 lg:p-10"
+                        style={{ background: 'var(--card-bg)' }}
+                    >
+                        {/* Title */}
+                        <div className="mb-7">
                             <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                                GJAS
+                                Masuk
                             </h1>
-                            <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                                General Journal Approval System
+                            <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                Silakan masuk menggunakan akun Anda
                             </p>
                         </div>
 
@@ -85,14 +110,27 @@ export default function Login() {
                                     </div>
                                     <input
                                         id="password"
-                                        type="password"
+                                        type={showPassword ? 'text' : 'password'}
                                         value={data.password}
                                         onChange={(e) => setData('password', e.target.value)}
-                                        className={`${inputClass} pl-10`}
+                                        className={`${inputClass} pl-10 pr-10`}
                                         style={inputStyle}
                                         placeholder="••••••••"
                                         required
                                     />
+                                    {/* Toggle show/hide password */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((prev) => !prev)}
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                        tabIndex={-1}
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff size={15} style={{ color: 'var(--text-muted)' }} />
+                                        ) : (
+                                            <Eye size={15} style={{ color: 'var(--text-muted)' }} />
+                                        )}
+                                    </button>
                                 </div>
                                 {errors.password && (
                                     <p className="mt-1.5 text-[12px]" style={{ color: '#e05c5c' }}>{errors.password}</p>
@@ -111,12 +149,12 @@ export default function Login() {
                                 {processing ? 'Masuk...' : 'Masuk'}
                             </button>
                         </form>
-                    </div>
 
-                    {/* Footer */}
-                    <p className="text-center text-xs mt-6" style={{ color: 'var(--text-muted)' }}>
-                        © {new Date().getFullYear()} PT Astra Visteon Indonesia
-                    </p>
+                        {/* Footer */}
+                        <p className="text-center text-xs mt-6" style={{ color: 'var(--text-muted)' }}>
+                            © {new Date().getFullYear()} PT Astra Visteon Indonesia. All Rights Reserved. <br />
+                                                    </p>
+                    </div>
                 </div>
             </div>
         </>

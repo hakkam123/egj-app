@@ -214,7 +214,7 @@ export default function MainLayout({ children, title }) {
                                     <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 text-gray-800 z-50 overflow-hidden animate-in fade-in zoom-in duration-150">
                                         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
                                             <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                                                <Bell size={16} className="text-blue-600" /> Notifikasi
+                                                Notifikasi
                                             </h4>
                                             {unreadCount > 0 && (
                                                 <button

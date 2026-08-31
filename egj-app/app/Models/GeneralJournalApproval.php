@@ -51,6 +51,14 @@ class GeneralJournalApproval extends Model
     }
 
     /**
+     * Alias for approvedByUser.
+     */
+    public function approvedBy()
+    {
+        return $this->approvedByUser();
+    }
+
+    /**
      * Check if this approval is pending.
      */
     public function isPending(): bool

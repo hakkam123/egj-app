@@ -7,6 +7,7 @@ use App\Models\ApprovalHistory;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -18,9 +19,11 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $role = $user->role;
+        $thresholdDays = 3;
 
         $stats = [];
         $recentData = [];
+        $actionQuery = null;
 
         if ($role === 'Staff') {
             $stats = [
@@ -35,7 +38,6 @@ class DashboardController extends Controller
                 ->orderBy('last_updated_at', 'desc')
                 ->limit(5)
                 ->get();
-
         } elseif ($role === 'Section Head' || $role === 'Dept/Div Head') {
             $stats = [
                 'pending_approval' => GeneralJournal::where('current_assign_to', $user->id)->where('status', 'Waiting Approval')->count(),
@@ -51,6 +53,10 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get();
 
+            $actionQuery = GeneralJournal::with(['requester', 'assignee'])
+                ->where('current_assign_to', $user->id)
+                ->where('status', 'Waiting Approval');
+
         } elseif ($role === 'Admin') {
             $stats = [
                 'total_users' => User::count(),
@@ -64,12 +70,45 @@ class DashboardController extends Controller
                 ->orderBy('last_updated_at', 'desc')
                 ->limit(5)
                 ->get();
+
+            $actionQuery = GeneralJournal::with(['requester', 'assignee'])
+                ->where('status', 'Waiting Approval');
+        }
+
+        // Calculate Action Required Documents (Waiting >= thresholdDays)
+        $actionRequiredDocs = [];
+        if ($actionQuery) {
+            $actionRequiredDocs = $actionQuery->get()->map(function ($journal) use ($thresholdDays) {
+                $submittedDate = $journal->submitted_at ?? $journal->created_at ?? $journal->journal_date;
+                $daysWaiting = $submittedDate ? (int) floor(now()->floatDiffInDays($submittedDate)) : 0;
+
+                return [
+                    'id' => $journal->id,
+                    'document_number' => $journal->document_number,
+                    'journal_date' => $journal->journal_date ? $journal->journal_date->format('Y-m-d') : null,
+                    'submitted_at' => $journal->submitted_at ? $journal->submitted_at->format('Y-m-d H:i') : ($journal->created_at ? $journal->created_at->format('Y-m-d H:i') : null),
+                    'reference' => $journal->reference,
+                    'status' => $journal->status,
+                    'requester' => $journal->requester ? ['id' => $journal->requester->id, 'name' => $journal->requester->name] : null,
+                    'assignee' => $journal->assignee ? ['id' => $journal->assignee->id, 'name' => $journal->assignee->name] : null,
+                    'days_waiting' => $daysWaiting,
+                    'is_overdue' => $daysWaiting >= $thresholdDays,
+                ];
+            })
+            ->filter(function ($doc) use ($thresholdDays) {
+                return $doc['days_waiting'] >= $thresholdDays;
+            })
+            ->sortByDesc('days_waiting')
+            ->values()
+            ->all();
         }
 
         return Inertia::render('Dashboard/Index', [
             'role' => $role,
             'stats' => $stats,
             'recentData' => $recentData,
+            'actionRequiredDocs' => $actionRequiredDocs,
+            'thresholdDays' => $thresholdDays,
         ]);
     }
 }

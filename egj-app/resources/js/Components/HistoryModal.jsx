@@ -67,9 +67,9 @@ export default function HistoryModal({ open, journalId, onClose }) {
                     <div className="flex items-center justify-between px-6 py-4 border-b-[0.5px] border-[var(--border)] bg-[#fafafa]">
                         <div>
                             <h3 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
-                                <Clock className="w-5 h-5 text-[var(--text-secondary)]" /> Timeline Dokumen
+                                Timeline Dokumen
                             </h3>
-                            {journal && <p className="text-[13px] font-mono text-[var(--text-secondary)] mt-0.5">{journal.document_number}</p>}
+                            {journal && <p className="text-[13px] font-mono text-[var(--text-secondary)] mt-0.5">No. Dokumen :  {journal.document_number}</p>}
                         </div>
                         <button onClick={onClose} className="p-1.5 text-[var(--text-muted)] hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
                             <X size={20} />

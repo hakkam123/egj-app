@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\GeneralJournal;
-use App\Models\GeneralJournalFile;
-use App\Models\GeneralJournalApproval;
 use App\Models\ApprovalHistory;
-use App\Models\Notification;
 use App\Models\EmailToken;
+use App\Models\GeneralJournal;
+use App\Models\GeneralJournalApproval;
+use App\Models\GeneralJournalFile;
+use App\Models\Notification;
 use App\Models\User;
+use App\Services\PdfApprovalStampService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-use App\Services\PdfApprovalStampService;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 use Inertia\Inertia;
 use App\Mail\ApprovalRequestMail;
 use App\Mail\DeptHeadApprovalMail;
@@ -24,29 +24,33 @@ use App\Mail\DeptHeadApprovalMail;
 class GeneralJournalController extends Controller
 {
     /**
-     * Show create form for new draft.
+     * Show the create form.
      */
     public function create()
     {
         $user = Auth::user();
 
-        if (!$user->canCreateJournal()) {
-            abort(403, 'Anda tidak memiliki izin untuk membuat General Journal.');
+        // Hanya Staff dan Section Head yang boleh membuat pengajuan
+        if (!$user->hasRole('Staff') && !$user->hasRole('Section Head')) {
+            abort(403, 'Hanya Staff dan Section Head yang dapat mengajukan General Journal.');
         }
 
         return Inertia::render('GeneralJournal/Create');
     }
 
+    /**
+     * Store a newly created General Journal with PDF and supporting documents.
+     */
     public function store(Request $request)
     {
         $user = Auth::user();
 
-        if (!$user->canCreateJournal()) {
+        if (!$user->hasRole('Staff') && !$user->hasRole('Section Head')) {
             abort(403);
         }
 
         $request->validate([
-            'document_number' => ['required', 'string', 'max:100'],
+            'document_number' => ['required', 'string', 'max:50', 'unique:general_journals,document_number'],
             'journal_date' => ['required', 'date'],
             'reference' => ['nullable', 'string'],
             'general_journal_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
@@ -58,7 +62,7 @@ class GeneralJournalController extends Controller
             $sectionHead = User::where('role', 'Section Head')->where('is_active', true)->first();
             $deptHead = User::where('role', 'Dept/Div Head')->where('is_active', true)->first();
             
-            $currentAssignTo = $user->hasRole('Staff') ? $sectionHead->id : $deptHead->id;
+            $currentAssignTo = $user->hasRole('Staff') ? $sectionHead?->id : $deptHead?->id;
 
             $journal = GeneralJournal::create([
                 'document_number' => $request->document_number,
@@ -75,6 +79,7 @@ class GeneralJournalController extends Controller
             // Upload General Journal PDF
             $gjFile = $request->file('general_journal_file');
             $gjPath = $gjFile->store("general-journals/{$journal->id}/general_journal");
+            $gjHash = hash_file('sha256', Storage::path($gjPath));
 
             GeneralJournalFile::create([
                 'general_journal_id' => $journal->id,
@@ -83,6 +88,7 @@ class GeneralJournalController extends Controller
                 'file_path' => $gjPath,
                 'file_size' => $gjFile->getSize(),
                 'mime_type' => $gjFile->getMimeType(),
+                'file_hash' => $gjHash,
                 'version' => 1,
                 'is_active' => true,
                 'uploaded_at' => now(),
@@ -92,6 +98,7 @@ class GeneralJournalController extends Controller
             if ($request->hasFile('supporting_documents')) {
                 foreach ($request->file('supporting_documents') as $file) {
                     $path = $file->store("general-journals/{$journal->id}/supporting_documents");
+                    $hash = hash_file('sha256', Storage::path($path));
 
                     GeneralJournalFile::create([
                         'general_journal_id' => $journal->id,
@@ -100,6 +107,7 @@ class GeneralJournalController extends Controller
                         'file_path' => $path,
                         'file_size' => $file->getSize(),
                         'mime_type' => $file->getMimeType(),
+                        'file_hash' => $hash,
                         'version' => 1,
                         'is_active' => true,
                         'uploaded_at' => now(),
@@ -119,23 +127,29 @@ class GeneralJournalController extends Controller
                 ]);
 
                 // Superior: Section Head
-                GeneralJournalApproval::create([
-                    'general_journal_id' => $journal->id,
-                    'approval_level' => 'superior',
-                    'assigned_user_id' => $sectionHead->id,
-                    'status' => 'Pending',
-                ]);
+                if ($sectionHead) {
+                    GeneralJournalApproval::create([
+                        'general_journal_id' => $journal->id,
+                        'approval_level' => 'superior',
+                        'assigned_user_id' => $sectionHead->id,
+                        'status' => 'Pending',
+                    ]);
+                }
 
                 // Superior of Superior: Dept/Div Head
-                GeneralJournalApproval::create([
-                    'general_journal_id' => $journal->id,
-                    'approval_level' => 'superior_of_superior',
-                    'assigned_user_id' => $deptHead->id,
-                    'status' => 'Pending',
-                ]);
+                if ($deptHead) {
+                    GeneralJournalApproval::create([
+                        'general_journal_id' => $journal->id,
+                        'approval_level' => 'superior_of_superior',
+                        'assigned_user_id' => $deptHead->id,
+                        'status' => 'Pending',
+                    ]);
+                }
 
                 // Send email to Section Head
-                $this->sendApprovalEmail($journal, $sectionHead, $deptHead);
+                if ($sectionHead && $deptHead) {
+                    $this->sendApprovalEmail($journal, $sectionHead, $deptHead);
+                }
 
             } elseif ($user->hasRole('Section Head')) {
                 // Accounting & Superior auto-approved
@@ -158,15 +172,17 @@ class GeneralJournalController extends Controller
                 ]);
 
                 // Superior of Superior: Dept/Div Head
-                GeneralJournalApproval::create([
-                    'general_journal_id' => $journal->id,
-                    'approval_level' => 'superior_of_superior',
-                    'assigned_user_id' => $deptHead->id,
-                    'status' => 'Pending',
-                ]);
+                if ($deptHead) {
+                    GeneralJournalApproval::create([
+                        'general_journal_id' => $journal->id,
+                        'approval_level' => 'superior_of_superior',
+                        'assigned_user_id' => $deptHead->id,
+                        'status' => 'Pending',
+                    ]);
 
-                // Send email directly to Dept/Div Head
-                $this->sendDeptHeadApprovalEmail($journal, $deptHead);
+                    // Send email directly to Dept/Div Head
+                    $this->sendDeptHeadApprovalEmail($journal, $deptHead);
+                }
             }
 
             // Record history
@@ -192,15 +208,6 @@ class GeneralJournalController extends Controller
             return $journal;
         });
 
-        // Stamp PDF
-        $stampService = app(PdfApprovalStampService::class);
-        if ($user->hasRole('Staff')) {
-            $stampService->stampApproval($journal, 'accounting');
-        } elseif ($user->hasRole('Section Head')) {
-            $stampService->stampApproval($journal, 'accounting');
-            $stampService->stampApproval($journal, 'superior');
-        }
-
         return redirect()->route('monitoring.index')
             ->with('success', 'Dokumen berhasil diajukan.');
     }
@@ -225,204 +232,19 @@ class GeneralJournalController extends Controller
     }
 
     /**
-     * Show resubmit form (after rejection).
-     */
-    public function resubmitForm(string $id)
-    {
-        $journal = GeneralJournal::with('activeFiles')->findOrFail($id);
-
-        if ($journal->requested_by !== Auth::id() || !$journal->isRejected()) {
-            abort(403, 'Anda tidak dapat resubmit dokumen ini.');
-        }
-
-        return Inertia::render('GeneralJournal/Resubmit', [
-            'journal' => $journal,
-        ]);
-    }
-
-    /**
-     * Process resubmit with new files.
-     */
-    public function resubmit(Request $request, string $id)
-    {
-        $journal = GeneralJournal::findOrFail($id);
-        $user = Auth::user();
-
-        if ($journal->requested_by !== $user->id || !$journal->isRejected()) {
-            abort(403);
-        }
-
-        $request->validate([
-            'general_journal_file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
-            'supporting_documents' => ['nullable', 'array'],
-            'supporting_documents.*' => ['file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,xlsx,xls'],
-        ]);
-
-        $journal = DB::transaction(function () use ($request, $journal, $user) {
-            $newVersion = $journal->resubmit_count + 2; // version starts at 1, resubmit adds 1
-
-            // Deactivate all old files
-            $journal->files()->update(['is_active' => false]);
-
-            // Upload new General Journal PDF
-            $gjFile = $request->file('general_journal_file');
-            $gjPath = $gjFile->store("general-journals/{$journal->id}/general_journal");
-
-            GeneralJournalFile::create([
-                'general_journal_id' => $journal->id,
-                'category' => 'general_journal',
-                'file_name' => $gjFile->getClientOriginalName(),
-                'file_path' => $gjPath,
-                'file_size' => $gjFile->getSize(),
-                'mime_type' => $gjFile->getMimeType(),
-                'version' => $newVersion,
-                'is_active' => true,
-                'uploaded_at' => now(),
-            ]);
-
-            // Upload new Supporting Documents
-            if ($request->hasFile('supporting_documents')) {
-                foreach ($request->file('supporting_documents') as $file) {
-                    $path = $file->store("general-journals/{$journal->id}/supporting_documents");
-
-                    GeneralJournalFile::create([
-                        'general_journal_id' => $journal->id,
-                        'category' => 'supporting_document',
-                        'file_name' => $file->getClientOriginalName(),
-                        'file_path' => $path,
-                        'file_size' => $file->getSize(),
-                        'mime_type' => $file->getMimeType(),
-                        'version' => $newVersion,
-                        'is_active' => true,
-                        'uploaded_at' => now(),
-                    ]);
-                }
-            }
-
-            // Reset approval records
-            $journal->approvals()->delete();
-
-            $sectionHead = User::where('role', 'Section Head')->where('is_active', true)->first();
-            $deptHead = User::where('role', 'Dept/Div Head')->where('is_active', true)->first();
-
-            if ($user->hasRole('Staff')) {
-                // Accounting: auto-approved
-                GeneralJournalApproval::create([
-                    'general_journal_id' => $journal->id,
-                    'approval_level' => 'accounting',
-                    'assigned_user_id' => $user->id,
-                    'approved_by_user_id' => $user->id,
-                    'status' => 'Approved',
-                    'approved_at' => now(),
-                ]);
-
-                GeneralJournalApproval::create([
-                    'general_journal_id' => $journal->id,
-                    'approval_level' => 'superior',
-                    'assigned_user_id' => $sectionHead->id,
-                    'status' => 'Pending',
-                ]);
-
-                GeneralJournalApproval::create([
-                    'general_journal_id' => $journal->id,
-                    'approval_level' => 'superior_of_superior',
-                    'assigned_user_id' => $deptHead->id,
-                    'status' => 'Pending',
-                ]);
-
-                $journal->update([
-                    'status' => 'Waiting Approval',
-                    'current_assign_to' => $sectionHead->id,
-                    'resubmit_count' => $journal->resubmit_count + 1,
-                    'last_updated_at' => now(),
-                ]);
-
-                $this->sendApprovalEmail($journal, $sectionHead, $deptHead);
-
-            } elseif ($user->hasRole('Section Head')) {
-                // Accounting & Superior auto-approved
-                GeneralJournalApproval::create([
-                    'general_journal_id' => $journal->id,
-                    'approval_level' => 'accounting',
-                    'assigned_user_id' => $user->id,
-                    'approved_by_user_id' => $user->id,
-                    'status' => 'Approved',
-                    'approved_at' => now(),
-                ]);
-
-                GeneralJournalApproval::create([
-                    'general_journal_id' => $journal->id,
-                    'approval_level' => 'superior',
-                    'assigned_user_id' => $user->id,
-                    'approved_by_user_id' => $user->id,
-                    'status' => 'Approved',
-                    'approved_at' => now(),
-                ]);
-
-                GeneralJournalApproval::create([
-                    'general_journal_id' => $journal->id,
-                    'approval_level' => 'superior_of_superior',
-                    'assigned_user_id' => $deptHead->id,
-                    'status' => 'Pending',
-                ]);
-
-                $journal->update([
-                    'status' => 'Waiting Approval',
-                    'current_assign_to' => $deptHead->id,
-                    'resubmit_count' => $journal->resubmit_count + 1,
-                    'last_updated_at' => now(),
-                ]);
-
-                $this->sendDeptHeadApprovalEmail($journal, $deptHead);
-            }
-
-            // Record history
-            ApprovalHistory::create([
-                'general_journal_id' => $journal->id,
-                'action' => 'resubmit',
-                'actor_user_id' => $user->id,
-                'target_level' => $user->hasRole('Staff') ? 'superior' : 'superior_of_superior',
-                'created_at' => now(),
-            ]);
-
-            // Create notification for approver
-            if ($journal->current_assign_to) {
-                Notification::create([
-                    'user_id' => $journal->current_assign_to,
-                    'general_journal_id' => $journal->id,
-                    'type' => 'approval_request',
-                    'message' => "Dokumen {$journal->document_number} telah di-resubmit dan membutuhkan persetujuan Anda.",
-                    'created_at' => now(),
-                ]);
-            }
-
-            return $journal;
-        });
-
-        // Stamp PDF for resubmit
-        $stampService = app(PdfApprovalStampService::class);
-        if ($user->hasRole('Staff')) {
-            $stampService->stampApproval($journal, 'accounting');
-        } elseif ($user->hasRole('Section Head')) {
-            $stampService->stampApproval($journal, 'accounting');
-            $stampService->stampApproval($journal, 'superior');
-        }
-
-        return redirect()->route('monitoring.index')
-            ->with('success', 'General Journal berhasil di-resubmit.');
-    }
-
-    /**
      * Send approval notification email to Section Head.
      */
     private function sendApprovalEmail(GeneralJournal $journal, User $sectionHead, User $deptHead): void
     {
-        // Create preview token for Section Head
-        $previewToken = $this->createEmailToken($journal, $sectionHead->email, 'preview');
+        try {
+            $previewToken = $this->createEmailToken($journal, $sectionHead->email, 'preview');
 
-        Mail::to($sectionHead->email)->send(
-            new ApprovalRequestMail($journal, $sectionHead, $previewToken)
-        );
+            Mail::to($sectionHead->email)->send(
+                new ApprovalRequestMail($journal, $sectionHead, $previewToken)
+            );
+        } catch (\Throwable $e) {
+            \Log::error("Failed sending ApprovalRequestMail to Section Head: " . $e->getMessage());
+        }
     }
 
     /**
@@ -430,13 +252,16 @@ class GeneralJournalController extends Controller
      */
     private function sendDeptHeadApprovalEmail(GeneralJournal $journal, User $deptHead): void
     {
-        // Create approval token and preview token for Dept/Div Head
-        $approvalToken = $this->createEmailToken($journal, $deptHead->email, 'approval');
-        $previewToken = $this->createEmailToken($journal, $deptHead->email, 'preview');
+        try {
+            $approvalToken = $this->createEmailToken($journal, $deptHead->email, 'approval');
+            $previewToken = $this->createEmailToken($journal, $deptHead->email, 'preview');
 
-        Mail::to($deptHead->email)->send(
-            new DeptHeadApprovalMail($journal, $deptHead, $approvalToken, $previewToken)
-        );
+            Mail::to($deptHead->email)->send(
+                new DeptHeadApprovalMail($journal, $deptHead, $approvalToken, $previewToken)
+            );
+        } catch (\Throwable $e) {
+            \Log::error("Failed sending DeptHeadApprovalMail to Dept/Div Head: " . $e->getMessage());
+        }
     }
 
     /**
@@ -444,7 +269,6 @@ class GeneralJournalController extends Controller
      */
     private function createEmailToken(GeneralJournal $journal, string $email, string $purpose): EmailToken
     {
-        // Calculate 5 business days from now (skip weekends)
         $expiresAt = Carbon::now();
         $businessDays = 0;
         while ($businessDays < 5) {

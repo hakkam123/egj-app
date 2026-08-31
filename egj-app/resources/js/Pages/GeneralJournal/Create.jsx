@@ -106,14 +106,7 @@ export default function Create() {
                 <PageHeader
                     title="Buat Draft General Journal"
                     subtitle="Isi formulir pengajuan dan unggah dokumen pendukung General Journal"
-                    actions={
-                        <Link
-                            href="/monitoring"
-                            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg border-[0.5px] border-[var(--border)] bg-white text-[var(--text-secondary)] hover:bg-gray-50 transition-colors shadow-xs"
-                        >
-                            <ArrowLeft size={14} /> Kembali
-                        </Link>
-                    }
+                    
                 />
 
                 <form onSubmit={handleSubmit}>

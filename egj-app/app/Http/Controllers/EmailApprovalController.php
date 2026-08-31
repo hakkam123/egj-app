@@ -6,9 +6,11 @@ use App\Models\EmailToken;
 use App\Models\GeneralJournal;
 use App\Models\GeneralJournalApproval;
 use App\Models\ApprovalHistory;
+use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use App\Mail\ApprovalResultMail;
@@ -89,16 +91,16 @@ class EmailApprovalController extends Controller
             ->where('role', 'Dept/Div Head')
             ->first();
 
-        if (!$approver || $journal->current_assign_to !== $approver->id) {
+        if (!$approver) {
             return Inertia::render('EmailApproval/Invalid', [
                 'message' => 'Anda tidak memiliki akses untuk approval dokumen ini.',
             ]);
         }
 
         DB::transaction(function () use ($journal, $approver, $emailToken) {
-            // Find the pending approval for this user
+            // Find the pending approval for Dept/Div Head
             $currentApproval = $journal->approvals()
-                ->where('assigned_user_id', $approver->id)
+                ->where('approval_level', 'superior_of_superior')
                 ->where('status', 'Pending')
                 ->first();
 
@@ -109,6 +111,7 @@ class EmailApprovalController extends Controller
             // Approve
             $currentApproval->update([
                 'status' => 'Approved',
+                'assigned_user_id' => $approver->id,
                 'approved_by_user_id' => $approver->id,
                 'approved_at' => now(),
                 'notes' => 'Approved ' . now()->format('Y-m-d') . ' ' . $approver->name . ' (via email)',
@@ -117,30 +120,12 @@ class EmailApprovalController extends Controller
             // Mark token as used
             $emailToken->markAsUsed();
 
-            // Check for next pending approvals
-            $nextPending = $journal->approvals()
-                ->where('status', 'Pending')
-                ->first();
-
-            if (!$nextPending) {
-                // All approved → final
-                $journal->update([
-                    'status' => 'Approved',
-                    'current_assign_to' => null,
-                    'last_updated_at' => now(),
-                ]);
-
-                // Send final approval email to requester
-                $requester = User::find($journal->requested_by);
-                Mail::to($requester->email)->send(
-                    new ApprovalResultMail($journal, $requester, 'approved')
-                );
-            } else {
-                $journal->update([
-                    'current_assign_to' => $nextPending->assigned_user_id,
-                    'last_updated_at' => now(),
-                ]);
-            }
+            // All approved → final
+            $journal->update([
+                'status' => 'Approved',
+                'current_assign_to' => null,
+                'last_updated_at' => now(),
+            ]);
 
             // Record history
             ApprovalHistory::create([
@@ -151,6 +136,35 @@ class EmailApprovalController extends Controller
                 'notes' => 'Approved via email ' . now()->format('Y-m-d') . ' ' . $approver->name,
                 'created_at' => now(),
             ]);
+
+            // Cek sebelum buat notifikasi approved ke requester
+            $alreadyNotified = Notification::where('general_journal_id', $journal->id)
+                ->where('user_id', $journal->requested_by)
+                ->where('type', 'approved')
+                ->exists();
+
+            if (!$alreadyNotified) {
+                // Create notification for requester
+                Notification::create([
+                    'user_id' => $journal->requested_by,
+                    'general_journal_id' => $journal->id,
+                    'type' => 'approved',
+                    'message' => "Dokumen {$journal->document_number} telah disetujui sepenuhnya.",
+                    'created_at' => now(),
+                ]);
+
+                // Send final approval email to requester
+                $requester = User::find($journal->requested_by);
+                if ($requester) {
+                    try {
+                        Mail::to($requester->email)->send(
+                            new ApprovalResultMail($journal, $requester, 'approved')
+                        );
+                    } catch (\Throwable $e) {
+                        Log::error("Failed sending ApprovalResultMail in email approval for journal {$journal->id}: " . $e->getMessage());
+                    }
+                }
+            }
         });
 
         return Inertia::render('EmailApproval/Success', [
