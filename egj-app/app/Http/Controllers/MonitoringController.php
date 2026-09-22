@@ -41,13 +41,19 @@ class MonitoringController extends Controller
             });
         }
 
-        // Compute stats before applying status filter
-        $statsQuery = clone $query;
+        // Compute stats before applying status filter using single aggregated query
+        $statsRaw = (clone $query)->selectRaw("
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 'Waiting Approval' THEN 1 ELSE 0 END) as waiting,
+            SUM(CASE WHEN status = 'Approved' THEN 1 ELSE 0 END) as approved,
+            SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) as rejected
+        ")->first();
+
         $stats = [
-            'total' => (clone $statsQuery)->count(),
-            'waiting' => (clone $statsQuery)->where('status', 'Waiting Approval')->count(),
-            'approved' => (clone $statsQuery)->where('status', 'Approved')->count(),
-            'rejected' => (clone $statsQuery)->where('status', 'Rejected')->count(),
+            'total' => (int) ($statsRaw->total ?? 0),
+            'waiting' => (int) ($statsRaw->waiting ?? 0),
+            'approved' => (int) ($statsRaw->approved ?? 0),
+            'rejected' => (int) ($statsRaw->rejected ?? 0),
         ];
 
         // Filter by status
@@ -81,7 +87,7 @@ class MonitoringController extends Controller
     }
 
     /**
-     * Export monitoring data to Excel (all filtered data, no pagination).
+     * Export monitoring data to Excel (all filtered data using streaming chunking).
      */
     public function export(Request $request)
     {
@@ -108,8 +114,6 @@ class MonitoringController extends Controller
             });
         }
 
-        $journals = $query->orderBy('last_updated_at', 'desc')->get();
-
         $fileName = 'monitoring_gj_' . now()->format('Y-m-d_His') . '.xlsx';
         $filePath = storage_path("app/{$fileName}");
 
@@ -128,19 +132,21 @@ class MonitoringController extends Controller
         ]);
         $writer->addRow($headerRow);
 
-        // Data rows
-        foreach ($journals as $journal) {
-            $row = Row::fromValues([
-                $journal->document_number,
-                $journal->journal_date->format('Y-m-d'),
-                $journal->reference ?? '',
-                $journal->status,
-                $journal->assignee?->name ?? '-',
-                $journal->requester?->name ?? '-',
-                $journal->last_updated_at?->format('Y-m-d H:i:s') ?? '',
-            ]);
-            $writer->addRow($row);
-        }
+        // Stream data rows in chunks of 500
+        $query->orderBy('last_updated_at', 'desc')->chunk(500, function ($journals) use ($writer) {
+            foreach ($journals as $journal) {
+                $row = Row::fromValues([
+                    $journal->document_number,
+                    $journal->journal_date ? $journal->journal_date->format('Y-m-d') : '',
+                    $journal->reference ?? '',
+                    $journal->status,
+                    $journal->assignee?->name ?? '-',
+                    $journal->requester?->name ?? '-',
+                    $journal->last_updated_at?->format('Y-m-d H:i:s') ?? '',
+                ]);
+                $writer->addRow($row);
+            }
+        });
 
         $writer->close();
 

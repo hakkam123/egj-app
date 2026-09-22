@@ -25,12 +25,14 @@ class DeptHeadApprovalMail extends Mailable
         public User $approver,
         public string $approveUrl,
         public string $rejectUrl,
+        public int $reminderNumber = 0, // 0 = email pertama, 1 = reminder 1, 2 = reminder 2
     ) {}
 
     public function envelope(): Envelope
     {
+        $subjectPrefix = $this->reminderNumber > 0 ? "[Pengingat #{$this->reminderNumber}] " : '';
         return new Envelope(
-            subject: 'Approval Required: General Journal ' . $this->journal->document_number,
+            subject: "{$subjectPrefix}Approval Required: General Journal {$this->journal->document_number}",
         );
     }
 
@@ -43,6 +45,7 @@ class DeptHeadApprovalMail extends Mailable
                 'approver'       => $this->approver,
                 'approveUrl'     => $this->approveUrl,
                 'rejectUrl'      => $this->rejectUrl,
+                'reminderNumber' => $this->reminderNumber,
                 'overLimitFiles' => $this->overLimitFiles,
             ],
         );

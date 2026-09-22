@@ -75,32 +75,40 @@ class DashboardController extends Controller
                 ->where('status', 'Waiting Approval');
         }
 
-        // Calculate Action Required Documents (Waiting >= thresholdDays)
+        // Calculate Action Required Documents (Waiting >= thresholdDays, filtered directly in SQL)
         $actionRequiredDocs = [];
         if ($actionQuery) {
-            $actionRequiredDocs = $actionQuery->get()->map(function ($journal) use ($thresholdDays) {
-                $submittedDate = $journal->submitted_at ?? $journal->created_at ?? $journal->journal_date;
-                $daysWaiting = $submittedDate ? (int) floor(now()->floatDiffInDays($submittedDate)) : 0;
+            $thresholdDate = now()->subDays($thresholdDays);
 
-                return [
-                    'id' => $journal->id,
-                    'document_number' => $journal->document_number,
-                    'journal_date' => $journal->journal_date ? $journal->journal_date->format('Y-m-d') : null,
-                    'submitted_at' => $journal->submitted_at ? $journal->submitted_at->format('Y-m-d H:i') : ($journal->created_at ? $journal->created_at->format('Y-m-d H:i') : null),
-                    'reference' => $journal->reference,
-                    'status' => $journal->status,
-                    'requester' => $journal->requester ? ['id' => $journal->requester->id, 'name' => $journal->requester->name] : null,
-                    'assignee' => $journal->assignee ? ['id' => $journal->assignee->id, 'name' => $journal->assignee->name] : null,
-                    'days_waiting' => $daysWaiting,
-                    'is_overdue' => $daysWaiting >= $thresholdDays,
-                ];
-            })
-            ->filter(function ($doc) use ($thresholdDays) {
-                return $doc['days_waiting'] >= $thresholdDays;
-            })
-            ->sortByDesc('days_waiting')
-            ->values()
-            ->all();
+            $actionRequiredDocs = $actionQuery
+                ->where(function ($q) use ($thresholdDate) {
+                    $q->where('submitted_at', '<=', $thresholdDate)
+                      ->orWhere(function ($sub) use ($thresholdDate) {
+                          $sub->whereNull('submitted_at')
+                              ->where('created_at', '<=', $thresholdDate);
+                      });
+                })
+                ->orderBy('submitted_at', 'asc')
+                ->limit(20)
+                ->get()
+                ->map(function ($journal) use ($thresholdDays) {
+                    $submittedDate = $journal->submitted_at ?? $journal->created_at ?? $journal->journal_date;
+                    $daysWaiting = $submittedDate ? (int) floor(now()->floatDiffInDays($submittedDate)) : 0;
+
+                    return [
+                        'id' => $journal->id,
+                        'document_number' => $journal->document_number,
+                        'journal_date' => $journal->journal_date ? $journal->journal_date->format('Y-m-d') : null,
+                        'submitted_at' => $journal->submitted_at ? $journal->submitted_at->format('Y-m-d H:i') : ($journal->created_at ? $journal->created_at->format('Y-m-d H:i') : null),
+                        'reference' => $journal->reference,
+                        'status' => $journal->status,
+                        'requester' => $journal->requester ? ['id' => $journal->requester->id, 'name' => $journal->requester->name] : null,
+                        'assignee' => $journal->assignee ? ['id' => $journal->assignee->id, 'name' => $journal->assignee->name] : null,
+                        'days_waiting' => $daysWaiting,
+                        'is_overdue' => true,
+                    ];
+                })
+                ->all();
         }
 
         return Inertia::render('Dashboard/Index', [

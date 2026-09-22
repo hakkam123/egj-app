@@ -17,7 +17,8 @@
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td valign="middle">
-            <p style="margin:0;color:#ffffff;font-size:15px;font-weight:bold;letter-spacing:0.3px;">Electronic General Journal Approval</p>
+            <p style="margin:0;color:#ffffff;font-size:15px;font-weight:bold;letter-spacing:0.3px;">E-GJ</p>
+            <p style="margin:3px 0 0;color:rgba(255,255,255,0.45);font-size:11px;">Electronic General Journal Approval</p>
           </td>
           <td valign="middle" align="right">
             <p style="margin:0;color:rgba(255,255,255,0.55);font-size:11px;">PT Astra Visteon Indonesia</p>
@@ -35,6 +36,18 @@
       </p>
     </td>
   </tr>
+
+  @if(isset($reminderNumber) && $reminderNumber > 0)
+  <!-- Banner Reminder -->
+  <tr>
+    <td style="background:#fff8e1;padding:10px 28px;border-bottom:0.5px solid #e8eaed;">
+      <p style="margin:0;font-size:12px;color:#8a6500;line-height:1.5;">
+        ⏰ <strong>Pengingat #{{ $reminderNumber }}</strong> — Dokumen ini belum mendapat persetujuan Anda
+        sejak {{ $reminderNumber === 1 ? '3' : '5' }} hari yang lalu.
+      </p>
+    </td>
+  </tr>
+  @endif
 
   <!-- Body -->
   <tr>
@@ -135,7 +148,7 @@
         <tr>
           <td>
             <p style="margin:0;font-size:11px;color:#9aa0a6;">
-             PT Astra Visteon Indonesia
+              E-GJ System &mdash; PT Astra Visteon Indonesia
             </p>
           </td>
           <td align="right">

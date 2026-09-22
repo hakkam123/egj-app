@@ -51,7 +51,7 @@ export default function Login() {
                                 Tentang Aplikasi
                             </p>
                             <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                                Electronic General Journal Approval adalah sistem persetujuan jurnal digital untuk PT Astra Visteon Indonesia.
+                                Electronic General Journal Approval adalah sistem persetujuan jurnal digital.
                             </p>
                         </div>
                     </div>

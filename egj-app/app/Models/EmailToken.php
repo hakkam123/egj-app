@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Prunable;
 
 class EmailToken extends Model
 {
-    use HasUlids;
+    use HasUlids, Prunable;
 
     public $timestamps = false;
 
@@ -28,6 +29,15 @@ class EmailToken extends Model
             'used_at' => 'datetime',
             'created_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Get the prunable model query.
+     * Prune tokens expired more than 7 days ago.
+     */
+    public function prunable()
+    {
+        return static::where('expires_at', '<', now()->subDays(7));
     }
 
     /**
