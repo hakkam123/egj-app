@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 class DispatchApprovalReminders extends Command
 {
-    protected $signature   = 'gjas:dispatch-reminders';
+    protected $signature   = 'jago:dispatch-reminders';
     protected $description = 'Dispatch reminder emails for pending Dept Head approvals';
 
     public function handle(): void
@@ -62,7 +62,7 @@ class DispatchApprovalReminders extends Command
             }
         }
 
-        Log::info("gjas:dispatch-reminders completed. Dispatched: {$dispatched}");
+        Log::info("jago:dispatch-reminders completed. Dispatched: {$dispatched}");
         $this->info("Done. Dispatched {$dispatched} reminder(s).");
     }
 }

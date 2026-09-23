@@ -15,7 +15,7 @@ export default function Invalid({ message }) {
                     <p className="text-gray-400 text-sm">{message}</p>
                     <div className="mt-8">
                         <a href="/login" className="text-sm text-blue-400 hover:text-blue-300 underline">
-                            Login ke Portal GJAS
+                            Login ke Portal JAGO
                         </a>
                     </div>
                 </div>

@@ -95,11 +95,11 @@ class TutorialController extends Controller
         }
 
         if (file_exists(public_path('manuals/user_manual.pdf'))) {
-            return response()->download(public_path('manuals/user_manual.pdf'), 'User_Manual_GJAS.pdf');
+            return response()->download(public_path('manuals/user_manual.pdf'), 'User_Manual_JAGO.pdf');
         }
 
         if (Storage::disk('local')->exists('manuals/user_manual.pdf')) {
-            return Storage::disk('local')->download('manuals/user_manual.pdf', 'User_Manual_GJAS.pdf');
+            return Storage::disk('local')->download('manuals/user_manual.pdf', 'User_Manual_JAGO.pdf');
         }
 
         return back()->with('error', 'Belum ada file tutorial yang diunggah.');

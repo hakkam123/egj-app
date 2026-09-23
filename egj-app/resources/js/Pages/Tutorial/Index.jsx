@@ -64,8 +64,8 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
 
             <div className="space-y-6 max-w-5xl mx-auto">
                 <PageHeader
-                    title="Panduan Pengguna GJAS"
-                    subtitle="Pelajari alur pengajuan, verifikasi, serta persetujuan General Journal Approval System (GJAS)"
+                    title="Panduan Pengguna JAGO"
+                    subtitle="Pelajari alur pengajuan, verifikasi, serta persetujuan Journal Approval General Operations (JAGO)"
                     actions={
                         <>
                             {isAdmin && (

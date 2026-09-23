@@ -10,7 +10,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 // Reminder email approval Dept Head
-Schedule::command('gjas:dispatch-reminders')->dailyAt('08:00');
+Schedule::command('jago:dispatch-reminders')->dailyAt('08:00');
 
 // Prune model yang punya trait Prunable (EmailToken, ErrorLog, Notification)
 Schedule::command('model:prune')->dailyAt('02:00');

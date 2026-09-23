@@ -29,15 +29,6 @@
                 
                 <!-- Main White Card -->
                 <table width="580" cellpadding="0" cellspacing="0" style="width:100%;max-width:580px;background-color:#ffffff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.06);border:1px solid #e2e8f0;overflow:hidden;text-align:left;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                    
-                    <!-- Top Status Strip -->
-                    <tr>
-                        <td style="background-color:{{ $result === 'approved' ? '#ecfdf5' : '#fef2f2' }};border-bottom:1px solid {{ $result === 'approved' ? '#d1fae5' : '#fee2e2' }};padding:12px 32px;text-align:center;">
-                            <span style="color:{{ $result === 'approved' ? '#047857' : '#b91c1c' }};font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                {{ $result === 'approved' ? '✓ DOKUMEN TELAH DISETUJUI SEPENUHNYA' : '✕ DOKUMEN TELAH DITOLAK' }}
-                            </span>
-                        </td>
-                    </tr>
 
                     <!-- Card Body -->
                     <tr>
