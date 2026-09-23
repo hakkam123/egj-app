@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>General Journal {{ $result === 'approved' ? 'Approved' : 'Rejected' }} — GJAS</title>
+    <title>General Journal {{ $result === 'approved' ? 'Approved' : 'Rejected' }} — JAGO</title>
     <!-- Google Fonts: Plus Jakarta Sans & Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,8 +41,17 @@
 
                     <!-- Card Body -->
                     <tr>
-                        <td style="padding:44px 38px 38px 38px;">
+                        <td style="padding:40px 38px 38px 38px;">
                             
+                            <!-- Header Logo JAGO -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                                <tr>
+                                    <td align="center">
+                                        <img src="{{ isset($message) ? $message->embed(public_path('images/JAGO-logo.png')) : asset('images/JAGO-logo.png') }}" alt="JAGO" width="160" style="width:160px;max-width:100%;height:auto;border:0;display:block;margin:0 auto;" />
+                                    </td>
+                                </tr>
+                            </table>
+
                             <!-- Main Title -->
                             <h1 style="margin:0 0 18px 0;font-size:24px;font-weight:800;color:#1a2540;letter-spacing:-0.5px;text-align:center;font-family:'Plus Jakarta Sans','Poppins',sans-serif;line-height:1.3;">
                                 {{ $result === 'approved' ? 'General Journal Disetujui' : 'General Journal Ditolak' }}
@@ -111,7 +120,7 @@
                                 <tr>
                                     <td align="center">
                                         <a href="{{ $portalUrl }}" style="background-color:#1a2540;color:#ffffff;display:inline-block;padding:13px 36px;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;box-shadow:0 2px 6px rgba(26,37,64,0.25);text-align:center;font-family:'Plus Jakarta Sans','Poppins',sans-serif;letter-spacing:-0.2px;">
-                                            Buka Portal GJAS
+                                            Buka Portal Monitoring
                                         </a>
                                     </td>
                                 </tr>
@@ -131,7 +140,7 @@
                                 </p>
                                 <p style="margin:16px 0 0 0;font-size:13px;color:#475569;line-height:1.55;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                     Salam hormat,<br>
-                                    <strong style="color:#1a2540;">Tim GJAS &mdash; PT Astra Visteon Indonesia</strong>
+                                    <strong style="color:#1a2540;">Tim JAGO &mdash; PT Astra Visteon Indonesia</strong>
                                 </p>
                             </div>
 
@@ -167,7 +176,7 @@
                             </p>
                             
                             <p style="margin:0 0 8px 0;font-size:11.5px;color:#94a3b8;line-height:1.55;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                Email ini dikirim otomatis oleh Electronic General Journal Approval System (GJAS).
+                                Email ini dikirim otomatis oleh Journal Approval General Operations (JAGO).
                             </p>
                             
                             <p style="margin:0;font-size:11.5px;color:#94a3b8;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">

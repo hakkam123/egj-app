@@ -14,72 +14,50 @@ export default function Login() {
         post('/login');
     };
 
-    const inputClass = "w-full px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white rounded-[7px]";
-    const inputStyle = { border: '0.5px solid var(--border)', color: 'var(--text-primary)' };
-    const labelClass = "block text-[11px] font-medium uppercase tracking-wide mb-1.5";
+    const inputClass = "w-full px-3.5 py-2.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#1a2540]/20 focus:border-[#1a2540] bg-white rounded-lg transition-all";
+    const inputStyle = { border: '1px solid var(--border)', color: 'var(--text-primary)' };
+    const labelClass = "block text-[11px] font-semibold uppercase tracking-wider mb-1.5";
     const labelStyle = { color: 'var(--text-muted)' };
 
     return (
         <>
             <Head title="Login" />
 
-            <div className="min-h-screen flex items-center justify-center bg-dashboard px-4">
+            <div className="min-h-screen flex items-center justify-center bg-dashboard px-4 py-12">
                 <div
-                    className="w-full max-w-3xl flex flex-col lg:flex-row overflow-hidden rounded-[12px]"
+                    className="w-full max-w-md bg-white rounded-2xl shadow-sm p-8 sm:p-10"
                     style={{ border: '0.5px solid var(--border)' }}
                 >
-                    {/* Kolom kiri: Logo + Deskripsi */}
-                    <div
-                        className="w-full lg:w-[45%] flex flex-col"
-                        style={{ background: '#ffffff', borderRight: '0.5px solid var(--border)' }}
-                    >
-                        {/* Atas: Logo */}
-                        <div className="flex-1 flex flex-col items-center justify-center gap-5 p-8 pb-4">
-                            <img
-                                src="/images/egj-png.png"
-                                alt="EGJ Logo"
-                                className="w-60 sm:w-66 h-auto"
-                            />
-                        </div>
-
-                        {/* Divider */}
-                        <div style={{ height: '0.5px', background: 'var(--border)', margin: '0 24px' }} />
-
-                        {/* Bawah: Deskripsi */}
-                        <div className="flex-1 flex flex-col items-center justify-center p-8 pt-5 text-center">
-                            <p className="text-[11px] font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>
-                                Tentang Aplikasi
-                            </p>
-                            <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                                Electronic General Journal Approval adalah sistem persetujuan jurnal digital.
-                            </p>
-                        </div>
+                    {/* Row 1: Logo */}
+                    <div className="flex justify-center mb-6">
+                        <img
+                            src="/images/JAGO-logo.png"
+                            alt="JAGO Logo"
+                            className="w-56 sm:w-64 h-auto object-contain"
+                        />
                     </div>
 
-                    {/* Kolom kanan: Form */}
-                    <div
-                        className="w-full lg:w-[55%] flex flex-col justify-center p-8 lg:p-10"
-                        style={{ background: 'var(--card-bg)' }}
-                    >
+                    {/* Row 2: Title, Form Input, Button */}
+                    <div>
                         {/* Title */}
-                        <div className="mb-7">
+                        <div className="mb-6 text-center">
                             <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
                                 Masuk
                             </h1>
-                            <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                            <p className="mt-1 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
                                 Silakan masuk menggunakan akun Anda
                             </p>
                         </div>
 
                         {/* Form */}
-                        <form onSubmit={handleSubmit} className="space-y-5">
+                        <form onSubmit={handleSubmit} className="space-y-4">
                             {/* Email */}
                             <div>
                                 <label htmlFor="email" className={labelClass} style={labelStyle}>
                                     Email <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
                                 <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                                         <User size={15} style={{ color: 'var(--text-muted)' }} />
                                     </div>
                                     <input
@@ -105,7 +83,7 @@ export default function Login() {
                                     Password <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
                                 <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                                         <Lock size={15} style={{ color: 'var(--text-muted)' }} />
                                     </div>
                                     <input
@@ -122,7 +100,7 @@ export default function Login() {
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword((prev) => !prev)}
-                                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                        className="absolute inset-y-0 right-0 pr-3.5 flex items-center"
                                         tabIndex={-1}
                                     >
                                         {showPassword ? (
@@ -141,7 +119,7 @@ export default function Login() {
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-lg text-white font-medium text-[13px] transition-colors disabled:opacity-50"
+                                className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-white font-medium text-[13px] transition-colors disabled:opacity-50 mt-2"
                                 style={{ background: '#1a2540' }}
                                 onMouseEnter={e => !processing && (e.currentTarget.style.background = '#243355')}
                                 onMouseLeave={e => e.currentTarget.style.background = '#1a2540'}
@@ -151,9 +129,9 @@ export default function Login() {
                         </form>
 
                         {/* Footer */}
-                        <p className="text-center text-xs mt-6" style={{ color: 'var(--text-muted)' }}>
-                            © {new Date().getFullYear()} PT Astra Visteon Indonesia. All Rights Reserved. <br />
-                                                    </p>
+                        <p className="text-center text-[11px] mt-6" style={{ color: 'var(--text-muted)' }}>
+                            © {new Date().getFullYear()} PT Astra Visteon Indonesia. All Rights Reserved.
+                        </p>
                     </div>
                 </div>
             </div>

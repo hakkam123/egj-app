@@ -5,9 +5,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>{{ config('app.name', 'Laravel') }}</title>
-        <link rel="icon" type="image/png" href="{{ asset('images/egj-png.png') }}">
-        <link rel="shortcut icon" type="image/png" href="{{ asset('images/egj-png.png') }}">
-        <link rel="apple-touch-icon" href="{{ asset('images/egj-png.png') }}">
+        <link rel="icon" type="image/png" href="{{ asset('images/JAGO-logo.png') }}">
+        <link rel="shortcut icon" type="image/png" href="{{ asset('images/JAGO-logo.png') }}">
+        <link rel="apple-touch-icon" href="{{ asset('images/JAGO-logo.png') }}">
 
         @fonts
 
