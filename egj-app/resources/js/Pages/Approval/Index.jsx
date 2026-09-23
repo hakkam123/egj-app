@@ -2,7 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import MainLayout from '../../Layouts/MainLayout';
 import PageHeader from '../../Components/PageHeader';
 import { useState, useEffect, useRef } from 'react';
-import { Eye, Search, RotateCcw, X } from 'lucide-react';
+import { Eye, Search, RotateCcw, X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ApprovalIndex({ journals, filters, users }) {
@@ -16,6 +16,8 @@ export default function ApprovalIndex({ journals, filters, users }) {
     // Modal state for Approve & Reject without using window.confirm/prompt/alert
     const [approveModal, setApproveModal] = useState({ open: false, journalId: null });
     const [rejectModal, setRejectModal] = useState({ open: false, journalId: null, notes: '', error: '' });
+    const [isApproving, setIsApproving] = useState(false);
+    const [isRejecting, setIsRejecting] = useState(false);
 
     const isInitialMount = useRef(true);
 
@@ -113,26 +115,38 @@ export default function ApprovalIndex({ journals, filters, users }) {
     };
 
     const confirmApprove = () => {
-        if (!approveModal.journalId) return;
+        if (!approveModal.journalId || isApproving) return;
+        setIsApproving(true);
         markNotifRead(approveModal.journalId);
         router.post(`/approval/${approveModal.journalId}/approve`, { notes: 'Approved from list' }, {
             preserveScroll: true,
             onSuccess: () => setApproveModal({ open: false, journalId: null }),
+            onFinish: () => setIsApproving(false),
+            onError: (errors) => {
+                const msg = Object.values(errors)[0] || 'Gagal menyetujui dokumen.';
+                toast.error(msg);
+            }
         });
     };
 
     const confirmReject = () => {
-        if (!rejectModal.journalId) return;
+        if (!rejectModal.journalId || isRejecting) return;
         if (!rejectModal.notes || rejectModal.notes.trim().length < 5) {
             setRejectModal(prev => ({ ...prev, error: 'Alasan penolakan minimal 5 karakter.' }));
             toast.error('Alasan penolakan minimal 5 karakter.');
             return;
         }
 
+        setIsRejecting(true);
         markNotifRead(rejectModal.journalId);
         router.post(`/approval/${rejectModal.journalId}/reject`, { notes: rejectModal.notes }, {
             preserveScroll: true,
             onSuccess: () => setRejectModal({ open: false, journalId: null, notes: '', error: '' }),
+            onFinish: () => setIsRejecting(false),
+            onError: (errors) => {
+                const msg = Object.values(errors)[0] || 'Gagal menolak dokumen.';
+                toast.error(msg);
+            }
         });
     };
 
@@ -409,16 +423,25 @@ export default function ApprovalIndex({ journals, filters, users }) {
                         </p>
                         <div className="flex justify-end gap-3">
                             <button
-                                onClick={() => setApproveModal({ open: false, journalId: null })}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                                onClick={() => !isApproving && setApproveModal({ open: false, journalId: null })}
+                                disabled={isApproving}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 Batal
                             </button>
                             <button
                                 onClick={confirmApprove}
-                                className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors"
+                                disabled={isApproving}
+                                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-75 disabled:cursor-not-allowed transition-colors"
                             >
-                                Ya, Disetujui
+                                {isApproving ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>Memproses...</span>
+                                    </>
+                                ) : (
+                                    'Ya, Disetujui'
+                                )}
                             </button>
                         </div>
                     </div>
@@ -430,13 +453,13 @@ export default function ApprovalIndex({ journals, filters, users }) {
                 <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
                     <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl relative animate-in fade-in zoom-in duration-150">
                         <button
-                            onClick={() => setRejectModal({ open: false, journalId: null, notes: '', error: '' })}
+                            onClick={() => !isRejecting && setRejectModal({ open: false, journalId: null, notes: '', error: '' })}
+                            disabled={isRejecting}
                             className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
                         >
                             <X size={18} />
                         </button>
                         <div className="flex items-center gap-3 text-red-600 mb-3">
-                            
                             <h3 className="text-lg font-bold text-gray-800">Penolakan Dokumen</h3>
                         </div>
                         <p className="text-sm text-gray-600 mb-4">
@@ -445,9 +468,10 @@ export default function ApprovalIndex({ journals, filters, users }) {
                         <textarea
                             value={rejectModal.notes}
                             onChange={e => setRejectModal(prev => ({ ...prev, notes: e.target.value, error: '' }))}
+                            disabled={isRejecting}
                             placeholder="Alasan penolakan..."
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 mb-1"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 mb-1 disabled:bg-gray-100 disabled:cursor-not-allowed"
                         />
                         <p className="mb-2 text-right text-[11px]" style={{ color: (rejectModal.notes?.length || 0) < 5 ? '#e05c5c' : 'var(--text-muted)' }}>
                             {rejectModal.notes?.length || 0} / 5 karakter minimum
@@ -457,16 +481,25 @@ export default function ApprovalIndex({ journals, filters, users }) {
                         )}
                         <div className="flex justify-end gap-3 mt-4">
                             <button
-                                onClick={() => setRejectModal({ open: false, journalId: null, notes: '', error: '' })}
-                                className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                                onClick={() => !isRejecting && setRejectModal({ open: false, journalId: null, notes: '', error: '' })}
+                                disabled={isRejecting}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 Batal
                             </button>
                             <button
                                 onClick={confirmReject}
-                                className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors"
+                                disabled={isRejecting}
+                                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 disabled:opacity-75 disabled:cursor-not-allowed transition-colors"
                             >
-                                Reject Dokumen
+                                {isRejecting ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>Menyimpan...</span>
+                                    </>
+                                ) : (
+                                    'Reject Dokumen'
+                                )}
                             </button>
                         </div>
                     </div>

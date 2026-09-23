@@ -1,167 +1,211 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Persetujuan General Journal — E-GJ</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Persetujuan General Journal — GJAS</title>
+    <!-- Google Fonts: Plus Jakarta Sans & Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap');
+        * {
+            font-family: 'Plus Jakarta Sans', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+        }
+        body, table, td, p, a, h1, h2, h3, span {
+            font-family: 'Plus Jakarta Sans', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
 </head>
-<body style="margin:0;padding:0;background:#f0f2f5;font-family:Arial,sans-serif;">
+<body style="margin:0;padding:0;background-color:#f4f6f9;font-family:'Plus Jakarta Sans','Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#334155;-webkit-font-smoothing:antialiased;">
 
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f2f5;padding:32px 16px;">
-<tr><td align="center">
-<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;border:0.5px solid #e0e0e0;">
-
-  <!-- Header navy -->
-  <tr>
-    <td style="background:#1a2540;padding:20px 28px;">
-      <table width="100%" cellpadding="0" cellspacing="0">
+    <!-- Main Outer Container -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f9;padding:40px 16px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
         <tr>
-          <td valign="middle">
-            <p style="margin:0;color:#ffffff;font-size:15px;font-weight:bold;letter-spacing:0.3px;">E-GJ</p>
-            <p style="margin:3px 0 0;color:rgba(255,255,255,0.45);font-size:11px;">Electronic General Journal Approval</p>
-          </td>
-          <td valign="middle" align="right">
-            <p style="margin:0;color:rgba(255,255,255,0.55);font-size:11px;">PT Astra Visteon Indonesia</p>
-          </td>
+            <td align="center">
+                
+                <!-- Main White Card -->
+                <table width="580" cellpadding="0" cellspacing="0" style="width:100%;max-width:580px;background-color:#ffffff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,0.06);border:1px solid #e2e8f0;overflow:hidden;text-align:left;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                    
+                    @if(isset($reminderNumber) && $reminderNumber > 0)
+                    <!-- Reminder Alert Header -->
+                    <tr>
+                        <td style="background-color:#fffbeb;border-bottom:1px solid #fef3c7;padding:12px 32px;text-align:center;">
+                            <span style="color:#b45309;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                ⏰ PENGINGAT APPROVAL #{{ $reminderNumber }} (Menunggu {{ $reminderNumber === 1 ? '3' : '5' }} Hari)
+                            </span>
+                        </td>
+                    </tr>
+                    @endif
+
+                    <!-- Card Body -->
+                    <tr>
+                        <td style="padding:44px 38px 38px 38px;">
+                            
+                            <!-- Main Title -->
+                            <h1 style="margin:0 0 18px 0;font-size:24px;font-weight:800;color:#1a2540;letter-spacing:-0.5px;text-align:center;font-family:'Plus Jakarta Sans','Poppins',sans-serif;line-height:1.3;">
+                                @if(isset($reminderNumber) && $reminderNumber > 0)
+                                    Persetujuan Diperlukan Segera
+                                @else
+                                    Persetujuan General Journal
+                                @endif
+                            </h1>
+
+                            <!-- Intro Paragraph -->
+                            <p style="margin:0 0 16px 0;font-size:14px;color:#475569;line-height:1.65;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                Yth. Bapak/Ibu <strong>{{ $approver->name }}</strong>,
+                            </p>
+                            <p style="margin:0 0 24px 0;font-size:14px;color:#475569;line-height:1.65;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                Dokumen General Journal berikut telah disetujui oleh <strong>Section Head</strong> dan saat ini menunggu persetujuan akhir dari Anda. File PDF lengkap telah dilampirkan pada email ini untuk ditinjau.
+                            </p>
+
+                            <!-- Document Details Box -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:28px;overflow:hidden;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                <tr>
+                                    <td style="padding:13px 18px;border-bottom:1px solid #e2e8f0;width:38%;color:#64748b;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                        No. Dokumen
+                                    </td>
+                                    <td style="padding:13px 18px;border-bottom:1px solid #e2e8f0;color:#1a2540;font-size:14px;font-weight:800;font-family:'Plus Jakarta Sans',monospace;">
+                                        {{ $journal->document_number }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:13px 18px;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                        Tanggal Journal
+                                    </td>
+                                    <td style="padding:13px 18px;border-bottom:1px solid #e2e8f0;color:#1e293b;font-size:13.5px;font-weight:600;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                        {{ $journal->journal_date->format('d M Y') }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:13px 18px;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                        Reference
+                                    </td>
+                                    <td style="padding:13px 18px;border-bottom:1px solid #e2e8f0;color:#1e293b;font-size:13.5px;font-weight:600;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                        {{ $journal->reference ?? '-' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:13px 18px;color:#64748b;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                        Diajukan Oleh
+                                    </td>
+                                    <td style="padding:13px 18px;color:#1e293b;font-size:13.5px;font-weight:600;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                        {{ $journal->requester->name }}
+                                    </td>
+                                </tr>
+                            </table>
+
+                            @if(isset($overLimitFiles) && count($overLimitFiles) > 0)
+                            <!-- Over Limit Attachments Warning -->
+                            <div style="background-color:#fffbeb;border:1px solid #fef3c7;border-radius:10px;padding:14px 18px;margin-bottom:28px;">
+                                <p style="margin:0 0 8px 0;font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.5px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                    📎 Dokumen Pendukung Tambahan (Unduh via Link):
+                                </p>
+                                @foreach($overLimitFiles as $file)
+                                <p style="margin:4px 0 0 0;font-size:12.5px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                    <a href="{{ route('files.download', $file->id) }}" style="color:#1a2540;font-weight:600;text-decoration:none;">
+                                        &darr; {{ $file->file_name }} <span style="color:#64748b;font-weight:normal;">({{ round($file->file_size / 1024 / 1024, 1) }} MB)</span>
+                                    </a>
+                                </p>
+                                @endforeach
+                            </div>
+                            @endif
+
+                            <!-- Action Buttons CTA -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 28px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                                            <tr>
+                                                <td style="padding-right:8px;">
+                                                    <a href="{{ $approveUrl }}" style="background-color:#1a2540;color:#ffffff;display:inline-block;padding:13px 32px;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;box-shadow:0 2px 6px rgba(26,37,64,0.25);text-align:center;font-family:'Plus Jakarta Sans','Poppins',sans-serif;letter-spacing:-0.2px;">
+                                                        Setujui Dokumen
+                                                    </a>
+                                                </td>
+                                                <td style="padding-left:8px;">
+                                                    <a href="{{ $rejectUrl }}" style="background-color:#ffffff;color:#dc2626;border:1.5px solid #dc2626;display:inline-block;padding:11.5px 28px;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;text-align:center;font-family:'Plus Jakarta Sans','Poppins',sans-serif;letter-spacing:-0.2px;">
+                                                        Tolak Dokumen
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Fallback Link Section -->
+                            <div style="border-top:1px solid #e2e8f0;padding-top:22px;margin-top:24px;">
+                                <p style="margin:0 0 6px 0;font-size:12px;color:#64748b;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                    Jika tombol di atas tidak berfungsi, salin dan tempel tautan persetujuan berikut ke browser Anda:
+                                </p>
+                                <p style="margin:0 0 16px 0;font-size:12px;word-break:break-all;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                    <a href="{{ $approveUrl }}" style="color:#2563eb;text-decoration:none;font-weight:500;">{{ $approveUrl }}</a>
+                                </p>
+
+                                <p style="margin:0 0 6px 0;font-size:12px;color:#64748b;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                    Tautan penolakan dokumen:
+                                </p>
+                                <p style="margin:0 0 20px 0;font-size:12px;word-break:break-all;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                    <a href="{{ $rejectUrl }}" style="color:#dc2626;text-decoration:none;font-weight:500;">{{ $rejectUrl }}</a>
+                                </p>
+
+                                <p style="margin:0 0 4px 0;font-size:13px;color:#64748b;line-height:1.55;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                    Jika Anda memiliki pertanyaan mengenai dokumen ini, silakan hubungi pengaju atau tim finance terkait.
+                                </p>
+                                <p style="margin:16px 0 0 0;font-size:13px;color:#475569;line-height:1.55;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                    Salam hormat,<br>
+                                    <strong style="color:#1a2540;">Tim GJAS &mdash; PT Astra Visteon Indonesia</strong>
+                                </p>
+                            </div>
+
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Secondary Soft Highlight Box ("Need more help?") -->
+                <table width="580" cellpadding="0" cellspacing="0" style="width:100%;max-width:580px;background-color:#eef3fa;border:1px solid #d0ddeb;border-radius:10px;margin-top:20px;text-align:center;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                    <tr>
+                        <td style="padding:20px 24px;">
+                            <p style="margin:0 0 4px 0;font-size:13px;font-weight:700;color:#1a2540;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                Butuh Bantuan atau Akses Dokumen Lainnya?
+                            </p>
+                            <p style="margin:0;font-size:12.5px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                <a href="{{ url('/monitoring') }}" style="color:#2563eb;font-weight:600;text-decoration:none;">
+                                    Buka Portal Monitoring Dokumen &rarr;
+                                </a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Footer Section -->
+                <table width="580" cellpadding="0" cellspacing="0" style="width:100%;max-width:580px;margin-top:24px;text-align:center;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                    <tr>
+                        <td style="padding:0 20px;">
+                            <!-- Navigation links -->
+                            <p style="margin:0 0 12px 0;font-size:12px;font-weight:600;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                <a href="{{ url('/dashboard') }}" style="color:#475569;text-decoration:none;margin:0 8px;">Dashboard</a> &bull;
+                                <a href="{{ url('/monitoring') }}" style="color:#475569;text-decoration:none;margin:0 8px;">Monitoring</a> &bull;
+                                <a href="{{ url('/tutorial') }}" style="color:#475569;text-decoration:none;margin:0 8px;">Panduan</a>
+                            </p>
+                            
+                            <p style="margin:0 0 8px 0;font-size:11.5px;color:#94a3b8;line-height:1.55;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                Email ini dikirim otomatis oleh Electronic General Journal Approval System (GJAS). Tautan approval berlaku 48 jam.
+                            </p>
+                            
+                            <p style="margin:0;font-size:11.5px;color:#94a3b8;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                &copy; {{ date('Y') }} PT Astra Visteon Indonesia. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
         </tr>
-      </table>
-    </td>
-  </tr>
-
-  <!-- Label persetujuan -->
-  <tr>
-    <td style="background:#f5f6f8;padding:10px 28px;border-bottom:0.5px solid #e8eaed;">
-      <p style="margin:0;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#9aa0a6;">
-        Permintaan Persetujuan
-      </p>
-    </td>
-  </tr>
-
-  @if(isset($reminderNumber) && $reminderNumber > 0)
-  <!-- Banner Reminder -->
-  <tr>
-    <td style="background:#fff8e1;padding:10px 28px;border-bottom:0.5px solid #e8eaed;">
-      <p style="margin:0;font-size:12px;color:#8a6500;line-height:1.5;">
-        ⏰ <strong>Pengingat #{{ $reminderNumber }}</strong> — Dokumen ini belum mendapat persetujuan Anda
-        sejak {{ $reminderNumber === 1 ? '3' : '5' }} hari yang lalu.
-      </p>
-    </td>
-  </tr>
-  @endif
-
-  <!-- Body -->
-  <tr>
-    <td style="padding:24px 28px 20px;">
-
-      <p style="margin:0 0 16px;font-size:13px;color:#5f6368;line-height:1.7;">
-        Yth. <strong style="color:#1a1a2e;">{{ $approver->name }}</strong>,<br>
-        Dokumen General Journal berikut telah disetujui oleh Section Head dan memerlukan persetujuan akhir Anda.
-        File PDF terlampir pada email ini untuk ditinjau sebelum mengambil keputusan.
-      </p>
-
-      <!-- Info dokumen -->
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;border-radius:8px;overflow:hidden;border:0.5px solid #e8eaed;">
-        <tr>
-          <td style="background:#f5f6f8;padding:8px 14px 6px;">
-            <p style="margin:0;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;color:#9aa0a6;">No. Dokumen</p>
-            <p style="margin:2px 0 0;font-size:14px;font-weight:bold;color:#1a1a2e;font-family:monospace;">{{ $journal->document_number }}</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="background:#ffffff;padding:8px 14px 6px;border-top:0.5px solid #e8eaed;">
-            <p style="margin:0;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;color:#9aa0a6;">Tanggal Journal</p>
-            <p style="margin:2px 0 0;font-size:13px;color:#1a1a2e;">{{ $journal->journal_date->format('d M Y') }}</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="background:#f5f6f8;padding:8px 14px 6px;border-top:0.5px solid #e8eaed;">
-            <p style="margin:0;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;color:#9aa0a6;">Reference</p>
-            <p style="margin:2px 0 0;font-size:13px;color:#1a1a2e;">{{ $journal->reference ?? '-' }}</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="background:#ffffff;padding:8px 14px 10px;border-top:0.5px solid #e8eaed;">
-            <p style="margin:0;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;color:#9aa0a6;">Diajukan Oleh</p>
-            <p style="margin:2px 0 0;font-size:13px;color:#1a1a2e;">{{ $journal->requester->name }}</p>
-          </td>
-        </tr>
-      </table>
-
-      @if(isset($overLimitFiles) && count($overLimitFiles) > 0)
-      <!-- Supporting Documents over limit -->
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;border-radius:8px;overflow:hidden;border:0.5px solid #e8eaed;">
-        <tr>
-          <td style="background:#fff8e1;padding:8px 14px;border-bottom:0.5px solid #e8eaed;">
-            <p style="margin:0;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px;color:#8a6500;">
-              Supporting Documents (Terlalu besar untuk dilampirkan)
-            </p>
-          </td>
-        </tr>
-        @foreach($overLimitFiles as $file)
-        <tr>
-          <td style="background:#ffffff;padding:8px 14px;border-top:0.5px solid #e8eaed;">
-            <a href="{{ route('files.download', $file->id) }}"
-               style="font-size:13px;color:#1a2540;text-decoration:none;">
-              ↓ {{ $file->file_name }}
-              <span style="color:#9aa0a6;font-size:11px;">({{ round($file->file_size / 1024 / 1024, 1) }} MB)</span>
-            </a>
-          </td>
-        </tr>
-        @endforeach
-      </table>
-      @endif
-
-      <!-- Divider -->
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-        <tr><td style="border-top:0.5px solid #e8eaed;"></td></tr>
-      </table>
-
-      <!-- Tombol aksi -->
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
-        <tr>
-          <td width="50%" style="padding-right:6px;">
-            <a href="{{ $approveUrl }}"
-               style="display:block;background:#1a2540;color:#ffffff;text-decoration:none;text-align:center;padding:11px 16px;border-radius:7px;font-size:13px;font-weight:bold;">
-              Setujui
-            </a>
-          </td>
-          <td width="50%" style="padding-left:6px;">
-            <a href="{{ $rejectUrl }}"
-               style="display:block;background:#ffffff;color:#8b1f1f;text-decoration:none;text-align:center;padding:10px 16px;border-radius:7px;font-size:13px;font-weight:bold;border:1px solid #8b1f1f;">
-              Tolak
-            </a>
-          </td>
-        </tr>
-      </table>
-
-      <p style="margin:0;font-size:11px;color:#9aa0a6;text-align:center;line-height:1.6;">
-        Tombol di atas hanya berlaku <strong>sekali</strong> dan akan kedaluwarsa dalam <strong>48 jam</strong>.<br>
-        Jika Anda bukan penerima yang dimaksud, abaikan email ini.
-      </p>
-    </td>
-  </tr>
-
-  <!-- Footer -->
-  <tr>
-    <td style="background:#f5f6f8;padding:14px 28px;border-top:0.5px solid #e8eaed;">
-      <table width="100%" cellpadding="0" cellspacing="0">
-        <tr>
-          <td>
-            <p style="margin:0;font-size:11px;color:#9aa0a6;">
-              E-GJ System &mdash; PT Astra Visteon Indonesia
-            </p>
-          </td>
-          <td align="right">
-            <p style="margin:0;font-size:11px;color:#c5c8cc;">© {{ date('Y') }}</p>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-
-</table>
-</td></tr>
-</table>
+    </table>
 
 </body>
 </html>

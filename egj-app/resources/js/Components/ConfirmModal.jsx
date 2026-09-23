@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, CheckCircle2, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, X, Loader2 } from 'lucide-react';
 
 export default function ConfirmModal({ 
     open,
@@ -69,18 +69,27 @@ export default function ConfirmModal({
                     <button
                         type="button"
                         onClick={() => {
-                            if (onConfirm) onConfirm();
+                            if (onConfirm && !loading) onConfirm();
                         }}
                         disabled={loading}
-                        className={`px-4 py-2 text-xs font-semibold text-white rounded-lg transition-colors shadow-xs ${
+                        className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-white rounded-lg transition-colors shadow-xs ${
+                            loading ? 'cursor-not-allowed opacity-75' : ''
+                        } ${
                             isSuccessType 
-                                ? 'bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50' 
+                                ? 'bg-emerald-600 hover:bg-emerald-700' 
                                 : isDangerType 
-                                ? 'bg-red-600 hover:bg-red-700 disabled:opacity-50' 
-                                : 'bg-blue-600 hover:bg-blue-700 disabled:opacity-50'
+                                ? 'bg-red-600 hover:bg-red-700' 
+                                : 'bg-blue-600 hover:bg-blue-700'
                         }`}
                     >
-                        {loading ? 'Memproses...' : confirmText}
+                        {loading ? (
+                            <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Memproses...</span>
+                            </>
+                        ) : (
+                            confirmText
+                        )}
                     </button>
                 </div>
             </div>

@@ -14,7 +14,8 @@ import {
     ArrowLeft,
     CheckCircle2,
     AlertCircle,
-    Download
+    Download,
+    Loader2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { STATUS_COLORS } from '../../constants/statusColors';
@@ -196,14 +197,16 @@ export default function ApprovalShow({ journal }) {
                                         <button
                                             type="button"
                                             onClick={handleRejectClick}
-                                            className="flex-1 px-4 py-2.5 bg-[#fbeceb] text-[#b8433c] hover:bg-[#f8dedd] text-[13px] font-bold rounded-lg transition-all shadow-2xs cursor-pointer"
+                                            disabled={isApproving || isRejecting}
+                                            className="flex-1 px-4 py-2.5 bg-[#fbeceb] text-[#b8433c] hover:bg-[#f8dedd] disabled:opacity-50 disabled:cursor-not-allowed text-[13px] font-bold rounded-lg transition-all shadow-2xs cursor-pointer"
                                         >
                                             Tolak
                                         </button>
                                         <button
                                             type="button"
                                             onClick={handleApproveClick}
-                                            className="flex-1 px-4 py-2.5 bg-[#e6f2ef] text-[#2b6b5c] hover:bg-[#d8ece7] text-[13px] font-bold rounded-lg transition-all shadow-2xs cursor-pointer"
+                                            disabled={isApproving || isRejecting}
+                                            className="flex-1 px-4 py-2.5 bg-[#e6f2ef] text-[#2b6b5c] hover:bg-[#d8ece7] disabled:opacity-50 disabled:cursor-not-allowed text-[13px] font-bold rounded-lg transition-all shadow-2xs cursor-pointer"
                                         >
                                             Setujui
                                         </button>
@@ -393,9 +396,16 @@ export default function ApprovalShow({ journal }) {
                                 <button
                                     type="submit"
                                     disabled={isRejecting}
-                                    className="px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-lg transition-colors shadow-xs"
+                                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors shadow-xs"
                                 >
-                                    {isRejecting ? 'Menyimpan...' : 'Kirim Penolakan'}
+                                    {isRejecting ? (
+                                        <>
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            <span>Menyimpan...</span>
+                                        </>
+                                    ) : (
+                                        'Kirim Penolakan'
+                                    )}
                                 </button>
                             </div>
                         </form>
