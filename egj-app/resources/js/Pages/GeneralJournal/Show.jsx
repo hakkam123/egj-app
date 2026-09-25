@@ -178,20 +178,27 @@ export default function Show({ journal }) {
                     <div>
                         <Link
                             href="/monitoring"
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors mb-2"
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors mb-3"
                         >
-                            <ArrowLeft size={14} /> Back to Monitoring
+                            <ArrowLeft size={14} strokeWidth={1.8} />
+                            Back to Monitoring
                         </Link>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-mono">
-                                {journal.document_number}
-                            </h1>
-                            {renderStatusBadge(journal.status)}
+
+                        <div>
+                            <div className="flex items-center gap-2.5">
+                                <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight font-mono">
+                                    {journal.document_number}
+                                </h1>
+
+                                {renderStatusBadge(journal.status)}
+                            </div>
+
+                            <p className="text-xs text-[var(--text-secondary)] mt-1.5">
+                                General Journal document details, approval chain, and live stamped PDF preview.
+                            </p>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                            General Journal document details, approval chain, and live stamped PDF preview.
-                        </p>
                     </div>
+
 
                     <div className="flex items-center gap-2">
                         {/* Draft actions */}
@@ -243,7 +250,7 @@ export default function Show({ journal }) {
                         <div className="flex-1">
                             <h4 className="text-sm font-bold text-amber-900">Revision Requested by Approver</h4>
                             <p className="text-xs text-amber-800/90 mt-1">
-                                This document requires revision before it can proceed in the approval chain. Click &quot;Revise & Resubmit&quot; to upload updated files.
+                                This document requires revision before it can proceed in the approval chain. Click &quot;Revise&quot; to upload updated files.
                             </p>
                         </div>
                     </div>

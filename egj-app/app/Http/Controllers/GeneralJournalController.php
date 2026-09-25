@@ -390,7 +390,7 @@ class GeneralJournalController extends Controller
                 'last_updated_at' => now(),
             ]);
 
-            $this->setupApprovalChainAndNotify($journal, $user, $sectionHead, $deptHead);
+            $this->setupApprovalChainAndNotify($journal, $journal->requester ?? $user, $sectionHead, $deptHead);
         });
 
         return redirect()->route('monitoring.index')
@@ -647,7 +647,7 @@ class GeneralJournalController extends Controller
 
             // Reset approval chain
             $journal->approvals()->delete();
-            $this->setupApprovalChainAndNotify($journal, $user, $sectionHead, $deptHead, true);
+            $this->setupApprovalChainAndNotify($journal, $journal->requester ?? $user, $sectionHead, $deptHead, true);
         });
 
         return redirect()->route('monitoring.index')
@@ -792,15 +792,17 @@ class GeneralJournalController extends Controller
                 $this->sendApprovalEmail($journal, $sectionHead);
             }
         } elseif ($user->hasRole('Section Head')) {
-            // Superior also auto-approved
+            $superiorApprovedAt = Carbon::parse($journal->journal_date)->setTimeFrom(now());
+
+            // Superior also auto-approved with date matching journal_date
             GeneralJournalApproval::create([
                 'general_journal_id' => $journal->id,
                 'approval_level' => 'superior',
                 'assigned_user_id' => $user->id,
                 'approved_by_user_id' => $user->id,
                 'status' => 'Approved',
-                'approved_at' => now(),
-                'notes' => 'Approved ' . now()->format('Y-m-d') . ' ' . $user->name,
+                'approved_at' => $superiorApprovedAt,
+                'notes' => 'Approved ' . Carbon::parse($journal->journal_date)->format('Y-m-d') . ' ' . $user->name,
             ]);
 
             // Superior of Superior: Dept/Div Head

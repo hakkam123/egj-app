@@ -1,4 +1,4 @@
-import { Head, useForm, Link, router } from '@inertiajs/react';
+import { Head, useForm, Link, router, usePage } from '@inertiajs/react';
 import {
     FileText,
     UploadCloud,
@@ -22,6 +22,7 @@ import { useState, useRef } from 'react';
 import toast from 'react-hot-toast';
 
 export default function Edit({ journal }) {
+    const { auth } = usePage().props;
     const isRevised = journal.status === 'Revised';
     const isDraft = journal.status === 'Draft';
 
@@ -238,18 +239,7 @@ export default function Edit({ journal }) {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        {isRevised && (
-                            <button
-                                type="button"
-                                onClick={() => setSelfRejectModalOpen(true)}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors cursor-pointer"
-                            >
-                                <XCircle size={14} />
-                                Self-Reject (Cancel Document)
-                            </button>
-                        )}
-                    </div>
+
                 </div>
 
                 {/* Validation Error Banner */}
@@ -353,7 +343,7 @@ export default function Edit({ journal }) {
                                         />
                                         <p className="text-[11px] text-blue-600/90 mt-1 flex items-center gap-1">
                                             <CheckCircle2 size={12} className="shrink-0" />
-                                            Official Accounting approval stamp date: <strong className="font-mono">{data.journal_date}</strong>
+                                            Official {auth?.user?.role === 'Section Head' ? 'Accounting & Superior' : 'Accounting'} approval stamp date: <strong className="font-mono">{data.journal_date}</strong>
                                         </p>
                                         {mergedErrors.journal_date && (
                                             <p className="mt-1 text-xs text-red-500 font-medium flex items-center gap-1">
@@ -432,11 +422,11 @@ export default function Edit({ journal }) {
                                                 type="button"
                                                 disabled={processing}
                                                 onClick={() => setSelfRejectModalOpen(true)}
-                                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition-colors cursor-pointer"
+                                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
                                             >
-                                                <XCircle size={15} />
-                                                Self-Reject
+                                                Reject
                                             </button>
+
 
                                             <button
                                                 type="button"

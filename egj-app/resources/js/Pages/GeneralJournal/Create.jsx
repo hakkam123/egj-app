@@ -1,4 +1,4 @@
-import { Head, useForm, Link } from '@inertiajs/react';
+import { Head, useForm, Link, usePage } from '@inertiajs/react';
 import {
     FileText,
     UploadCloud,
@@ -21,6 +21,7 @@ import { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
 export default function Create() {
+    const { auth } = usePage().props;
     // Default today's date formatted YYYY-MM-DD
     const today = new Date().toISOString().split('T')[0];
 
@@ -253,7 +254,7 @@ export default function Create() {
                                         </div>
                                         <p className="text-[11px] text-blue-600/90 mt-1 flex items-center gap-1">
                                             <CheckCircle2 size={12} className="shrink-0" />
-                                            This date will automatically be registered as the official approval date on the Accounting stamp.
+                                            This date will automatically be registered as the official approval date on the {auth?.user?.role === 'Section Head' ? 'Accounting & Superior' : 'Accounting'} stamp.
                                         </p>
                                         {mergedErrors.journal_date && (
                                             <p className="mt-1 text-xs text-red-500 font-medium flex items-center gap-1">
