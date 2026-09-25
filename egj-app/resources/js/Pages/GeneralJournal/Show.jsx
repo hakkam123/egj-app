@@ -309,8 +309,8 @@ export default function Show({ journal }) {
                             {/* Approver Actions Panel */}
                             {isCurrentApprover && (
                                 <div className="pt-4 border-t border-slate-100 space-y-2">
-                                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Your Approval Action</p>
-                                    <div className="flex gap-2.5">
+                                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Approval Decision</p>
+                                    <div className="flex gap-2">
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -318,19 +318,23 @@ export default function Show({ journal }) {
                                                 setReviseError('');
                                                 setReviseModalOpen(true);
                                             }}
-                                            className="flex-1 px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold rounded-xl transition-all shadow-2xs cursor-pointer"
+                                            disabled={isApproving || isRevising}
+                                            className="flex-1 px-4 py-2.5 bg-[var(--card-bg)] hover:bg-[var(--surface-muted)] text-[var(--text-primary)] border border-[var(--border)] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                                         >
-                                            Request Revision
+                                            Revision
                                         </button>
 
                                         <button
                                             type="button"
                                             onClick={() => setApproveModalOpen(true)}
-                                            className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-600/20 cursor-pointer"
+                                            disabled={isApproving || isRevising}
+                                            className="flex-1 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                                         >
-                                            Approve Document
+                                            Approve
                                         </button>
                                     </div>
+
+
                                 </div>
                             )}
                         </div>
@@ -539,7 +543,6 @@ export default function Show({ journal }) {
                     >
                         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                                <AlertTriangle className="text-amber-500" size={20} />
                                 Request Revision
                             </h3>
                             <button
@@ -597,7 +600,7 @@ export default function Show({ journal }) {
                                             Sending...
                                         </>
                                     ) : (
-                                        'Send Revision Request'
+                                        'Send Revision'
                                     )}
                                 </button>
                             </div>

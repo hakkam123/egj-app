@@ -147,17 +147,6 @@
 
                             <!-- Fallback Link Section -->
                             <div style="border-top:1px solid #e2e8f0;padding-top:22px;margin-top:24px;">
-                                <p style="margin:0 0 6px 0;font-size:12px;color:#64748b;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                    If the buttons above do not work, copy and paste the respective link into your browser:
-                                </p>
-                                <p style="margin:0 0 16px 0;font-size:12px;word-break:break-all;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                    Approval link: <a href="{{ $approveUrl }}" style="color:#2563eb;text-decoration:none;font-weight:500;">{{ $approveUrl }}</a>
-                                </p>
-
-                                <p style="margin:0 0 20px 0;font-size:12px;word-break:break-all;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                    Revision link: <a href="{{ $rejectUrl }}" style="color:#d97706;text-decoration:none;font-weight:500;">{{ $rejectUrl }}</a>
-                                </p>
-
                                 <p style="margin:0 0 4px 0;font-size:13px;color:#64748b;line-height:1.55;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                     If you have questions regarding this document, please contact the requester or finance team.
                                 </p>
@@ -180,7 +169,7 @@
                             </p>
                             <p style="margin:0;font-size:12.5px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                 <a href="{{ url('/monitoring') }}" style="color:#2563eb;font-weight:600;text-decoration:none;">
-                                    Open Document Monitoring Portal &rarr;
+                                    Open Document Monitoring Portal
                                 </a>
                             </p>
                         </td>
@@ -191,12 +180,6 @@
                 <table width="580" cellpadding="0" cellspacing="0" style="width:100%;max-width:580px;margin-top:24px;text-align:center;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                     <tr>
                         <td style="padding:0 20px;">
-                            <!-- Navigation links -->
-                            <p style="margin:0 0 12px 0;font-size:12px;font-weight:600;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                <a href="{{ url('/dashboard') }}" style="color:#475569;text-decoration:none;margin:0 8px;">Dashboard</a> &bull;
-                                <a href="{{ url('/monitoring') }}" style="color:#475569;text-decoration:none;margin:0 8px;">Monitoring</a> &bull;
-                                <a href="{{ url('/tutorial') }}" style="color:#475569;text-decoration:none;margin:0 8px;">User Guide</a>
-                            </p>
                             
                             <p style="margin:0 0 8px 0;font-size:11.5px;color:#94a3b8;line-height:1.55;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                 This email was sent automatically by Journal Approval General Operations (JAGO). Approval tokens are valid during the active review period.

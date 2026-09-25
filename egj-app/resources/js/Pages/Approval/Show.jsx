@@ -183,7 +183,7 @@ export default function ApprovalShow({ journal }) {
                             {isCurrentApprover && (
                                 <div className="mt-5 pt-4 border-t border-[var(--border)] space-y-2">
                                     <p className="text-[11px] font-medium text-[var(--text-secondary)]">
-                                        Your Approval Decision
+                                        Approval Decision
                                     </p>
 
                                     <div className="flex gap-2">
