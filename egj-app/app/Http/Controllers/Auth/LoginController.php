@@ -22,20 +22,32 @@ class LoginController extends Controller
      */
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
+        $request->validate([
+            'npk' => ['required', 'string'],
+            'password' => ['required', 'string'],
+        ], [
+            'npk.required' => 'NPK wajib diisi.',
+            'password.required' => 'Password wajib diisi.',
         ]);
 
-        if (Auth::attempt(array_merge($credentials, ['is_active' => true]))) {
+        $input = trim($request->input('npk'));
+        $fieldType = filter_var($input, FILTER_VALIDATE_EMAIL) ? 'email' : 'npk';
+
+        $credentials = [
+            $fieldType => $input,
+            'password' => $request->input('password'),
+            'is_active' => true,
+        ];
+
+        if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
             return redirect()->intended('/dashboard');
         }
 
         return back()->withErrors([
-            'email' => 'Email atau password salah, atau akun tidak aktif.',
-        ])->onlyInput('email');
+            'npk' => 'NPK atau password salah, atau akun tidak aktif.',
+        ])->onlyInput('npk');
     }
 
     /**

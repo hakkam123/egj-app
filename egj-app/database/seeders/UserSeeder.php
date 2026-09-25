@@ -42,7 +42,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Ahmad Hidayat',
-                'email' => 'ahmad.hidayat@astra-visteon.com',
+                'email' => 'devhiraethtys@gmail.com',
                 'npk' => '10004',
                 'password' => 'password123',
                 'role' => 'Section Head',
@@ -62,7 +62,7 @@ class UserSeeder extends Seeder
 
         foreach ($users as $userData) {
             User::updateOrCreate(
-                ['email' => $userData['email']],
+                ['npk' => $userData['npk']],
                 $userData
             );
         }

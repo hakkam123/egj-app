@@ -4,7 +4,7 @@ import { User, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function Login() {
     const { data, setData, post, processing, errors } = useForm({
-        email: '',
+        npk: '',
         password: '',
     });
     const [showPassword, setShowPassword] = useState(false);
@@ -51,29 +51,29 @@ export default function Login() {
 
                         {/* Form */}
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* Email */}
+                            {/* NPK */}
                             <div>
-                                <label htmlFor="email" className={labelClass} style={labelStyle}>
-                                    Email Address <span style={{ color: '#e05c5c' }}>*</span>
+                                <label htmlFor="npk" className={labelClass} style={labelStyle}>
+                                    Employee ID (NPK) <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                                         <User size={15} style={{ color: 'var(--text-muted)' }} />
                                     </div>
                                     <input
-                                        id="email"
-                                        type="email"
-                                        value={data.email}
-                                        onChange={(e) => setData('email', e.target.value)}
+                                        id="npk"
+                                        type="text"
+                                        value={data.npk}
+                                        onChange={(e) => setData('npk', e.target.value)}
                                         className={`${inputClass} pl-10`}
                                         style={inputStyle}
-                                        placeholder="name@astra-visteon.com"
+                                        placeholder="e.g. 10004"
                                         required
                                         autoFocus
                                     />
                                 </div>
-                                {errors.email && (
-                                    <p className="mt-1.5 text-[12px]" style={{ color: '#e05c5c' }}>{errors.email}</p>
+                                {errors.npk && (
+                                    <p className="mt-1.5 text-[12px]" style={{ color: '#e05c5c' }}>{errors.npk}</p>
                                 )}
                             </div>
 

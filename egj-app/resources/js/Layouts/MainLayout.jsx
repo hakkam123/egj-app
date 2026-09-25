@@ -297,7 +297,7 @@ export default function MainLayout({ children, title }) {
                                             className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                                         >
                                             <BookOpen size={15} className="text-gray-500" />
-                                            User Manual / Guide
+                                            User Manual
                                         </Link>
                                         <div className="border-t border-gray-100 my-1"></div>
                                         <Link
