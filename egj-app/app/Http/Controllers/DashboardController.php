@@ -28,7 +28,9 @@ class DashboardController extends Controller
         if ($role === 'Staff') {
             $stats = [
                 'total' => GeneralJournal::where('requested_by', $user->id)->count(),
+                'draft' => GeneralJournal::where('requested_by', $user->id)->where('status', 'Draft')->count(),
                 'waiting' => GeneralJournal::where('requested_by', $user->id)->where('status', 'Waiting Approval')->count(),
+                'revised' => GeneralJournal::where('requested_by', $user->id)->where('status', 'Revised')->count(),
                 'approved' => GeneralJournal::where('requested_by', $user->id)->where('status', 'Approved')->count(),
                 'rejected' => GeneralJournal::where('requested_by', $user->id)->where('status', 'Rejected')->count(),
             ];
@@ -41,8 +43,10 @@ class DashboardController extends Controller
         } elseif ($role === 'Section Head' || $role === 'Dept/Div Head') {
             $stats = [
                 'pending_approval' => GeneralJournal::where('current_assign_to', $user->id)->where('status', 'Waiting Approval')->count(),
+                'draft' => GeneralJournal::where('requested_by', $user->id)->where('status', 'Draft')->count(),
+                'revised' => GeneralJournal::where('requested_by', $user->id)->where('status', 'Revised')->count(),
                 'total_approved' => ApprovalHistory::where('actor_user_id', $user->id)->where('action', 'approve')->count(),
-                'total_rejected' => ApprovalHistory::where('actor_user_id', $user->id)->where('action', 'reject')->count(),
+                'total_revised' => ApprovalHistory::where('actor_user_id', $user->id)->where('action', 'revise')->count(),
                 'total_submitted_by_me' => GeneralJournal::where('requested_by', $user->id)->count(),
             ];
 
@@ -61,7 +65,9 @@ class DashboardController extends Controller
             $stats = [
                 'total_users' => User::count(),
                 'total_journals' => GeneralJournal::count(),
+                'draft' => GeneralJournal::where('status', 'Draft')->count(),
                 'waiting' => GeneralJournal::where('status', 'Waiting Approval')->count(),
+                'revised' => GeneralJournal::where('status', 'Revised')->count(),
                 'approved' => GeneralJournal::where('status', 'Approved')->count(),
                 'rejected' => GeneralJournal::where('status', 'Rejected')->count(),
             ];
@@ -75,7 +81,7 @@ class DashboardController extends Controller
                 ->where('status', 'Waiting Approval');
         }
 
-        // Calculate Action Required Documents (Waiting >= thresholdDays, filtered directly in SQL)
+        // Calculate Action Required Documents (Waiting >= thresholdDays)
         $actionRequiredDocs = [];
         if ($actionQuery) {
             $thresholdDate = now()->subDays($thresholdDays);
@@ -91,7 +97,7 @@ class DashboardController extends Controller
                 ->orderBy('submitted_at', 'asc')
                 ->limit(20)
                 ->get()
-                ->map(function ($journal) use ($thresholdDays) {
+                ->map(function ($journal) {
                     $submittedDate = $journal->submitted_at ?? $journal->created_at ?? $journal->journal_date;
                     $daysWaiting = $submittedDate ? (int) floor(now()->floatDiffInDays($submittedDate)) : 0;
 

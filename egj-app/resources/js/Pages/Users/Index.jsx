@@ -161,10 +161,10 @@ export default function UsersIndex({ users, filters }) {
                 preserveScroll: true,
                 onSuccess: () => {
                     setShowModal(false);
-                    toast.success('Data user berhasil diperbarui.');
+                    toast.success('User updated successfully.');
                 },
                 onError: () => {
-                    toast.error('Gagal memperbarui data user. Periksa kembali form isian.');
+                    toast.error('Failed to update user. Please check form errors.');
                 }
             });
         } else {
@@ -173,10 +173,10 @@ export default function UsersIndex({ users, filters }) {
                 onSuccess: () => {
                     setShowModal(false);
                     userForm.reset();
-                    toast.success('User baru berhasil ditambahkan.');
+                    toast.success('New user created successfully.');
                 },
                 onError: () => {
-                    toast.error('Gagal menambahkan user baru. Periksa kembali form isian.');
+                    toast.error('Failed to create user. Please check form errors.');
                 }
             });
         }
@@ -196,10 +196,10 @@ export default function UsersIndex({ users, filters }) {
             onSuccess: () => {
                 setShowDeleteModal(false);
                 setUserToDelete(null);
-                toast.success('User berhasil dinonaktifkan.');
+                toast.success('User deactivated successfully.');
             },
             onError: () => {
-                toast.error('Gagal menonaktifkan user.');
+                toast.error('Failed to deactivate user.');
             }
         });
     };
@@ -208,13 +208,13 @@ export default function UsersIndex({ users, filters }) {
     const labelClass = "block text-[11px] font-medium uppercase tracking-wide mb-1.5 text-[var(--text-muted)]";
 
     return (
-        <MainLayout title="Manajemen Pengguna">
+        <MainLayout title="User Management">
             <Head title="User Management" />
 
             <div className="space-y-6 max-w-7xl mx-auto">
                 <PageHeader
                     title="User Management"
-                    subtitle="Kelola data pengguna, peran akses, dan status akun"
+                    subtitle="Manage users, access roles, and account statuses"
                     actions={
                         <button
                             onClick={openCreateModal}
@@ -223,7 +223,7 @@ export default function UsersIndex({ users, filters }) {
                             onMouseEnter={e => e.currentTarget.style.background = '#243355'}
                             onMouseLeave={e => e.currentTarget.style.background = '#1a2540'}
                         >
-                            <Plus size={16} /> Tambah User
+                            <Plus size={16} /> Add User
                         </button>
                     }
                 />
@@ -232,9 +232,9 @@ export default function UsersIndex({ users, filters }) {
                 <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] overflow-hidden shadow-xs">
                     {/* Header bar */}
                     <div className="px-5 py-4 border-b-[0.5px] border-[var(--border)] flex items-center justify-between">
-                        <h3 className="text-base font-semibold text-[var(--text-primary)]">Daftar Pengguna Sistem</h3>
+                        <h3 className="text-base font-semibold text-[var(--text-primary)]">System Users</h3>
                         <span className="text-xs text-[var(--text-muted)]">
-                            Total: <strong className="text-[var(--text-primary)]">{users?.total || 0}</strong> user
+                            Total: <strong className="text-[var(--text-primary)]">{users?.total || 0}</strong> users
                         </span>
                     </div>
 
@@ -243,11 +243,11 @@ export default function UsersIndex({ users, filters }) {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
                             {/* Search */}
                             <div className="lg:col-span-2">
-                                <label className={labelClass}>Pencarian</label>
+                                <label className={labelClass}>Search</label>
                                 <div className="relative">
                                     <input
                                         type="text"
-                                        placeholder="Cari nama, email, atau NPK..."
+                                        placeholder="Search by name, email, or NPK..."
                                         value={searchQuery}
                                         onChange={e => setSearchQuery(e.target.value)}
                                         className="w-full pl-9 pr-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
@@ -264,7 +264,7 @@ export default function UsersIndex({ users, filters }) {
                                     onChange={handleRoleChange}
                                     className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                                 >
-                                    <option value="">Semua Role</option>
+                                    <option value="">All Roles</option>
                                     <option value="Staff">Staff</option>
                                     <option value="Section Head">Section Head</option>
                                     <option value="Dept/Div Head">Dept/Div Head</option>
@@ -274,15 +274,15 @@ export default function UsersIndex({ users, filters }) {
 
                             {/* Status Filter */}
                             <div>
-                                <label className={labelClass}>Status Akun</label>
+                                <label className={labelClass}>Account Status</label>
                                 <select
                                     value={statusFilter}
                                     onChange={handleStatusChange}
                                     className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                                 >
-                                    <option value="">Semua Status</option>
-                                    <option value="active">Aktif</option>
-                                    <option value="inactive">Nonaktif</option>
+                                    <option value="">All Statuses</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
                                 </select>
                             </div>
 
@@ -293,6 +293,7 @@ export default function UsersIndex({ users, filters }) {
                                     type="button"
                                     onClick={handleResetFilters}
                                     className="w-full px-3 py-2 bg-white border-[0.5px] border-[var(--border)] text-[var(--text-secondary)] text-[13px] font-semibold rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                                    title="Reset Filters"
                                 >
                                     <RotateCcw size={15} />
                                 </button>
@@ -305,19 +306,19 @@ export default function UsersIndex({ users, filters }) {
                         <table className="w-full text-left text-sm text-[var(--text-primary)]">
                             <thead className="bg-[#fafafa] border-b-[0.5px] border-[var(--border)] text-[11px] uppercase text-[var(--text-muted)] font-semibold">
                                 <tr>
-                                    <th className="px-5 py-3 whitespace-nowrap">Nama Pengguna</th>
+                                    <th className="px-5 py-3 whitespace-nowrap">User Name</th>
                                     <th className="px-5 py-3 whitespace-nowrap">Email</th>
                                     <th className="px-5 py-3 whitespace-nowrap">NPK</th>
                                     <th className="px-5 py-3 whitespace-nowrap">Role</th>
                                     <th className="px-5 py-3 whitespace-nowrap">Status</th>
-                                    <th className="px-5 py-3 text-center whitespace-nowrap">Aksi</th>
+                                    <th className="px-5 py-3 text-center whitespace-nowrap">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--border)]">
                                 {!users?.data?.length ? (
                                     <tr>
                                         <td colSpan={6} className="px-5 py-12 text-center text-[var(--text-muted)] text-[13px]">
-                                            Tidak ada data pengguna yang ditemukan.
+                                            No users found.
                                         </td>
                                     </tr>
                                 ) : (
@@ -325,9 +326,6 @@ export default function UsersIndex({ users, filters }) {
                                         <tr key={user.id} className="hover:bg-[#f9fafb] transition-colors">
                                             <td className="px-5 py-3 whitespace-nowrap">
                                                 <div className="flex items-center gap-2.5">
-                                                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-xs">
-                                                        {user.name?.charAt(0).toUpperCase()}
-                                                    </div>
                                                     <div>
                                                         <p className="font-semibold text-[13px] text-[var(--text-primary)]">{user.name}</p>
                                                     </div>
@@ -354,11 +352,11 @@ export default function UsersIndex({ users, filters }) {
                                             <td className="px-5 py-3 whitespace-nowrap">
                                                 {user.is_active ? (
                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#e6f2ef] text-[#2b6b5c]">
-                                                        Aktif
+                                                        Active
                                                     </span>
                                                 ) : (
                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#f1f5f9] text-[#475569]">
-                                                        Nonaktif
+                                                        Inactive
                                                     </span>
                                                 )}
                                             </td>
@@ -375,7 +373,7 @@ export default function UsersIndex({ users, filters }) {
                                                         <button
                                                             onClick={() => handleDeleteClick(user)}
                                                             className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
-                                                            title="Nonaktifkan User"
+                                                            title="Deactivate User"
                                                         >
                                                             <Trash2 size={14} />
                                                         </button>
@@ -393,7 +391,7 @@ export default function UsersIndex({ users, filters }) {
                     <div className="px-5 py-3 border-t-[0.5px] border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                             <div className="flex items-center gap-2">
-                                <span className="text-[12px] text-[var(--text-secondary)]">Tampilkan</span>
+                                <span className="text-[12px] text-[var(--text-secondary)]">Show</span>
                                 <select
                                     value={perPage}
                                     onChange={handlePerPageChange}
@@ -404,11 +402,11 @@ export default function UsersIndex({ users, filters }) {
                                     <option value="50">50</option>
                                     <option value="100">100</option>
                                 </select>
-                                <span className="text-[12px] text-[var(--text-secondary)]">data per halaman</span>
+                                <span className="text-[12px] text-[var(--text-secondary)]">entries</span>
                             </div>
                             {users?.from && (
                                 <p className="text-[12px] text-[var(--text-secondary)]">
-                                    Menampilkan <span className="font-medium text-[var(--text-primary)]">{users.from}</span> - <span className="font-medium text-[var(--text-primary)]">{users.to}</span> dari <span className="font-medium text-[var(--text-primary)]">{users.total}</span> user
+                                    Showing <span className="font-medium text-[var(--text-primary)]">{users.from}</span> to <span className="font-medium text-[var(--text-primary)]">{users.to}</span> of <span className="font-medium text-[var(--text-primary)]">{users.total}</span> users
                                 </p>
                             )}
                         </div>
@@ -418,13 +416,12 @@ export default function UsersIndex({ users, filters }) {
                                     <Link
                                         key={i}
                                         href={link.url || '#'}
-                                        className={`px-3 py-1.5 text-[12px] rounded-md transition-colors ${
-                                            link.active
+                                        className={`px-3 py-1.5 text-[12px] rounded-md transition-colors ${link.active
                                                 ? 'bg-blue-600 text-white font-medium'
                                                 : link.url
                                                     ? 'text-[var(--text-secondary)] hover:bg-gray-100'
                                                     : 'text-gray-300 cursor-not-allowed'
-                                        }`}
+                                            }`}
                                         dangerouslySetInnerHTML={{ __html: link.label }}
                                         preserveState
                                     />
@@ -448,10 +445,10 @@ export default function UsersIndex({ users, filters }) {
                         <div className="flex items-center justify-between px-6 py-4 border-b-[0.5px] border-[var(--border)] bg-gray-50/50">
                             <div>
                                 <h3 className="text-sm font-bold text-[var(--text-primary)]">
-                                    {isEditing ? 'Edit Data Pengguna' : 'Tambah Pengguna Baru'}
+                                    {isEditing ? 'Edit User' : 'Add New User'}
                                 </h3>
                                 <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                                    {isEditing ? 'Perbarui informasi profil, NPK, peran, atau kata sandi pengguna' : 'Lengkapi informasi pengguna baru yang akan didaftarkan ke sistem'}
+                                    {isEditing ? 'Update profile, role, NPK, or account password' : 'Fill in the information for the new user account'}
                                 </p>
                             </div>
                             <button
@@ -469,14 +466,14 @@ export default function UsersIndex({ users, filters }) {
                                 {/* Name */}
                                 <div>
                                     <label className={labelClass}>
-                                        Nama Lengkap <span style={{ color: '#e05c5c' }}>*</span>
+                                        Full Name <span style={{ color: '#e05c5c' }}>*</span>
                                     </label>
                                     <input
                                         type="text"
                                         value={userForm.data.name}
                                         onChange={e => userForm.setData('name', e.target.value)}
                                         className={inputClass}
-                                        placeholder="Nama lengkap user"
+                                        placeholder="Full name"
                                         required
                                     />
                                     {userForm.errors.name && (
@@ -487,14 +484,14 @@ export default function UsersIndex({ users, filters }) {
                                 {/* Email */}
                                 <div>
                                     <label className={labelClass}>
-                                        Email <span style={{ color: '#e05c5c' }}>*</span>
+                                        Email Address <span style={{ color: '#e05c5c' }}>*</span>
                                     </label>
                                     <input
                                         type="email"
                                         value={userForm.data.email}
                                         onChange={e => userForm.setData('email', e.target.value)}
                                         className={inputClass}
-                                        placeholder="nama@astra-visteon.com"
+                                        placeholder="name@astra-visteon.com"
                                         required
                                     />
                                     {userForm.errors.email && (
@@ -504,13 +501,13 @@ export default function UsersIndex({ users, filters }) {
 
                                 {/* NPK */}
                                 <div>
-                                    <label className={labelClass}>NPK (Nomor Pokok Karyawan)</label>
+                                    <label className={labelClass}>Employee ID (NPK)</label>
                                     <input
                                         type="text"
                                         value={userForm.data.npk}
                                         onChange={e => userForm.setData('npk', e.target.value)}
                                         className={inputClass}
-                                        placeholder="Contoh: 12345 (Opsional)"
+                                        placeholder="e.g. 12345 (Optional)"
                                     />
                                     {userForm.errors.npk && (
                                         <p className="mt-1 text-[12px]" style={{ color: '#e05c5c' }}>{userForm.errors.npk}</p>
@@ -520,7 +517,7 @@ export default function UsersIndex({ users, filters }) {
                                 {/* Role */}
                                 <div>
                                     <label className={labelClass}>
-                                        Role / Peran <span style={{ color: '#e05c5c' }}>*</span>
+                                        Role <span style={{ color: '#e05c5c' }}>*</span>
                                     </label>
                                     <select
                                         value={userForm.data.role}
@@ -542,7 +539,7 @@ export default function UsersIndex({ users, filters }) {
                                 <div>
                                     <label className={labelClass}>
                                         {isEditing ? (
-                                            <>Password Baru <span className="text-gray-400 font-normal lowercase">(opsional)</span></>
+                                            <>New Password <span className="text-gray-400 font-normal lowercase">(optional)</span></>
                                         ) : (
                                             <>Password <span style={{ color: '#e05c5c' }}>*</span></>
                                         )}
@@ -552,12 +549,12 @@ export default function UsersIndex({ users, filters }) {
                                         value={userForm.data.password}
                                         onChange={e => userForm.setData('password', e.target.value)}
                                         className={inputClass}
-                                        placeholder={isEditing ? 'Kosongkan jika tidak diubah' : 'Minimal 8 karakter'}
+                                        placeholder={isEditing ? 'Leave empty if unchanged' : 'Min. 8 characters'}
                                         required={!isEditing}
                                     />
                                     {(!isEditing || Boolean(userForm.data.password?.length)) && (
                                         <p className="mt-1 text-right text-[11px]" style={{ color: (userForm.data.password?.length || 0) < 8 ? '#e05c5c' : 'var(--text-muted)' }}>
-                                            {userForm.data.password?.length || 0} / 8 karakter minimum
+                                            {userForm.data.password?.length || 0} / 8 minimum characters
                                         </p>
                                     )}
                                     {userForm.errors.password && (
@@ -569,9 +566,9 @@ export default function UsersIndex({ users, filters }) {
                                 <div>
                                     <label className={labelClass}>
                                         {isEditing ? (
-                                            <>Konfirmasi Password Baru <span className="text-gray-400 font-normal lowercase">(opsional)</span></>
+                                            <>Confirm New Password <span className="text-gray-400 font-normal lowercase">(optional)</span></>
                                         ) : (
-                                            <>Konfirmasi Password <span style={{ color: '#e05c5c' }}>*</span></>
+                                            <>Confirm Password <span style={{ color: '#e05c5c' }}>*</span></>
                                         )}
                                     </label>
                                     <input
@@ -579,13 +576,13 @@ export default function UsersIndex({ users, filters }) {
                                         value={userForm.data.password_confirmation}
                                         onChange={e => userForm.setData('password_confirmation', e.target.value)}
                                         className={inputClass}
-                                        placeholder="Ulangi password"
+                                        placeholder="Re-enter password"
                                         required={!isEditing && Boolean(userForm.data.password)}
                                     />
                                 </div>
                             </div>
 
-                            {/* Status Aktif & Default Approver */}
+                            {/* Active & Default Approver check */}
                             <div className="space-y-3 pt-3 border-t-[0.5px] border-[var(--border)]">
                                 <div className="flex items-center gap-3">
                                     <input
@@ -596,7 +593,7 @@ export default function UsersIndex({ users, filters }) {
                                         className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                     />
                                     <label htmlFor="modal_is_active" className="text-[13px] font-medium text-[var(--text-primary)] cursor-pointer">
-                                        Akun Aktif (Dapat login ke sistem)
+                                        Active Account (Can login to the system)
                                     </label>
                                 </div>
 
@@ -611,10 +608,10 @@ export default function UsersIndex({ users, filters }) {
                                         />
                                         <div>
                                             <label htmlFor="modal_is_default_approver" className="text-[13px] font-semibold text-blue-900 cursor-pointer">
-                                                Default Approver Section Head
+                                                Default Section Head Approver
                                             </label>
                                             <p className="text-[11px] text-blue-700 mt-0.5">
-                                                Jika dicentang, dokumen General Journal baru dari Staff akan otomatis ditugaskan ke Section Head ini untuk approval tingkat pertama.
+                                                If checked, new General Journal documents will automatically route to this Section Head for level 1 review.
                                             </p>
                                         </div>
                                     </div>
@@ -628,7 +625,7 @@ export default function UsersIndex({ users, filters }) {
                                     onClick={() => setShowModal(false)}
                                     className="px-4 py-2 text-[13px] font-medium rounded-lg border-[0.5px] border-[var(--border)] text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
                                 >
-                                    Batal
+                                    Cancel
                                 </button>
                                 <button
                                     type="submit"
@@ -638,7 +635,7 @@ export default function UsersIndex({ users, filters }) {
                                     onMouseEnter={e => !userForm.processing && (e.currentTarget.style.background = '#243355')}
                                     onMouseLeave={e => e.currentTarget.style.background = '#1a2540'}
                                 >
-                                    {userForm.processing ? 'Menyimpan...' : isEditing ? 'Simpan Perubahan' : 'Tambah User'}
+                                    {userForm.processing ? 'Saving...' : isEditing ? 'Save Changes' : 'Add User'}
                                 </button>
                             </div>
                         </form>
@@ -656,10 +653,10 @@ export default function UsersIndex({ users, filters }) {
                 >
                     <div className="bg-white rounded-[10px] p-6 w-full max-w-md shadow-2xl relative animate-in fade-in zoom-in duration-150 border-[0.5px] border-[var(--border)]">
                         <h3 className="text-base font-bold text-[var(--text-primary)] mb-2">
-                            Nonaktifkan Pengguna?
+                            Deactivate User?
                         </h3>
                         <p className="text-xs text-[var(--text-secondary)] leading-relaxed mb-6">
-                            Apakah Anda yakin ingin menonaktifkan akun pengguna <strong className="text-[var(--text-primary)]">{userToDelete.name}</strong> ({userToDelete.email})? Pengguna tidak akan dapat login lagi ke dalam sistem.
+                            Are you sure you want to deactivate user account <strong className="text-[var(--text-primary)]">{userToDelete.name}</strong> ({userToDelete.email})? The user will no longer be able to log in.
                         </p>
                         <div className="flex justify-end gap-3">
                             <button
@@ -667,14 +664,14 @@ export default function UsersIndex({ users, filters }) {
                                 onClick={() => setShowDeleteModal(false)}
                                 className="px-4 py-2 text-[13px] font-medium rounded-lg border-[0.5px] border-[var(--border)] text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
                             >
-                                Batal
+                                Cancel
                             </button>
                             <button
                                 type="button"
                                 onClick={confirmDelete}
                                 className="px-4 py-2 text-[13px] font-bold rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors shadow-xs"
                             >
-                                Ya, Nonaktifkan
+                                Yes, Deactivate
                             </button>
                         </div>
                     </div>

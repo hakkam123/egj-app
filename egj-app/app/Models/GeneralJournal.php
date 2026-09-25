@@ -118,6 +118,14 @@ class GeneralJournal extends Model
     }
 
     /**
+     * Check if the journal has been requested for revision.
+     */
+    public function isRevised(): bool
+    {
+        return $this->status === 'Revised';
+    }
+
+    /**
      * Check if the journal has been approved.
      */
     public function isApproved(): bool

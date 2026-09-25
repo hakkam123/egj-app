@@ -28,19 +28,19 @@ class EmailApprovalController extends Controller
 
         if (!$emailToken) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Token tidak valid.',
+                'message' => 'Invalid token.',
             ]);
         }
 
         if ($emailToken->isExpired()) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Token sudah kedaluwarsa. Silakan minta pengiriman ulang notifikasi email.',
+                'message' => 'Token has expired (5 business days limit exceeded). Please request a new notification.',
             ]);
         }
 
         if ($emailToken->isUsed()) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Token ini sudah digunakan.',
+                'message' => 'This token has already been used.',
             ]);
         }
 
@@ -50,10 +50,9 @@ class EmailApprovalController extends Controller
             'approvals.assignedUser',
         ])->findOrFail($emailToken->general_journal_id);
 
-        // Check if the journal is still waiting approval
         if (!$journal->isWaitingApproval()) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Dokumen ini sudah tidak memerlukan approval.',
+                'message' => 'This document is no longer pending approval.',
             ]);
         }
 
@@ -74,7 +73,7 @@ class EmailApprovalController extends Controller
 
         if (!$emailToken || $emailToken->isExpired() || $emailToken->isUsed()) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Token tidak valid atau sudah kedaluwarsa.',
+                'message' => 'Invalid or expired token.',
             ]);
         }
 
@@ -82,23 +81,21 @@ class EmailApprovalController extends Controller
 
         if (!$journal->isWaitingApproval()) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Dokumen ini sudah tidak memerlukan approval.',
+                'message' => 'This document is no longer pending approval.',
             ]);
         }
 
-        // Find the approver user by email
         $approver = User::where('email', $emailToken->email)
             ->where('role', 'Dept/Div Head')
             ->first();
 
         if (!$approver) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Anda tidak memiliki akses untuk approval dokumen ini.',
+                'message' => 'You are not authorized to approve this document.',
             ]);
         }
 
         DB::transaction(function () use ($journal, $approver, $emailToken) {
-            // Find the pending approval for Dept/Div Head
             $currentApproval = $journal->approvals()
                 ->where('approval_level', 'superior_of_superior')
                 ->where('status', 'Pending')
@@ -108,7 +105,6 @@ class EmailApprovalController extends Controller
                 abort(403);
             }
 
-            // Approve
             $currentApproval->update([
                 'status' => 'Approved',
                 'assigned_user_id' => $approver->id,
@@ -117,20 +113,17 @@ class EmailApprovalController extends Controller
                 'notes' => 'Approved ' . now()->format('Y-m-d') . ' ' . $approver->name . ' (via email)',
             ]);
 
-            // Mark all tokens for this journal/email as used
             EmailToken::where('general_journal_id', $journal->id)
                 ->where('email', $emailToken->email)
                 ->whereNull('used_at')
                 ->update(['used_at' => now()]);
 
-            // All approved → final
             $journal->update([
                 'status' => 'Approved',
                 'current_assign_to' => null,
                 'last_updated_at' => now(),
             ]);
 
-            // Record history
             ApprovalHistory::create([
                 'general_journal_id' => $journal->id,
                 'action' => 'approve',
@@ -140,32 +133,22 @@ class EmailApprovalController extends Controller
                 'created_at' => now(),
             ]);
 
-            // Cek sebelum buat notifikasi approved ke requester
-            $alreadyNotified = Notification::where('general_journal_id', $journal->id)
-                ->where('user_id', $journal->requested_by)
-                ->where('type', 'approved')
-                ->exists();
+            Notification::create([
+                'user_id' => $journal->requested_by,
+                'general_journal_id' => $journal->id,
+                'type' => 'approved',
+                'message' => "Document {$journal->document_number} has been fully approved.",
+                'created_at' => now(),
+            ]);
 
-            if (!$alreadyNotified) {
-                // Create notification for requester
-                Notification::create([
-                    'user_id' => $journal->requested_by,
-                    'general_journal_id' => $journal->id,
-                    'type' => 'approved',
-                    'message' => "Dokumen {$journal->document_number} telah disetujui sepenuhnya.",
-                    'created_at' => now(),
-                ]);
-
-                // Send final approval email to requester
-                $requester = User::find($journal->requested_by);
-                if ($requester) {
-                    try {
-                        Mail::to($requester->email)->send(
-                            new ApprovalResultMail($journal, $requester, 'approved')
-                        );
-                    } catch (\Throwable $e) {
-                        Log::error("Failed sending ApprovalResultMail in email approval for journal {$journal->id}: " . $e->getMessage());
-                    }
+            $requester = User::find($journal->requested_by);
+            if ($requester) {
+                try {
+                    Mail::to($requester->email)->send(
+                        new ApprovalResultMail($journal, $requester, 'approved')
+                    );
+                } catch (\Throwable $e) {
+                    Log::error("Failed sending ApprovalResultMail in email approval for journal {$journal->id}: " . $e->getMessage());
                 }
             }
         });
@@ -177,29 +160,29 @@ class EmailApprovalController extends Controller
     }
 
     /**
-     * Show reject confirmation and reason form page (GET).
+     * Show revision form via email token (GET).
      */
-    public function showReject(string $token)
+    public function showRevise(string $token)
     {
         $emailToken = EmailToken::where('token', $token)
-            ->where('purpose', 'rejection')
+            ->whereIn('purpose', ['rejection', 'revise'])
             ->first();
 
         if (!$emailToken) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Token tidak valid.',
+                'message' => 'Invalid token.',
             ]);
         }
 
         if ($emailToken->isExpired()) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Token sudah kedaluwarsa. Silakan minta pengiriman ulang notifikasi email.',
+                'message' => 'Token has expired. Please request a new notification.',
             ]);
         }
 
         if ($emailToken->isUsed()) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Token ini sudah digunakan.',
+                'message' => 'This token has already been used.',
             ]);
         }
 
@@ -211,7 +194,7 @@ class EmailApprovalController extends Controller
 
         if (!$journal->isWaitingApproval()) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Dokumen ini sudah tidak memerlukan tindakan approval/rejection.',
+                'message' => 'This document is no longer pending approval/revision.',
             ]);
         }
 
@@ -222,24 +205,24 @@ class EmailApprovalController extends Controller
     }
 
     /**
-     * Process rejection via email token (POST).
+     * Process revision request via email token (POST).
      */
-    public function reject(Request $request, string $token)
+    public function revise(Request $request, string $token)
     {
         $request->validate([
-            'notes' => ['required', 'string', 'min:5', 'max:1000'],
+            'notes' => ['required', 'string', 'min:5', 'max:2000'],
         ], [
-            'notes.required' => 'Alasan penolakan wajib diisi.',
-            'notes.min' => 'Alasan penolakan minimal 5 karakter.',
+            'notes.required' => 'Revision notes are required.',
+            'notes.min' => 'Revision notes must be at least 5 characters.',
         ]);
 
         $emailToken = EmailToken::where('token', $token)
-            ->where('purpose', 'rejection')
+            ->whereIn('purpose', ['rejection', 'revise'])
             ->first();
 
         if (!$emailToken || $emailToken->isExpired() || $emailToken->isUsed()) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Token tidak valid atau sudah kedaluwarsa.',
+                'message' => 'Invalid or expired token.',
             ]);
         }
 
@@ -247,23 +230,21 @@ class EmailApprovalController extends Controller
 
         if (!$journal->isWaitingApproval()) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Dokumen ini sudah tidak memerlukan tindakan approval/rejection.',
+                'message' => 'This document is no longer pending approval.',
             ]);
         }
 
-        // Find approver user by email
         $approver = User::where('email', $emailToken->email)
             ->where('role', 'Dept/Div Head')
             ->first();
 
         if (!$approver) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Anda tidak memiliki akses untuk menolak dokumen ini.',
+                'message' => 'You are not authorized to request revision for this document.',
             ]);
         }
 
         DB::transaction(function () use ($journal, $approver, $emailToken, $request) {
-            // Find the pending approval for Dept/Div Head
             $currentApproval = $journal->approvals()
                 ->where('approval_level', 'superior_of_superior')
                 ->where('status', 'Pending')
@@ -273,64 +254,71 @@ class EmailApprovalController extends Controller
                 abort(403);
             }
 
-            // Reject approval record
             $currentApproval->update([
-                'status' => 'Rejected',
+                'status' => 'Revised',
                 'assigned_user_id' => $approver->id,
                 'approved_by_user_id' => $approver->id,
                 'approved_at' => now(),
                 'notes' => $request->notes . ' (via email)',
             ]);
 
-            // Mark all tokens for this journal/email as used
             EmailToken::where('general_journal_id', $journal->id)
                 ->where('email', $emailToken->email)
                 ->whereNull('used_at')
                 ->update(['used_at' => now()]);
 
-            // Update journal status to Rejected
             $journal->update([
-                'status' => 'Rejected',
-                'current_assign_to' => null,
+                'status' => 'Revised',
+                'current_assign_to' => $journal->requested_by,
                 'last_updated_at' => now(),
             ]);
 
-            // Record history
             ApprovalHistory::create([
                 'general_journal_id' => $journal->id,
-                'action' => 'reject',
+                'action' => 'revise',
                 'actor_user_id' => $approver->id,
                 'target_level' => $currentApproval->approval_level,
                 'notes' => $request->notes . ' (via email)',
                 'created_at' => now(),
             ]);
 
-            // Create notification for requester
             Notification::create([
                 'user_id' => $journal->requested_by,
                 'general_journal_id' => $journal->id,
-                'type' => 'rejected',
-                'message' => "Dokumen {$journal->document_number} telah ditolak oleh Dept/Div Head: {$request->notes}",
+                'type' => 'revised',
+                'message' => "Document {$journal->document_number} requires revision from Dept/Div Head: {$request->notes}",
                 'created_at' => now(),
             ]);
 
-            // Send rejection email to requester
             $requester = User::find($journal->requested_by);
             if ($requester) {
                 try {
                     Mail::to($requester->email)->send(
-                        new ApprovalResultMail($journal, $requester, 'rejected', $request->notes)
+                        new ApprovalResultMail($journal, $requester, 'revised', $request->notes)
                     );
                 } catch (\Throwable $e) {
-                    Log::error("Failed sending ApprovalResultMail in email rejection for journal {$journal->id}: " . $e->getMessage());
+                    Log::error("Failed sending ApprovalResultMail in email revise for journal {$journal->id}: " . $e->getMessage());
                 }
             }
         });
 
         return Inertia::render('EmailApproval/Success', [
             'journal' => $journal->fresh(['requester']),
-            'action' => 'rejected',
+            'action' => 'revised',
             'notes' => $request->notes,
         ]);
+    }
+
+    /**
+     * Backward-compatibility aliases
+     */
+    public function showReject(string $token)
+    {
+        return $this->showRevise($token);
+    }
+
+    public function reject(Request $request, string $token)
+    {
+        return $this->revise($request, $token);
     }
 }

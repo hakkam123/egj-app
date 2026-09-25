@@ -1,24 +1,26 @@
 import { Head, router, Link, usePage } from '@inertiajs/react';
-import MainLayout from '../../Layouts/MainLayout';
-import PageHeader from '../../Components/PageHeader';
-import ConfirmModal from '../../Components/ConfirmModal';
+import MainLayout from '@/Layouts/MainLayout';
+import PageHeader from '@/Components/PageHeader';
+import ConfirmModal from '@/Components/ConfirmModal';
 import { useState } from 'react';
-import { 
-    Check, 
-    X, 
-    FileText, 
-    Paperclip, 
-    Clock, 
-    CheckCircle, 
-    XCircle, 
-    ArrowLeft,
+import {
+    Check,
+    X,
+    FileText,
+    Paperclip,
+    Clock,
     CheckCircle2,
-    AlertCircle,
+    XCircle,
+    ArrowLeft,
+    AlertTriangle,
     Download,
-    Loader2
+    Loader2,
+    Calendar,
+    User as UserIcon,
+    History as HistoryIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { STATUS_COLORS } from '../../constants/statusColors';
+import { STATUS_COLORS } from '@/constants/statusColors';
 
 export default function ApprovalShow({ journal }) {
     const { auth } = usePage().props;
@@ -26,11 +28,11 @@ export default function ApprovalShow({ journal }) {
 
     // Modal & processing states
     const [approveModalOpen, setApproveModalOpen] = useState(false);
-    const [rejectModalOpen, setRejectModalOpen] = useState(false);
-    const [rejectNotes, setRejectNotes] = useState('');
-    const [rejectError, setRejectError] = useState('');
+    const [reviseModalOpen, setReviseModalOpen] = useState(false);
+    const [reviseNotes, setReviseNotes] = useState('');
+    const [reviseError, setReviseError] = useState('');
     const [isApproving, setIsApproving] = useState(false);
-    const [isRejecting, setIsRejecting] = useState(false);
+    const [isRevising, setIsRevising] = useState(false);
     const [pdfLoading, setPdfLoading] = useState(true);
 
     const markNotifRead = (journalId) => {
@@ -45,10 +47,6 @@ export default function ApprovalShow({ journal }) {
         });
     };
 
-    const handleApproveClick = () => {
-        setApproveModalOpen(true);
-    };
-
     const confirmApprove = () => {
         setIsApproving(true);
         markNotifRead(journal.id);
@@ -57,80 +55,69 @@ export default function ApprovalShow({ journal }) {
             onSuccess: () => {
                 setApproveModalOpen(false);
                 setIsApproving(false);
+                toast.success('General Journal approved successfully.');
             },
             onError: (errors) => {
                 setIsApproving(false);
-                const msg = Object.values(errors)[0] || 'Gagal menyetujui dokumen.';
-                toast.error(msg);
+                toast.error(Object.values(errors)[0] || 'Failed to approve document.');
             }
         });
     };
 
-    const handleRejectClick = () => {
-        setRejectNotes('');
-        setRejectError('');
-        setRejectModalOpen(true);
-    };
-
-    const confirmReject = (e) => {
+    const confirmRevise = (e) => {
         if (e) e.preventDefault();
-        
-        if (!rejectNotes || rejectNotes.trim().length < 5) {
-            setRejectError('Alasan penolakan minimal 5 karakter.');
-            toast.error('Alasan penolakan minimal 5 karakter.');
+
+        if (!reviseNotes || reviseNotes.trim().length < 5) {
+            setReviseError('Revision notes must be at least 5 characters.');
+            toast.error('Revision notes must be at least 5 characters.');
             return;
         }
 
-        setIsRejecting(true);
+        setIsRevising(true);
         markNotifRead(journal.id);
-        router.post(`/approval/${journal.id}/reject`, { notes: rejectNotes.trim() }, {
+        router.post(`/approval/${journal.id}/revise`, { notes: reviseNotes.trim() }, {
             preserveScroll: true,
             onSuccess: () => {
-                setRejectModalOpen(false);
-                setIsRejecting(false);
+                setReviseModalOpen(false);
+                setIsRevising(false);
+                toast.success('Revision request sent to requester.');
             },
             onError: (errors) => {
-                setIsRejecting(false);
-                const msg = Object.values(errors)[0] || 'Gagal menolak dokumen.';
-                toast.error(msg);
+                setIsRevising(false);
+                toast.error(Object.values(errors)[0] || 'Failed to request revision.');
             }
         });
     };
 
     const approvalLevelLabel = (level) => {
-        const labels = { 
-            'accounting': 'Accounting', 
-            'superior': 'Superior', 
-            'superior_of_superior': 'Superior of Superior' 
+        const labels = {
+            'accounting': 'Accounting',
+            'superior': 'Superior (Section Head)',
+            'superior_of_superior': 'Superior of Superior (Dept/Div Head)'
         };
         return labels[level] || level;
     };
 
-    const statusBadge = (status) => {
-        const config = STATUS_COLORS[status] || STATUS_COLORS['Draft'];
+    const renderStatusBadge = (status) => {
+        const config = STATUS_COLORS[status] || STATUS_COLORS['Neutral'];
         return (
-            <span
-                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
-                style={{
-                    backgroundColor: config.bgSoft,
-                    color: config.solid,
-                }}
-            >
-                {status}
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold tracking-normal shadow-2xs ${config.badgeClass}`}>
+                <span className={`w-2 h-2 rounded-full shrink-0 ${config.dotClass || 'bg-slate-400'}`}></span>
+                <span>{config.label || status}</span>
             </span>
         );
     };
 
     const getTimelineIcon = (status) => {
-        if (status === 'Approved') return <CheckCircle size={16} className="text-[#2b6b5c] bg-white" />;
-        if (status === 'Rejected') return <XCircle size={16} className="text-[#b8433c] bg-white" />;
-        return <Clock size={16} className="text-[#b8791f] bg-white" />;
+        if (status === 'Approved') return <CheckCircle2 size={16} className="text-emerald-600 bg-white" />;
+        if (status === 'Revised') return <AlertTriangle size={16} className="text-amber-600 bg-white" />;
+        if (status === 'Rejected') return <XCircle size={16} className="text-red-600 bg-white" />;
+        return <Clock size={16} className="text-blue-600 bg-white" />;
     };
 
     const gjFiles = journal.active_files?.filter(f => f.category === 'general_journal') || [];
     const sdFiles = journal.active_files?.filter(f => f.category === 'supporting_document') || [];
 
-    // Tombol hanya muncul jika user adalah approver aktif saat ini dan status dokumen masih Waiting Approval
     const isCurrentApprover = (
         String(journal.current_assign_to) === String(user?.id) ||
         (user?.role === 'Dept/Div Head' && journal.approvals?.some(a => a.approval_level === 'superior_of_superior' && a.status === 'Pending')) ||
@@ -138,112 +125,127 @@ export default function ApprovalShow({ journal }) {
     ) && journal.status === 'Waiting Approval';
 
     return (
-        <MainLayout title="Detail Approval">
-            <Head title={`Approval ${journal.document_number}`} />
+        <MainLayout title={`Approval Review: ${journal.document_number}`}>
+            <Head title={`Review ${journal.document_number} - JAGO`} />
 
             <div className="space-y-6">
                 <PageHeader
-                    title="Review Dokumen"
-                    subtitle="Review detail dan berikan persetujuan untuk dokumen General Journal"
+                    title="Approval Document Review"
+                    subtitle="Review General Journal information, audit attachments, and perform verification"
                     actions={
                         <Link
                             href="/approval"
-                            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg border-[0.5px] border-[var(--border)] bg-white text-[var(--text-secondary)] hover:bg-gray-50 transition-colors shadow-xs"
+                            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
                         >
-                            <ArrowLeft size={14} /> Kembali ke Antrean
+                            <ArrowLeft size={14} /> Back to Queue
                         </Link>
                     }
                 />
 
-                <div className="flex flex-col lg:flex-row gap-6">
-                    {/* Left Column: Metadata & Actions */}
-                    <div className="lg:w-1/3 flex flex-col gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    {/* Left Column: Metadata & Approver Action Panel (5 Cols) */}
+                    <div className="lg:col-span-5 space-y-6">
                         {/* Info Card */}
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-6 shadow-xs">
-                            <div className="flex items-center justify-between mb-4 pb-4 border-b-[0.5px] border-[var(--border)]">
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 space-y-4">
+                            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
                                 <div>
-                                    <h3 className="text-base font-bold text-[var(--text-primary)] font-mono">{journal.document_number}</h3>
-                                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">Detail Dokumen</p>
+                                    <h3 className="text-base font-black text-slate-900 font-mono tracking-tight">{journal.document_number}</h3>
+                                    <p className="text-xs text-slate-400">Document Overview</p>
                                 </div>
-                                {statusBadge(journal.status)}
+                                {renderStatusBadge(journal.status)}
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-3.5 text-xs">
                                 <div>
-                                    <span className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide">Tanggal Journal</span>
-                                    <p className="text-[13px] font-semibold text-[var(--text-primary)] mt-1">{journal.journal_date?.split('T')[0]}</p>
+                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Journal Date</span>
+                                    <p className="font-bold text-slate-800 mt-0.5">
+                                        {journal.journal_date ? new Date(journal.journal_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}
+                                    </p>
                                 </div>
+
                                 <div>
-                                    <span className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide">Diajukan oleh</span>
+                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Person Request / Requester</span>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-700">
-                                            {journal.requester?.name?.charAt(0).toUpperCase()}
-                                        </div>
-                                        <p className="text-[13px] font-semibold text-[var(--text-primary)]">{journal.requester?.name}</p>
+                                        <p className="font-semibold text-slate-800">{journal.requester?.name}</p>
                                     </div>
                                 </div>
+
                                 {journal.reference && (
-                                    <div className="pt-3 border-t-[0.5px] border-[var(--border)]">
-                                        <span className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide">Reference</span>
-                                        <p className="text-[13px] text-[var(--text-secondary)] mt-1">{journal.reference}</p>
+                                    <div className="pt-3 border-t border-slate-100">
+                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Reference / Description</span>
+                                        <p className="text-slate-600 mt-1 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                            {journal.reference}
+                                        </p>
                                     </div>
                                 )}
                             </div>
 
                             {/* Action Buttons */}
                             {isCurrentApprover && (
-                                <div className="mt-6 pt-6 border-t-[0.5px] border-[var(--border)]">
-                                    <div className="flex gap-3">
+                                <div className="mt-5 pt-4 border-t border-slate-100 space-y-2">
+                                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Your Approval Decision</p>
+                                    <div className="flex gap-2.5">
                                         <button
                                             type="button"
-                                            onClick={handleRejectClick}
-                                            disabled={isApproving || isRejecting}
-                                            className="flex-1 px-4 py-2.5 bg-[#fbeceb] text-[#b8433c] hover:bg-[#f8dedd] disabled:opacity-50 disabled:cursor-not-allowed text-[13px] font-bold rounded-lg transition-all shadow-2xs cursor-pointer"
+                                            onClick={() => {
+                                                setReviseNotes('');
+                                                setReviseError('');
+                                                setReviseModalOpen(true);
+                                            }}
+                                            disabled={isApproving || isRevising}
+                                            className="flex-1 px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 disabled:opacity-50 text-xs font-bold rounded-xl transition-all shadow-2xs cursor-pointer"
                                         >
-                                            Tolak
+                                            Request Revision
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={handleApproveClick}
-                                            disabled={isApproving || isRejecting}
-                                            className="flex-1 px-4 py-2.5 bg-[#e6f2ef] text-[#2b6b5c] hover:bg-[#d8ece7] disabled:opacity-50 disabled:cursor-not-allowed text-[13px] font-bold rounded-lg transition-all shadow-2xs cursor-pointer"
+                                            onClick={() => setApproveModalOpen(true)}
+                                            disabled={isApproving || isRevising}
+                                            className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-600/20 cursor-pointer"
                                         >
-                                            Setujui
+                                            Approve Document
                                         </button>
                                     </div>
                                 </div>
                             )}
                         </div>
 
-                        {/* Timeline Riwayat Approval */}
+                        {/* Timeline Workflow Chain */}
                         {journal.approvals?.length > 0 && (
-                            <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-6 shadow-xs">
-                                <h4 className="text-[13px] font-bold text-[var(--text-primary)] mb-5">Riwayat Persetujuan</h4>
-                                
-                                <div className="relative border-l-[0.5px] border-[var(--border)] ml-3 space-y-6">
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 space-y-4">
+                                <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                                    <HistoryIcon size={16} className="text-blue-600" /> Approval Workflow Progress
+                                </h4>
+
+                                <div className="relative border-l border-slate-200 ml-3 space-y-5 pl-5 pt-1">
                                     {journal.approvals.map((a) => (
-                                        <div key={a.id} className="relative pl-6">
-                                            <div className="absolute -left-[8px] top-1">
+                                        <div key={a.id} className="relative">
+                                            <div className="absolute -left-[27px] top-0.5">
                                                 {getTimelineIcon(a.status)}
                                             </div>
                                             <div>
-                                                <p className="text-[13px] font-semibold text-[var(--text-primary)]">{approvalLevelLabel(a.approval_level)}</p>
-                                                <p className="text-[12px] text-[var(--text-secondary)]">{a.assigned_user?.name}</p>
-                                                
-                                                <div className="mt-1 flex items-center gap-2">
-                                                    <span className={`text-[11px] font-semibold ${
-                                                        a.status === 'Approved' ? 'text-[#2b6b5c]' :
-                                                        a.status === 'Rejected' ? 'text-[#b8433c]' :
-                                                        'text-[#b8791f]'
-                                                    }`}>{a.status}</span>
-                                                    
-                                                    {a.approved_at && (
-                                                        <span className="text-[11px] text-[var(--text-muted)]">• {new Date(a.approved_at).toLocaleString('id-ID')}</span>
-                                                    )}
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-xs font-bold text-slate-900">{approvalLevelLabel(a.approval_level)}</p>
+                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${a.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                                        a.status === 'Revised' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                                                            a.status === 'Rejected' ? 'bg-red-50 text-red-700 border border-red-200' :
+                                                                'bg-blue-50 text-blue-700 border border-blue-200'
+                                                        }`}>{a.status}</span>
                                                 </div>
-                                                
+
+                                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                                    Assigned to: <strong className="text-slate-700">{a.assigned_user?.name || '-'}</strong>
+                                                </p>
+
+                                                {a.approved_at && (
+                                                    <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                                                        <Calendar size={11} />
+                                                        {new Date(a.approved_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                )}
+
                                                 {a.notes && (
-                                                    <div className="mt-2 p-2.5 bg-gray-50 border-[0.5px] border-[var(--border)] rounded-lg text-[12px] text-[var(--text-secondary)] italic">
+                                                    <div className="mt-2 p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-[11px] text-slate-600 italic">
                                                         &ldquo;{a.notes}&rdquo;
                                                     </div>
                                                 )}
@@ -255,67 +257,84 @@ export default function ApprovalShow({ journal }) {
                         )}
                     </div>
 
-                    {/* Right Column: Files Preview */}
-                    <div className="lg:w-2/3 flex flex-col gap-6">
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] flex flex-col h-full min-h-[500px] shadow-xs overflow-hidden">
-                            <div className="px-6 py-4 border-b-[0.5px] border-[var(--border)] flex items-center justify-between">
-                                <h4 className="text-[14px] font-bold text-[var(--text-primary)]">Preview File General Journal</h4>
+                    {/* Right Column: Files & Live Stamped PDF (7 Cols) */}
+                    <div className="lg:col-span-7 space-y-6">
+                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                            <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
+                                <div>
+                                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                                        General Journal PDF
+                                    </h4>
+                                    <p className="text-[10px] text-slate-400">Dynamic digital stamp overlay verification</p>
+                                </div>
+
                                 {gjFiles.length > 0 && (
-                                    <a 
+                                    <a
                                         href={`/files/${gjFiles[0].id}/download`}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-white bg-[#1a2540] hover:bg-[#243355] rounded-md shadow-2xs transition-all"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-2xs transition-all"
                                     >
-                                        <Download className="w-3.5 h-3.5" />
+                                        <Download size={13} />
                                         Download PDF
                                     </a>
                                 )}
                             </div>
-                            
-                            <div className="flex-1 p-6 bg-gray-50">
+
+                            <div className="p-4 bg-slate-100/60">
                                 {gjFiles.length > 0 ? (
                                     <div className="relative">
                                         {pdfLoading && (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center rounded-lg"
-                                                style={{ background: '#fafafa', border: '0.5px solid var(--border)', minHeight: '400px' }}>
-                                                <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mb-3"
-                                                    style={{ borderColor: '#1a2540', borderTopColor: 'transparent' }} />
-                                                <p className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>Memuat preview PDF...</p>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 rounded-xl min-h-[400px]">
+                                                <div className="w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-3" />
+                                                <p className="text-xs text-slate-500 font-medium">Loading stamped PDF preview...</p>
                                             </div>
                                         )}
-                                        <iframe 
-                                            src={`/files/${gjFiles[0].id}/preview`} 
-                                            className="w-full rounded-lg"
-                                            style={{ height: '600px', border: '0.5px solid var(--border)', display: pdfLoading ? 'none' : 'block' }}
+                                        <iframe
+                                            src={`/files/${gjFiles[0].id}/preview`}
+                                            className="w-full rounded-xl border border-slate-200 h-[600px] bg-white"
                                             title="PDF Preview"
                                             onLoad={() => setPdfLoading(false)}
                                         />
                                     </div>
                                 ) : (
-                                    <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
-                                        File General Journal tidak ditemukan
+                                    <div className="p-12 text-center text-xs text-slate-400">
+                                        General Journal file not found.
                                     </div>
                                 )}
                             </div>
                         </div>
-                        
+
                         {sdFiles.length > 0 && (
-                            <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] shadow-xs">
-                                <div className="px-6 py-4 border-b-[0.5px] border-[var(--border)]">
-                                    <h4 className="text-[14px] font-bold text-[var(--text-primary)]">Supporting Documents</h4>
-                                </div>
-                                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 space-y-3">
+                                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                                    <Paperclip size={14} className="text-slate-500" />
+                                    Supporting Documents ({sdFiles.length})
+                                </h4>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {sdFiles.map(f => (
-                                        <div key={f.id} className="flex items-center justify-between p-3.5 border-[0.5px] border-[var(--border)] bg-gray-50 rounded-lg">
-                                            <div className="flex items-center gap-3 overflow-hidden">
-                                                <Paperclip className="w-5 h-5 text-[var(--text-muted)] shrink-0" />
+                                        <div key={f.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 flex items-center justify-between">
+                                            <div className="flex items-center gap-2.5 overflow-hidden">
+                                                <Paperclip size={16} className="text-slate-400 shrink-0" />
                                                 <div className="min-w-0">
-                                                    <p className="text-[13px] font-medium text-[var(--text-primary)] truncate">{f.file_name}</p>
-                                                    <p className="text-[11px] text-[var(--text-secondary)]">{(f.file_size / 1024).toFixed(1)} KB</p>
+                                                    <p className="text-xs font-medium text-slate-800 truncate">{f.file_name}</p>
+                                                    <p className="text-[10px] text-slate-400">{(f.file_size / 1024).toFixed(1)} KB</p>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-2 shrink-0">
-                                                <a href={`/files/${f.id}/preview?v=${f.file_size}`} target="_blank" rel="noreferrer" className="px-3 py-1 text-[11px] font-medium text-blue-700 bg-white border-[0.5px] border-[var(--border)] rounded-md hover:bg-gray-50 shadow-2xs">Preview</a>
-                                                <a href={`/files/${f.id}/download`} className="px-3 py-1 text-[11px] font-medium text-[var(--text-secondary)] bg-white border-[0.5px] border-[var(--border)] rounded-md hover:bg-gray-50 shadow-2xs">Download</a>
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                <a
+                                                    href={`/files/${f.id}/preview?v=${f.file_size}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="px-2.5 py-1 text-[11px] font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                >
+                                                    Preview
+                                                </a>
+                                                <a
+                                                    href={`/files/${f.id}/download`}
+                                                    className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 rounded-lg transition-colors"
+                                                >
+                                                    <Download size={14} />
+                                                </a>
                                             </div>
                                         </div>
                                     ))}
@@ -326,86 +345,80 @@ export default function ApprovalShow({ journal }) {
                 </div>
             </div>
 
-            {/* Modal Setujui */}
+            {/* Modal Approve */}
             <ConfirmModal
-                open={approveModalOpen}
-                title="Setujui Dokumen"
-                message="Dengan menyetujui dokumen ini, Anda menyatakan bahwa data telah diperiksa dan sesuai. Lanjutkan?"
+                isOpen={approveModalOpen}
+                title="Approve General Journal"
+                message="By approving this document, you certify that the journal details and supporting documents have been verified and approved. Proceed?"
+                confirmText="Yes, Approve"
+                cancelText="Cancel"
+                confirmVariant="primary"
                 onConfirm={confirmApprove}
-                onClose={() => setApproveModalOpen(false)}
-                type="success"
-                confirmText="Ya, Setujui"
-                loading={isApproving}
+                onCancel={() => setApproveModalOpen(false)}
             />
 
-            {/* Modal Tolak / Reject */}
-            {rejectModalOpen && (
-                <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs" onClick={() => !isRejecting && setRejectModalOpen(false)}>
-                    <div 
-                        className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-150"
+            {/* Modal Revise */}
+            {reviseModalOpen && (
+                <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs" onClick={() => !isRevising && setReviseModalOpen(false)}>
+                    <div
+                        className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-150"
                         onClick={e => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between pb-3 border-b border-gray-200">
-                            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                               Tolak Dokumen
+                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                                <AlertTriangle className="text-amber-500" size={20} />
+                                Request Document Revision
                             </h3>
                             <button
                                 type="button"
-                                onClick={() => !isRejecting && setRejectModalOpen(false)}
-                                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                                onClick={() => !isRevising && setReviseModalOpen(false)}
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
                             >
                                 <X size={18} />
                             </button>
                         </div>
 
-                        <form onSubmit={confirmReject} className="space-y-4 pt-4">
+                        <form onSubmit={confirmRevise} className="space-y-4 pt-4">
                             <div>
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                                    Alasan Penolakan <span className="text-red-500">* (Min 5 karakter)</span>
+                                <label className="block text-xs font-bold uppercase tracking-wide text-slate-700 mb-1.5">
+                                    Revision Notes <span className="text-red-500">* (Min 5 characters)</span>
                                 </label>
                                 <textarea
-                                    value={rejectNotes}
+                                    value={reviseNotes}
                                     onChange={(e) => {
-                                        setRejectNotes(e.target.value);
-                                        if (rejectError && e.target.value.trim().length >= 5) {
-                                            setRejectError('');
+                                        setReviseNotes(e.target.value);
+                                        if (reviseError && e.target.value.trim().length >= 5) {
+                                            setReviseError('');
                                         }
                                     }}
                                     rows={4}
-                                    placeholder="Tuliskan alasan mengapa dokumen General Journal ini ditolak..."
-                                    className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+                                    placeholder="Explain clearly what corrections are needed from the requester..."
+                                    className="w-full px-3.5 py-2.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 bg-white"
                                     required
                                 />
-                                <p className="mt-1 text-right text-[11px]" style={{ color: (rejectNotes?.length || 0) < 5 ? '#e05c5c' : 'var(--text-muted)' }}>
-                                    {rejectNotes?.length || 0} / 5 karakter minimum
-                                </p>
-                                {rejectError && (
-                                    <p className="text-xs text-red-600 mt-1">{rejectError}</p>
-                                )}
+                                <div className="flex justify-between items-center mt-1 text-[11px]">
+                                    <span className="text-red-500">{reviseError}</span>
+                                    <span className={reviseNotes.length < 5 ? "text-red-500 font-semibold" : "text-slate-400"}>
+                                        {reviseNotes.length} / 5 min characters
+                                    </span>
+                                </div>
                             </div>
 
-                            <div className="pt-3 border-t border-gray-200 flex items-center justify-end gap-2">
+                            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => setRejectModalOpen(false)}
-                                    disabled={isRejecting}
-                                    className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                    onClick={() => setReviseModalOpen(false)}
+                                    disabled={isRevising}
+                                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
                                 >
-                                    Batal
+                                    Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={isRejecting}
-                                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors shadow-xs"
+                                    disabled={isRevising || reviseNotes.trim().length < 5}
+                                    className="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 rounded-xl transition-colors shadow-sm cursor-pointer"
                                 >
-                                    {isRejecting ? (
-                                        <>
-                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                            <span>Menyimpan...</span>
-                                        </>
-                                    ) : (
-                                        'Kirim Penolakan'
-                                    )}
+                                    {isRevising ? 'Sending...' : 'Send Revision Request'}
                                 </button>
                             </div>
                         </form>

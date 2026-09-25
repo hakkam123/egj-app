@@ -1,17 +1,32 @@
 import { Head, Link, router } from '@inertiajs/react';
-import MainLayout from '../../Layouts/MainLayout';
-import PageHeader from '../../Components/PageHeader';
+import MainLayout from '@/Layouts/MainLayout';
 import { useState, useEffect, useRef } from 'react';
-import { Eye, FileText, CheckCircle, Clock, XCircle, Download, Search, RotateCcw } from 'lucide-react';
-import FileModal from '../../Components/FileModal';
-import HistoryModal from '../../Components/HistoryModal';
+import {
+    Eye,
+    FileText,
+    CheckCircle2,
+    Clock,
+    XCircle,
+    Search,
+    RotateCcw,
+    FileEdit,
+    AlertTriangle,
+    Paperclip,
+    History,
+    Calendar
+} from 'lucide-react';
+import FileModal from '@/Components/FileModal';
+import HistoryModal from '@/Components/HistoryModal';
+import { STATUS_COLORS } from '@/constants/statusColors';
 
 export default function MonitoringIndex({ journals, filters, users, stats }) {
-    const [searchQuery, setSearchQuery] = useState(filters?.search || '');
+    // In-column filter states
+    const [docNumber, setDocNumber] = useState(filters?.doc_number || '');
+    const [reference, setReference] = useState(filters?.reference || '');
+    const [requester, setRequester] = useState(filters?.requester || '');
+    const [assignTo, setAssignTo] = useState(filters?.assign_to || '');
+    const [date, setDate] = useState(filters?.date || '');
     const [status, setStatus] = useState(filters?.status || '');
-    const [dateFrom, setDateFrom] = useState(filters?.date_from || '');
-    const [dateTo, setDateTo] = useState(filters?.date_to || '');
-    const [requestedBy, setRequestedBy] = useState(filters?.requested_by || '');
     const [perPage, setPerPage] = useState(filters?.per_page || 10);
 
     const [fileModal, setFileModal] = useState({ open: false, journalId: null });
@@ -21,11 +36,12 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
 
     const updateFilters = (overrides = {}) => {
         const queryParams = {
-            search: searchQuery,
+            doc_number: docNumber,
+            reference,
+            requester,
+            assign_to: assignTo,
+            date,
             status,
-            date_from: dateFrom,
-            date_to: dateTo,
-            requested_by: requestedBy,
             per_page: perPage,
             ...overrides,
         };
@@ -44,7 +60,7 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
         });
     };
 
-    // Debounce for search input
+    // Debounce for in-column search inputs
     useEffect(() => {
         if (isInitialMount.current) {
             isInitialMount.current = false;
@@ -52,61 +68,36 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
         }
 
         const timer = setTimeout(() => {
-            if (searchQuery !== (filters?.search || '')) {
-                updateFilters({ search: searchQuery });
-            }
+            updateFilters();
         }, 400);
 
         return () => clearTimeout(timer);
-    }, [searchQuery]);
+    }, [docNumber, reference, requester, assignTo, date]);
 
-    const handleStatusChange = (e) => {
-        const val = e.target.value;
+    const handleStatusFilterChange = (newStatus) => {
+        const val = status === newStatus ? '' : newStatus;
         setStatus(val);
         updateFilters({ status: val });
     };
 
-    const handleDateFromChange = (e) => {
-        const val = e.target.value;
-        setDateFrom(val);
-        updateFilters({ date_from: val });
-    };
-
-    const handleDateToChange = (e) => {
-        const val = e.target.value;
-        setDateTo(val);
-        updateFilters({ date_to: val });
-    };
-
-    const handleRequestedByChange = (e) => {
-        const val = e.target.value;
-        setRequestedBy(val);
-        updateFilters({ requested_by: val });
-    };
-
-    const handlePerPageChange = (e) => {
-        const val = e.target.value;
-        setPerPage(val);
-        updateFilters({ per_page: val });
-    };
-
     const handleReset = () => {
-        setSearchQuery('');
+        setDocNumber('');
+        setReference('');
+        setRequester('');
+        setAssignTo('');
+        setDate('');
         setStatus('');
-        setDateFrom('');
-        setDateTo('');
-        setRequestedBy('');
         setPerPage(10);
         router.get('/monitoring', {}, { preserveState: true, preserveScroll: true, replace: true });
     };
 
     const exportUrl = () => {
         const params = {
-            search: searchQuery,
+            doc_number: docNumber,
+            requester,
+            assign_to: assignTo,
+            date,
             status,
-            date_from: dateFrom,
-            date_to: dateTo,
-            requested_by: requestedBy,
         };
         const cleaned = {};
         Object.entries(params).forEach(([k, v]) => {
@@ -118,273 +109,348 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
         return `/monitoring/export${qs ? '?' + qs : ''}`;
     };
 
-    const statusBadge = (s) => {
-        const styleMap = {
-            'Draft': 'bg-[var(--badge-draft-bg)] text-[var(--badge-draft-text)]',
-            'Waiting Approval': 'bg-[var(--badge-waiting-bg)] text-[var(--badge-waiting-text)]',
-            'Approved': 'bg-[var(--badge-approved-bg)] text-[var(--badge-approved-text)]',
-            'Rejected': 'bg-[var(--badge-rejected-bg)] text-[var(--badge-rejected-text)]',
-        };
+    const renderStatusBadge = (s) => {
+        const conf = STATUS_COLORS[s] || STATUS_COLORS['Neutral'];
+
         return (
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${styleMap[s] || styleMap['Draft']}`}>
-                {s}
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold">
+                <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${conf.dotClass || 'bg-slate-500'
+                        }`}
+                />
+                <span className={conf.text || 'text-slate-500'}>
+                    {conf.label || s}
+                </span>
             </span>
         );
     };
 
+
+    const journalList = journals?.data || [];
+
     return (
-        <MainLayout title="Monitoring General Journal">
-            <Head title="Monitoring" />
+        <MainLayout title="General Journal Monitoring">
+            <Head title="Monitoring - JAGO" />
 
             <div className="space-y-6">
-                <PageHeader
-                    title="Monitoring General Journal"
-                    subtitle="Pantau status persetujuan dan riwayat seluruh dokumen General Journal"
-                    actions={
+                {/* Page Title & Export Action */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+                            General Journal Monitoring
+                        </h1>
+                        <p className="text-xs text-slate-500 mt-1">
+                            Track the approval workflow status, review documents, and audit histories across all journals.
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                        {(docNumber || reference || requester || assignTo || date || status) && (
+                            <button
+                                type="button"
+                                onClick={handleReset}
+                                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors cursor-pointer"
+                            >
+                                <RotateCcw size={14} /> Clear Filters
+                            </button>
+                        )}
+
                         <a
                             href={exportUrl()}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-xs"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-600/20 hover:scale-[1.02] active:scale-[0.98]"
                         >
-                            <Download size={15} />
-                            Export Excel
+                            Export to Excel
                         </a>
-                    }
-                />
-
-                {/* Stat Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
-                        <div>
-                            <p className="text-xs font-medium text-[var(--text-secondary)] uppercase">Total Dokumen</p>
-                            <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{stats?.total || 0}</p>
-                        </div>
-                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                            <FileText size={20} />
-                        </div>
-                    </div>
-                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
-                        <div>
-                            <p className="text-xs font-medium text-[var(--text-secondary)] uppercase">Waiting Approval</p>
-                            <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{stats?.waiting || 0}</p>
-                        </div>
-                        <div className="w-10 h-10 rounded-full bg-[var(--badge-waiting-bg)] flex items-center justify-center text-[var(--badge-waiting-text)]">
-                            <Clock size={20} />
-                        </div>
-                    </div>
-                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
-                        <div>
-                            <p className="text-xs font-medium text-[var(--text-secondary)] uppercase">Disetujui</p>
-                            <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{stats?.approved || 0}</p>
-                        </div>
-                        <div className="w-10 h-10 rounded-full bg-[var(--badge-approved-bg)] flex items-center justify-center text-[var(--badge-approved-text)]">
-                            <CheckCircle size={20} />
-                        </div>
-                    </div>
-                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
-                        <div>
-                            <p className="text-xs font-medium text-[var(--text-secondary)] uppercase">Ditolak</p>
-                            <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{stats?.rejected || 0}</p>
-                        </div>
-                        <div className="w-10 h-10 rounded-full bg-[var(--badge-rejected-bg)] flex items-center justify-center text-[var(--badge-rejected-text)]">
-                            <XCircle size={20} />
-                        </div>
                     </div>
                 </div>
 
-                {/* Combined Card: Header + Filters + Table + Pagination */}
-                <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] overflow-hidden shadow-xs">
-                    {/* Card Header */}
-                    <div className="px-5 py-4 flex items-center justify-between border-b-[0.5px] border-[var(--border)]">
-                        <div>
-                            <h3 className="text-base font-semibold text-[var(--text-primary)]">Daftar Dokumen</h3>
-                            <p className="text-xs text-[var(--text-secondary)] mt-0.5">Filter dan kelola dokumen General Journal</p>
-                        </div>
-                    </div>
-
-                    {/* Filters */}
-                    <div className="p-5 border-b-[0.5px] border-[var(--border)] bg-gray-50/50">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
-                            <div className="lg:col-span-2">
-                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Pencarian</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        placeholder="Cari No. Dokumen / Reference..."
-                                        value={searchQuery}
-                                        onChange={e => setSearchQuery(e.target.value)}
-                                        className="w-full pl-9 pr-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                                    />
-                                    <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Status</label>
-                                <select
-                                    value={status}
-                                    onChange={handleStatusChange}
-                                    className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                                >
-                                    <option value="">Semua Status</option>
-                                    <option value="Waiting Approval">Waiting Approval</option>
-                                    <option value="Approved">Approved</option>
-                                    <option value="Rejected">Rejected</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Dari Tanggal</label>
-                                <input
-                                    type="date"
-                                    value={dateFrom}
-                                    onChange={handleDateFromChange}
-                                    className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Sampai Tanggal</label>
-                                <input
-                                    type="date"
-                                    value={dateTo}
-                                    onChange={handleDateToChange}
-                                    className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">User / Requester</label>
-                                <div className="flex gap-2">
-                                    <select
-                                        value={requestedBy}
-                                        onChange={handleRequestedByChange}
-                                        className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                                    >
-                                        <option value="">Semua User</option>
-                                        {users?.map(u => (
-                                            <option key={u.id} value={u.id}>{u.name}</option>
-                                        ))}
-                                    </select>
-                                    <button
-                                        type="button"
-                                        onClick={handleReset}
-                                        className="px-3 py-2 bg-white border-[0.5px] border-[var(--border)] text-[var(--text-secondary)] text-[13px] font-semibold rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center shrink-0"
-                                        title="Reset Filter"
-                                    >
-                                        <RotateCcw size={16} />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Table */}
+                {/* Table Container */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm text-[var(--text-primary)]">
-                            <thead className="bg-[#fafafa] border-b-[0.5px] border-[var(--border)] text-[11px] uppercase text-[var(--text-muted)] font-semibold">
-                                <tr>
-                                    <th className="px-5 py-3 whitespace-nowrap">No. Dokumen</th>
-                                    <th className="px-5 py-3 whitespace-nowrap">Tanggal</th>
-                                    <th className="px-5 py-3">Reference</th>
-                                    <th className="px-5 py-3 whitespace-nowrap">Status</th>
-                                    <th className="px-5 py-3 whitespace-nowrap">Assign To</th>
-                                    <th className="px-5 py-3 text-center whitespace-nowrap">Aksi</th>
+                        <table className="w-full text-left text-xs text-slate-600 border-collapse">
+                            <thead>
+                                {/* Top Header Row */}
+                                <tr className="bg-slate-50/90 border-b border-slate-200 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
+                                    <th className="py-3 px-3 w-12 text-center">#</th>
+                                    <th className="py-3 px-3 min-w-[170px]">No Document</th>
+                                    <th className="py-3 px-3 min-w-[130px]">Date</th>
+                                    <th className="py-3 px-3 min-w-[160px]">Reference</th>
+                                    <th className="py-3 px-3 min-w-[130px]">Status</th>
+                                    <th className="py-3 px-3 min-w-[150px]">Assign To</th>
+                                    <th className="py-3 px-3 min-w-[150px]">Created by</th>
+                                    <th className="py-3 px-3 min-w-[120px]">Last Updated</th>
+                                    <th className="py-3 px-3 text-center min-w-[100px]">Actions</th>
+                                </tr>
+
+                                {/* In-Column Search Row */}
+                                <tr className="bg-slate-100/70 border-b border-slate-200/80">
+                                    {/* # Column */}
+                                    <td className="py-2 px-3 text-center text-slate-400 font-mono text-[10px]">
+                                        -
+                                    </td>
+
+                                    {/* In Search: No Document */}
+                                    <td className="py-1.5 px-2.5">
+                                        <div className="relative">
+                                            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search Doc..."
+                                                value={docNumber}
+                                                onChange={(e) => setDocNumber(e.target.value)}
+                                                className="w-full pl-7 pr-2 py-1 text-[11px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 placeholder:text-slate-400"
+                                            />
+                                        </div>
+                                    </td>
+
+                                    {/* In Search: Date */}
+                                    <td className="py-1.5 px-2.5">
+                                        <input
+                                            type="date"
+                                            value={date}
+                                            onChange={(e) => setDate(e.target.value)}
+                                            className="w-full px-2 py-1 text-[11px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 text-slate-700"
+                                        />
+                                    </td>
+
+                                    {/* In Search: Reference */}
+                                    <td className="py-1.5 px-2.5">
+                                        <div className="relative">
+                                            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search Reference..."
+                                                value={reference}
+                                                onChange={(e) => setReference(e.target.value)}
+                                                className="w-full pl-7 pr-2 py-1 text-[11px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 placeholder:text-slate-400 text-slate-700 font-medium"
+                                            />
+                                        </div>
+                                    </td>
+
+                                    {/* Status Filter */}
+                                    <td className="py-1.5 px-2.5">
+                                        <select
+                                            value={status}
+                                            onChange={(e) => {
+                                                setStatus(e.target.value);
+                                                updateFilters({ status: e.target.value });
+                                            }}
+                                            className="w-full px-2 py-1 text-[11px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 text-slate-700 font-medium"
+                                        >
+                                            <option value="">All Statuses</option>
+                                            <option value="Draft">Draft</option>
+                                            <option value="Waiting Approval">Waiting</option>
+                                            <option value="Revised">Revised</option>
+                                            <option value="Approved">Approved</option>
+                                            <option value="Rejected">Rejected</option>
+                                        </select>
+                                    </td>
+
+                                    {/* In Search: Assign To */}
+                                    <td className="py-1.5 px-2.5">
+                                        <div className="relative">
+                                            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search Assignee..."
+                                                value={assignTo}
+                                                onChange={(e) => setAssignTo(e.target.value)}
+                                                className="w-full pl-7 pr-2 py-1 text-[11px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 placeholder:text-slate-400"
+                                            />
+                                        </div>
+                                    </td>
+
+                                    {/* In Search: Requester / Person Request */}
+                                    <td className="py-1.5 px-2.5">
+                                        <div className="relative">
+                                            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search Requester..."
+                                                value={requester}
+                                                onChange={(e) => setRequester(e.target.value)}
+                                                className="w-full pl-7 pr-2 py-1 text-[11px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 placeholder:text-slate-400"
+                                            />
+                                        </div>
+                                    </td>
+
+                                    {/* Last Updated */}
+                                    <td className="py-1.5 px-2.5 text-slate-400 text-[10px]">
+                                        -
+                                    </td>
+
+                                    {/* Actions */}
+                                    <td className="py-1.5 px-2.5 text-center">
+                                        {(docNumber || requester || assignTo || date || status) && (
+                                            <button
+                                                type="button"
+                                                onClick={handleReset}
+                                                className="text-[10px] text-blue-600 hover:underline font-bold"
+                                            >
+                                                Reset
+                                            </button>
+                                        )}
+                                    </td>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-[var(--border)]">
-                                {journals?.data?.length === 0 ? (
+
+                            <tbody className="divide-y divide-slate-100">
+                                {journalList.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-5 py-12 text-center text-[var(--text-muted)] text-[13px]">
-                                            Tidak ada data ditemukan.
+                                        <td colSpan={9} className="py-16 text-center text-slate-400">
+                                            <div className="max-w-sm mx-auto flex flex-col items-center">
+                                                <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-2.5">
+                                                    <FileText size={24} />
+                                                </div>
+                                                <p className="text-sm font-bold text-slate-700">No Documents Found</p>
+                                                <p className="text-xs text-slate-400 mt-0.5">
+                                                    Try adjusting your in-column search filters.
+                                                </p>
+                                            </div>
                                         </td>
                                     </tr>
                                 ) : (
-                                    journals?.data?.map(journal => (
-                                        <tr key={journal.id} className="hover:bg-[#f9fafb] transition-colors">
-                                            <td className="px-5 py-3">
-                                                <Link href={`/general-journals/${journal.id}`} className="font-mono text-blue-600 hover:underline">
-                                                    {journal.document_number}
-                                                </Link>
-                                            </td>
-                                            <td className="px-5 py-3 text-[13px] whitespace-nowrap">
-                                                {journal.journal_date?.split('T')[0]}
-                                            </td>
-                                            <td className="px-5 py-3 text-[13px] max-w-[200px] truncate">
-                                                {journal.reference || '-'}
-                                            </td>
-                                            <td className="px-5 py-3 whitespace-nowrap">
-                                                {statusBadge(journal.status)}
-                                            </td>
-                                            <td className="px-5 py-3 whitespace-nowrap">
-                                                <div className="flex items-center gap-2">
-                                                    {journal.assignee ? (
-                                                        <>
-                                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-600">
-                                                                {journal.assignee.name.charAt(0).toUpperCase()}
-                                                            </div>
-                                                            <span className="text-[13px]">{journal.assignee.name}</span>
-                                                        </>
-                                                    ) : (
-                                                        <span className="text-[13px] text-[var(--text-muted)]">-</span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-5 py-3">
-                                                <div className="flex items-center justify-center gap-2">
+                                    journalList.map((journal, index) => {
+                                        const rowNum = (journals.current_page - 1) * journals.per_page + index + 1;
+
+                                        return (
+                                            <tr key={journal.id} className="hover:bg-slate-50/80 transition-colors">
+                                                {/* # Row Number */}
+                                                <td className="py-3 px-3 text-center text-slate-400 font-mono font-bold text-xs">
+                                                    {rowNum}
+                                                </td>
+
+                                                {/* No Document */}
+                                                <td className="py-3 px-3">
                                                     <Link
                                                         href={`/general-journals/${journal.id}`}
-                                                        title="Lihat Detail"
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 border-[0.5px] border-[var(--border)] rounded-md text-[12px] font-medium text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
+                                                        className="font-extrabold text-blue-600 hover:text-blue-800 hover:underline tracking-tight"
                                                     >
-                                                        <Eye size={14} />
+                                                        {journal.document_number}
                                                     </Link>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
+                                                </td>
+
+                                                {/* Date */}
+                                                <td className="py-3 px-3 font-medium text-slate-700 whitespace-nowrap">
+                                                    {journal.journal_date ? new Date(journal.journal_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'}
+                                                </td>
+
+                                                {/* Reference */}
+                                                <td className="py-3 px-3 max-w-[200px] truncate text-slate-600" title={journal.reference}>
+                                                    {journal.reference || '-'}
+                                                </td>
+
+                                                {/* Status */}
+                                                <td className="py-3 px-3 whitespace-nowrap">
+                                                    {renderStatusBadge(journal.status)}
+                                                </td>
+
+                                                {/* Assign To */}
+                                                <td className="py-3 px-3 whitespace-nowrap">
+                                                    {journal.assignee ? (
+                                                        <div className="flex items-center gap-1.5">
+
+                                                            <span className="font-medium text-slate-800">{journal.assignee.name}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-slate-400">-</span>
+                                                    )}
+                                                </td>
+
+                                                {/* Person Request / Requester */}
+                                                <td className="py-3 px-3 whitespace-nowrap">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="font-semibold text-slate-800">
+                                                            {journal.requester?.name || '-'}
+                                                        </span>
+                                                    </div>
+                                                </td>
+
+                                                {/* Last Updated */}
+                                                <td className="py-3 px-3 text-slate-400 text-[11px] whitespace-nowrap">
+                                                    {journal.last_updated_at ? new Date(journal.last_updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+                                                </td>
+
+                                                {/* Actions */}
+                                                <td className="py-3 px-3 text-center">
+                                                    <div className="flex items-center justify-center gap-1">
+                                                        <Link
+                                                            href={`/general-journals/${journal.id}`}
+                                                            title="View Document Details"
+                                                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                                        >
+                                                            <Eye size={15} />
+                                                        </Link>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setFileModal({ open: true, journalId: journal.id })}
+                                                            title="View Attachments"
+                                                            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                                                        >
+                                                            <Paperclip size={15} />
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setHistoryModal({ open: true, journalId: journal.id })}
+                                                            title="View Audit Timeline"
+                                                            className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                                                        >
+                                                            <History size={15} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
                     </div>
 
                     {/* Pagination Footer */}
-                    <div className="px-5 py-3 border-t-[0.5px] border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="px-4 py-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 bg-slate-50/60">
                         <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[12px] text-[var(--text-secondary)]">Tampilkan</span>
+                            <div className="flex items-center gap-1.5">
+                                <span>Show</span>
                                 <select
                                     value={perPage}
-                                    onChange={handlePerPageChange}
-                                    className="px-2 py-1 border-[0.5px] border-[var(--border)] rounded-md text-[12px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                    onChange={(e) => {
+                                        setPerPage(e.target.value);
+                                        updateFilters({ per_page: e.target.value });
+                                    }}
+                                    className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none"
                                 >
                                     <option value="10">10</option>
                                     <option value="25">25</option>
                                     <option value="50">50</option>
                                     <option value="100">100</option>
                                 </select>
-                                <span className="text-[12px] text-[var(--text-secondary)]">data</span>
+                                <span>rows</span>
                             </div>
-                            {journals?.from && (
-                                <p className="text-[12px] text-[var(--text-secondary)]">
-                                    Menampilkan <span className="font-medium text-[var(--text-primary)]">{journals.from}</span> - <span className="font-medium text-[var(--text-primary)]">{journals.to}</span> dari <span className="font-medium text-[var(--text-primary)]">{journals.total}</span> data
+
+                            {journals?.total > 0 && (
+                                <p>
+                                    Showing <strong className="text-slate-700">{journals.from}</strong> - <strong className="text-slate-700">{journals.to}</strong> of <strong className="text-slate-700">{journals.total}</strong> documents
                                 </p>
                             )}
                         </div>
+
                         {journals?.links && journals.links.length > 3 && (
-                            <div className="flex gap-1 flex-wrap">
-                                {journals.links.map((link, i) => (
+                            <div className="flex items-center gap-1 flex-wrap">
+                                {journals.links.map((link, idx) => (
                                     <Link
-                                        key={i}
+                                        key={idx}
                                         href={link.url || '#'}
-                                        className={`px-3 py-1.5 text-[12px] rounded-md transition-colors ${
-                                            link.active
-                                                ? 'bg-blue-600 text-white font-medium'
-                                                : link.url
-                                                    ? 'text-[var(--text-secondary)] hover:bg-gray-100'
-                                                    : 'text-gray-300 cursor-not-allowed'
-                                        }`}
+                                        preserveScroll
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${link.active
+                                            ? 'bg-blue-600 text-white font-bold'
+                                            : !link.url
+                                                ? 'text-slate-300 cursor-not-allowed'
+                                                : 'text-slate-600 hover:bg-slate-200/70'
+                                            }`}
                                         dangerouslySetInnerHTML={{ __html: link.label }}
-                                        preserveState
                                     />
                                 ))}
                             </div>
@@ -393,11 +459,14 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                 </div>
             </div>
 
+            {/* Modal for viewing files */}
             <FileModal
                 open={fileModal.open}
                 journalId={fileModal.journalId}
                 onClose={() => setFileModal({ open: false, journalId: null })}
             />
+
+            {/* Modal for viewing timeline */}
             <HistoryModal
                 open={historyModal.open}
                 journalId={historyModal.journalId}

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Persetujuan General Journal — JAGO</title>
+    <title>General Journal Approval — JAGO</title>
     <!-- Google Fonts: Plus Jakarta Sans & Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,7 +35,7 @@
                     <tr>
                         <td style="background-color:#fffbeb;border-bottom:1px solid #fef3c7;padding:12px 32px;text-align:center;">
                             <span style="color:#b45309;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                ⏰ PENGINGAT APPROVAL #{{ $reminderNumber }} (Menunggu {{ $reminderNumber === 1 ? '3' : '5' }} Hari)
+                                ⏰ APPROVAL REMINDER #{{ $reminderNumber }} (Pending for {{ $reminderNumber === 1 ? '3' : '5' }} Days)
                             </span>
                         </td>
                     </tr>
@@ -57,25 +57,25 @@
                             <!-- Main Title -->
                             <h1 style="margin:0 0 18px 0;font-size:24px;font-weight:800;color:#1a2540;letter-spacing:-0.5px;text-align:center;font-family:'Plus Jakarta Sans','Poppins',sans-serif;line-height:1.3;">
                                 @if(isset($reminderNumber) && $reminderNumber > 0)
-                                    Persetujuan Diperlukan Segera
+                                    Approval Required Urgently
                                 @else
-                                    Persetujuan General Journal
+                                    General Journal Approval Required
                                 @endif
                             </h1>
 
                             <!-- Intro Paragraph -->
                             <p style="margin:0 0 16px 0;font-size:14px;color:#475569;line-height:1.65;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                Yth. Bapak/Ibu <strong>{{ $approver->name }}</strong>,
+                                Dear <strong>{{ $approver->name }}</strong>,
                             </p>
                             <p style="margin:0 0 24px 0;font-size:14px;color:#475569;line-height:1.65;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                Dokumen General Journal berikut telah disetujui oleh <strong>Section Head</strong> dan saat ini menunggu persetujuan akhir dari Anda. File PDF lengkap telah dilampirkan pada email ini untuk ditinjau.
+                                The following General Journal document has been verified by <strong>Section Head</strong> and is currently awaiting your final approval. The complete PDF document is attached to this email for your review.
                             </p>
 
                             <!-- Document Details Box -->
                             <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:28px;overflow:hidden;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                 <tr>
                                     <td style="padding:13px 18px;border-bottom:1px solid #e2e8f0;width:38%;color:#64748b;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                        No. Dokumen
+                                        Document Number
                                     </td>
                                     <td style="padding:13px 18px;border-bottom:1px solid #e2e8f0;color:#1a2540;font-size:14px;font-weight:800;font-family:'Plus Jakarta Sans',monospace;">
                                         {{ $journal->document_number }}
@@ -83,7 +83,7 @@
                                 </tr>
                                 <tr>
                                     <td style="padding:13px 18px;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                        Tanggal Journal
+                                        Journal Date
                                     </td>
                                     <td style="padding:13px 18px;border-bottom:1px solid #e2e8f0;color:#1e293b;font-size:13.5px;font-weight:600;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                         {{ $journal->journal_date->format('d M Y') }}
@@ -99,7 +99,7 @@
                                 </tr>
                                 <tr>
                                     <td style="padding:13px 18px;color:#64748b;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                        Diajukan Oleh
+                                        Person Request
                                     </td>
                                     <td style="padding:13px 18px;color:#1e293b;font-size:13.5px;font-weight:600;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                         {{ $journal->requester->name }}
@@ -111,7 +111,7 @@
                             <!-- Over Limit Attachments Warning -->
                             <div style="background-color:#fffbeb;border:1px solid #fef3c7;border-radius:10px;padding:14px 18px;margin-bottom:28px;">
                                 <p style="margin:0 0 8px 0;font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.5px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                    📎 Dokumen Pendukung Tambahan (Unduh via Link):
+                                    📎 Additional Supporting Documents (Download via Link):
                                 </p>
                                 @foreach($overLimitFiles as $file)
                                 <p style="margin:4px 0 0 0;font-size:12.5px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
@@ -131,12 +131,12 @@
                                             <tr>
                                                 <td style="padding-right:8px;">
                                                     <a href="{{ $approveUrl }}" style="background-color:#1a2540;color:#ffffff;display:inline-block;padding:13px 32px;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;box-shadow:0 2px 6px rgba(26,37,64,0.25);text-align:center;font-family:'Plus Jakarta Sans','Poppins',sans-serif;letter-spacing:-0.2px;">
-                                                        Setujui Dokumen
+                                                        Approve Document
                                                     </a>
                                                 </td>
                                                 <td style="padding-left:8px;">
-                                                    <a href="{{ $rejectUrl }}" style="background-color:#ffffff;color:#dc2626;border:1.5px solid #dc2626;display:inline-block;padding:11.5px 28px;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;text-align:center;font-family:'Plus Jakarta Sans','Poppins',sans-serif;letter-spacing:-0.2px;">
-                                                        Tolak Dokumen
+                                                    <a href="{{ $rejectUrl }}" style="background-color:#ffffff;color:#d97706;border:1.5px solid #d97706;display:inline-block;padding:11.5px 28px;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;text-align:center;font-family:'Plus Jakarta Sans','Poppins',sans-serif;letter-spacing:-0.2px;">
+                                                        Request Revision
                                                     </a>
                                                 </td>
                                             </tr>
@@ -148,25 +148,22 @@
                             <!-- Fallback Link Section -->
                             <div style="border-top:1px solid #e2e8f0;padding-top:22px;margin-top:24px;">
                                 <p style="margin:0 0 6px 0;font-size:12px;color:#64748b;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                    Jika tombol di atas tidak berfungsi, salin dan tempel tautan persetujuan berikut ke browser Anda:
+                                    If the buttons above do not work, copy and paste the respective link into your browser:
                                 </p>
                                 <p style="margin:0 0 16px 0;font-size:12px;word-break:break-all;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                    <a href="{{ $approveUrl }}" style="color:#2563eb;text-decoration:none;font-weight:500;">{{ $approveUrl }}</a>
+                                    Approval link: <a href="{{ $approveUrl }}" style="color:#2563eb;text-decoration:none;font-weight:500;">{{ $approveUrl }}</a>
                                 </p>
 
-                                <p style="margin:0 0 6px 0;font-size:12px;color:#64748b;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                    Tautan penolakan dokumen:
-                                </p>
                                 <p style="margin:0 0 20px 0;font-size:12px;word-break:break-all;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                    <a href="{{ $rejectUrl }}" style="color:#dc2626;text-decoration:none;font-weight:500;">{{ $rejectUrl }}</a>
+                                    Revision link: <a href="{{ $rejectUrl }}" style="color:#d97706;text-decoration:none;font-weight:500;">{{ $rejectUrl }}</a>
                                 </p>
 
                                 <p style="margin:0 0 4px 0;font-size:13px;color:#64748b;line-height:1.55;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                    Jika Anda memiliki pertanyaan mengenai dokumen ini, silakan hubungi pengaju atau tim finance terkait.
+                                    If you have questions regarding this document, please contact the requester or finance team.
                                 </p>
                                 <p style="margin:16px 0 0 0;font-size:13px;color:#475569;line-height:1.55;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                    Salam hormat,<br>
-                                    <strong style="color:#1a2540;">Tim JAGO &mdash; PT Astra Visteon Indonesia</strong>
+                                    Best regards,<br>
+                                    <strong style="color:#1a2540;">JAGO Team &mdash; PT Astra Visteon Indonesia</strong>
                                 </p>
                             </div>
 
@@ -179,11 +176,11 @@
                     <tr>
                         <td style="padding:20px 24px;">
                             <p style="margin:0 0 4px 0;font-size:13px;font-weight:700;color:#1a2540;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                Butuh Bantuan atau Akses Dokumen Lainnya?
+                                Need Help or Access to Other Documents?
                             </p>
                             <p style="margin:0;font-size:12.5px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                 <a href="{{ url('/monitoring') }}" style="color:#2563eb;font-weight:600;text-decoration:none;">
-                                    Buka Portal Monitoring Dokumen &rarr;
+                                    Open Document Monitoring Portal &rarr;
                                 </a>
                             </p>
                         </td>
@@ -198,11 +195,11 @@
                             <p style="margin:0 0 12px 0;font-size:12px;font-weight:600;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                 <a href="{{ url('/dashboard') }}" style="color:#475569;text-decoration:none;margin:0 8px;">Dashboard</a> &bull;
                                 <a href="{{ url('/monitoring') }}" style="color:#475569;text-decoration:none;margin:0 8px;">Monitoring</a> &bull;
-                                <a href="{{ url('/tutorial') }}" style="color:#475569;text-decoration:none;margin:0 8px;">Panduan</a>
+                                <a href="{{ url('/tutorial') }}" style="color:#475569;text-decoration:none;margin:0 8px;">User Guide</a>
                             </p>
                             
                             <p style="margin:0 0 8px 0;font-size:11.5px;color:#94a3b8;line-height:1.55;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                Email ini dikirim otomatis oleh Journal Approval General Operations (JAGO). Tautan approval berlaku 48 jam.
+                                This email was sent automatically by Journal Approval General Operations (JAGO). Approval tokens are valid for 5 business days.
                             </p>
                             
                             <p style="margin:0;font-size:11.5px;color:#94a3b8;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">

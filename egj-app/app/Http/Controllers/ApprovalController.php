@@ -8,7 +8,6 @@ use App\Models\GeneralJournal;
 use App\Models\GeneralJournalApproval;
 use App\Models\Notification;
 use App\Models\User;
-use App\Services\PdfApprovalStampService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -51,11 +50,34 @@ class ApprovalController extends Controller
                 }
             });
 
+        if ($request->filled('doc_number')) {
+            $query->where('document_number', 'like', "%{$request->doc_number}%");
+        }
+
+        if ($request->filled('reference')) {
+            $query->where('reference', 'like', "%{$request->reference}%");
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('journal_date', $request->date);
+        }
+
+        if ($request->filled('requester')) {
+            $req = $request->requester;
+            $query->where(function ($q) use ($req) {
+                $q->where('requested_by', $req)
+                  ->orWhereHas('requester', function ($u) use ($req) {
+                      $u->where('name', 'like', "%{$req}%");
+                  });
+            });
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('document_number', 'like', "%{$search}%")
-                    ->orWhere('reference', 'like', "%{$search}%");
+                    ->orWhere('reference', 'like', "%{$search}%")
+                    ->orWhereHas('requester', fn($u) => $u->where('name', 'like', "%{$search}%"));
             });
         }
 
@@ -107,19 +129,30 @@ class ApprovalController extends Controller
                 ->where('status', 'Approved');
         })->count();
 
-        $rejectedCount = GeneralJournal::whereHas('approvals', function ($q) use ($user) {
+        $revisedCount = GeneralJournal::whereHas('approvals', function ($q) use ($user) {
             $q->where('approved_by_user_id', $user->id)
-                ->where('status', 'Rejected');
+                ->where('status', 'Revised');
         })->count();
 
         return Inertia::render('Approval/Index', [
             'journals' => $journals,
-            'filters' => $request->only(['search', 'status', 'date_from', 'date_to', 'requested_by', 'per_page']),
+            'filters' => $request->only([
+                'doc_number',
+                'reference',
+                'date',
+                'requester',
+                'status',
+                'search',
+                'date_from',
+                'date_to',
+                'requested_by',
+                'per_page'
+            ]),
             'users' => $users,
             'stats' => [
                 'waiting' => $waitingCount,
                 'approved' => $approvedCount,
-                'rejected' => $rejectedCount,
+                'revised' => $revisedCount,
             ],
         ]);
     }
@@ -140,14 +173,13 @@ class ApprovalController extends Controller
 
         $user = Auth::user();
 
-        // User can access if they are the current assignee OR they are in the approval chain OR eligible approver
         $isCurrentAssignee = $journal->current_assign_to == $user->id;
         $isInApprovalChain = $journal->approvals->contains('assigned_user_id', $user->id);
         $isEligibleApprover = ($user->hasRole('Dept/Div Head') && $journal->approvals->where('approval_level', 'superior_of_superior')->where('status', 'Pending')->count() > 0)
             || ($user->hasRole('Section Head') && $journal->approvals->where('approval_level', 'superior')->where('status', 'Pending')->count() > 0);
 
         if (!$isCurrentAssignee && !$isInApprovalChain && !$isEligibleApprover) {
-            abort(403, 'Anda tidak memiliki akses untuk approval dokumen ini.');
+            abort(403, 'You do not have permission to review this document.');
         }
 
         return Inertia::render('Approval/Show', [
@@ -168,12 +200,10 @@ class ApprovalController extends Controller
             || ($user->hasRole('Section Head') && $journal->approvals()->where('approval_level', 'superior')->where('status', 'Pending')->exists());
 
         if (!$isEligibleApprover || !$journal->isWaitingApproval()) {
-            abort(403, 'Anda tidak memiliki hak untuk menyetujui dokumen ini.');
+            abort(403, 'You do not have permission to approve this document.');
         }
 
-        $levelStamped = null;
-
-        DB::transaction(function () use ($journal, $user, &$levelStamped) {
+        DB::transaction(function () use ($journal, $user) {
             // Find the current pending approval for this user/role
             $currentApproval = $journal->approvals()
                 ->where('status', 'Pending')
@@ -188,10 +218,10 @@ class ApprovalController extends Controller
                 ->first();
 
             if (!$currentApproval) {
-                abort(403, 'Tidak ada approval yang pending untuk Anda.');
+                abort(403, 'No pending approval task found for your account.');
             }
 
-            // Approve the current level
+            // Approve current level
             $currentApproval->update([
                 'status' => 'Approved',
                 'assigned_user_id' => $user->id,
@@ -199,8 +229,6 @@ class ApprovalController extends Controller
                 'approved_at' => now(),
                 'notes' => 'Approved ' . now()->format('Y-m-d') . ' ' . $user->name,
             ]);
-
-            $levelStamped = $currentApproval->approval_level;
 
             // Record history
             ApprovalHistory::create([
@@ -212,14 +240,13 @@ class ApprovalController extends Controller
                 'created_at' => now(),
             ]);
 
-            // Check if there are more pending levels
+            // Check if next pending approval exists
             $nextPending = $journal->approvals()
                 ->where('status', 'Pending')
                 ->orderByRaw("CASE approval_level WHEN 'accounting' THEN 1 WHEN 'superior' THEN 2 WHEN 'superior_of_superior' THEN 3 END")
                 ->first();
 
             if ($nextPending) {
-                // Determine the next approver user (Dept/Div Head)
                 $nextUser = User::find($nextPending->assigned_user_id);
                 if (!$nextUser && $nextPending->approval_level === 'superior_of_superior') {
                     $nextUser = User::where('role', 'Dept/Div Head')->where('is_active', true)->first();
@@ -230,42 +257,32 @@ class ApprovalController extends Controller
 
                 $nextAssigneeId = $nextUser ? $nextUser->id : $nextPending->assigned_user_id;
 
-                // Move to next approver (Update current_assign_to to Dept Head's ULID)
                 $journal->update([
                     'current_assign_to' => $nextAssigneeId,
                     'last_updated_at' => now(),
                 ]);
 
-                // Create database notification for next approver (Dept Head)
                 if ($nextAssigneeId) {
-                    $alreadyNotifiedDeptHead = Notification::where('general_journal_id', $journal->id)
-                        ->where('user_id', $nextAssigneeId)
-                        ->where('type', 'approval_request')
-                        ->exists();
-
-                    if (!$alreadyNotifiedDeptHead) {
-                        Notification::create([
-                            'user_id' => $nextAssigneeId,
-                            'general_journal_id' => $journal->id,
-                            'type' => 'approval_request',
-                            'message' => "Dokumen {$journal->document_number} telah disetujui Section Head dan membutuhkan persetujuan Anda.",
-                            'created_at' => now(),
-                        ]);
-                    }
+                    Notification::create([
+                        'user_id' => $nextAssigneeId,
+                        'general_journal_id' => $journal->id,
+                        'type' => 'approval_request',
+                        'message' => "Document {$journal->document_number} has been approved by Section Head and is waiting for your review.",
+                        'created_at' => now(),
+                    ]);
                 }
 
-                // Send email with approve & reject buttons to Dept/Div Head (Only 1 email to Dept Head)
                 if ($nextUser) {
                     try {
                         $approvalToken = $this->createEmailToken($journal, $nextUser->email, 'approval');
-                        $rejectToken = $this->createEmailToken($journal, $nextUser->email, 'rejection');
+                        $reviseToken = $this->createEmailToken($journal, $nextUser->email, 'rejection');
 
                         Mail::to($nextUser->email)->send(
                             new DeptHeadApprovalMail(
                                 $journal,
                                 $nextUser,
                                 url('/approve-email/' . $approvalToken->token),
-                                url('/reject-email/' . $rejectToken->token)
+                                url('/revise-email/' . $reviseToken->token)
                             )
                         );
                     } catch (\Throwable $e) {
@@ -273,55 +290,48 @@ class ApprovalController extends Controller
                     }
                 }
             } else {
-                // All levels approved → final approved by Dept Head
+                // Final approved by Dept Head
                 $journal->update([
                     'status' => 'Approved',
                     'current_assign_to' => null,
                     'last_updated_at' => now(),
                 ]);
 
-                // Cek sebelum buat notifikasi approved ke requester
-                $alreadyNotified = Notification::where('general_journal_id', $journal->id)
-                    ->where('user_id', $journal->requested_by)
-                    ->where('type', 'approved')
-                    ->exists();
+                Notification::create([
+                    'user_id' => $journal->requested_by,
+                    'general_journal_id' => $journal->id,
+                    'type' => 'approved',
+                    'message' => "Document {$journal->document_number} has been fully approved.",
+                    'created_at' => now(),
+                ]);
 
-                if (!$alreadyNotified) {
-                    // Create database notification for requester
-                    Notification::create([
-                        'user_id' => $journal->requested_by,
-                        'general_journal_id' => $journal->id,
-                        'type' => 'approved',
-                        'message' => "Dokumen {$journal->document_number} telah disetujui sepenuhnya.",
-                        'created_at' => now(),
-                    ]);
-
-                    // Send final approval email ONLY to requester
-                    $requester = User::find($journal->requested_by);
-                    if ($requester) {
-                        try {
-                            Mail::to($requester->email)->send(
-                                new ApprovalResultMail($journal, $requester, 'approved')
-                            );
-                        } catch (\Throwable $e) {
-                            Log::error("Failed sending ApprovalResultMail (approved) for journal {$journal->id}: " . $e->getMessage());
-                        }
+                $requester = User::find($journal->requested_by);
+                if ($requester) {
+                    try {
+                        Mail::to($requester->email)->send(
+                            new ApprovalResultMail($journal, $requester, 'approved')
+                        );
+                    } catch (\Throwable $e) {
+                        Log::error("Failed sending ApprovalResultMail (approved) for journal {$journal->id}: " . $e->getMessage());
                     }
                 }
             }
         });
 
         return redirect()->route('approval.index')
-            ->with('success', 'General Journal berhasil di-approve.');
+            ->with('success', 'General Journal approved successfully.');
     }
 
     /**
-     * Reject a General Journal.
+     * Request revision for a General Journal (replaces Reject for approvers).
      */
-    public function reject(Request $request, string $id)
+    public function revise(Request $request, string $id)
     {
         $request->validate([
-            'notes' => ['required', 'string', 'min:5'],
+            'notes' => ['required', 'string', 'min:5', 'max:2000'],
+        ], [
+            'notes.required' => 'Revision notes are required.',
+            'notes.min' => 'Revision notes must be at least 5 characters.',
         ]);
 
         $journal = GeneralJournal::with('approvals')->findOrFail($id);
@@ -332,7 +342,7 @@ class ApprovalController extends Controller
             || ($user->hasRole('Section Head') && $journal->approvals()->where('approval_level', 'superior')->where('status', 'Pending')->exists());
 
         if (!$isEligibleApprover || !$journal->isWaitingApproval()) {
-            abort(403, 'Anda tidak memiliki hak untuk menolak dokumen ini.');
+            abort(403, 'You do not have permission to request revision for this document.');
         }
 
         DB::transaction(function () use ($request, $journal, $user) {
@@ -350,7 +360,7 @@ class ApprovalController extends Controller
 
             if ($currentApproval) {
                 $currentApproval->update([
-                    'status' => 'Rejected',
+                    'status' => 'Revised',
                     'assigned_user_id' => $user->id,
                     'approved_by_user_id' => $user->id,
                     'approved_at' => now(),
@@ -358,47 +368,55 @@ class ApprovalController extends Controller
                 ]);
             }
 
-            // Update journal status
+            // Update journal status to Revised and assign back to requester
             $journal->update([
-                'status' => 'Rejected',
-                'current_assign_to' => $journal->requested_by, // Assign back to requester
+                'status' => 'Revised',
+                'current_assign_to' => $journal->requested_by,
                 'last_updated_at' => now(),
             ]);
 
             // Record history
             ApprovalHistory::create([
                 'general_journal_id' => $journal->id,
-                'action' => 'reject',
+                'action' => 'revise',
                 'actor_user_id' => $user->id,
                 'target_level' => $currentApproval ? $currentApproval->approval_level : 'superior',
                 'notes' => $request->notes,
                 'created_at' => now(),
             ]);
 
-            // Create database notification for requester
+            // Create notification for requester
             Notification::create([
                 'user_id' => $journal->requested_by,
                 'general_journal_id' => $journal->id,
-                'type' => 'rejected',
-                'message' => "Dokumen {$journal->document_number} telah ditolak: {$request->notes}",
+                'type' => 'revised',
+                'message' => "Document {$journal->document_number} requires revision: {$request->notes}",
                 'created_at' => now(),
             ]);
 
-            // Send rejection email to requester
+            // Send revision notice email to requester
             $requester = User::find($journal->requested_by);
             if ($requester) {
                 try {
                     Mail::to($requester->email)->send(
-                        new ApprovalResultMail($journal, $requester, 'rejected', $request->notes)
+                        new ApprovalResultMail($journal, $requester, 'revised', $request->notes)
                     );
                 } catch (\Throwable $e) {
-                    Log::error("Failed sending ApprovalResultMail (rejected) for journal {$journal->id}: " . $e->getMessage());
+                    Log::error("Failed sending ApprovalResultMail (revised) for journal {$journal->id}: " . $e->getMessage());
                 }
             }
         });
 
         return redirect()->route('approval.index')
-            ->with('success', 'General Journal berhasil di-reject.');
+            ->with('success', 'Revision requested successfully.');
+    }
+
+    /**
+     * Backward-compatibility wrapper for reject route.
+     */
+    public function reject(Request $request, string $id)
+    {
+        return $this->revise($request, $id);
     }
 
     /**

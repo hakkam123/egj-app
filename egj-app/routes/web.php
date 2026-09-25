@@ -34,8 +34,12 @@ Route::middleware('guest')->group(function () {
 Route::get('/preview/{token}', [PreviewController::class, 'show'])->name('preview.token');
 Route::get('/approve-email/{token}', [EmailApprovalController::class, 'show'])->name('email.approve');
 Route::post('/approve-email/{token}', [EmailApprovalController::class, 'approve'])->name('email.approve.process');
-Route::get('/reject-email/{token}', [EmailApprovalController::class, 'showReject'])->name('email.reject');
-Route::post('/reject-email/{token}', [EmailApprovalController::class, 'reject'])->name('email.reject.process');
+Route::get('/revise-email/{token}', [EmailApprovalController::class, 'showRevise'])->name('email.revise');
+Route::post('/revise-email/{token}', [EmailApprovalController::class, 'revise'])->name('email.revise.process');
+
+// Backward compatibility for old links
+Route::get('/reject-email/{token}', [EmailApprovalController::class, 'showRevise'])->name('email.reject');
+Route::post('/reject-email/{token}', [EmailApprovalController::class, 'revise'])->name('email.reject.process');
 
 /*
 |--------------------------------------------------------------------------
@@ -54,7 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     Route::post('/notifications/mark-read-by-journal/{journalId}', [NotificationController::class, 'markReadByJournal'])->name('notifications.mark-read-by-journal');
 
-    // Tutorial / Manual Book (View, Preview, Download for all authenticated users)
+    // Tutorial / Manual Book
     Route::get('/tutorial', [TutorialController::class, 'index'])->name('tutorial.index');
     Route::get('/tutorial/download/{id?}', [TutorialController::class, 'download'])->name('tutorial.download');
     Route::get('/tutorial/{id}/preview', [TutorialController::class, 'preview'])->name('tutorial.preview');
@@ -68,22 +72,36 @@ Route::middleware('auth')->group(function () {
     Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring.index');
     Route::get('/monitoring/export', [MonitoringController::class, 'export'])->name('monitoring.export');
 
-    // General Journals
+    // Drafts Management & Bulk Submit (Staff & Section Head)
+    Route::get('/drafts', [GeneralJournalController::class, 'drafts'])->name('drafts.index');
+    Route::post('/general-journals/bulk-submit', [GeneralJournalController::class, 'bulkSubmit'])->name('general-journals.bulk-submit');
+
+    // General Journals CRUD & Lifecycle
     Route::get('/general-journals/create', [GeneralJournalController::class, 'create'])->name('general-journals.create');
     Route::post('/general-journals', [GeneralJournalController::class, 'store'])->name('general-journals.store');
     Route::get('/general-journals/{id}', [GeneralJournalController::class, 'show'])->name('general-journals.show');
+    Route::get('/general-journals/{id}/edit', [GeneralJournalController::class, 'edit'])->name('general-journals.edit');
+    Route::post('/general-journals/{id}/update', [GeneralJournalController::class, 'update'])->name('general-journals.update');
+    Route::put('/general-journals/{id}', [GeneralJournalController::class, 'update'])->name('general-journals.update.put');
+    Route::delete('/general-journals/{id}', [GeneralJournalController::class, 'destroy'])->name('general-journals.destroy');
+    Route::post('/general-journals/{id}/submit', [GeneralJournalController::class, 'submitSingle'])->name('general-journals.submit');
+    Route::post('/general-journals/{id}/resubmit', [GeneralJournalController::class, 'resubmit'])->name('general-journals.resubmit');
+    Route::post('/general-journals/{id}/self-reject', [GeneralJournalController::class, 'selfReject'])->name('general-journals.self-reject');
 
     // Approval (Section Head & Dept/Div Head only)
     Route::middleware('role:Section Head,Dept/Div Head')->group(function () {
         Route::get('/approval', [ApprovalController::class, 'index'])->name('approval.index');
         Route::get('/approval/{id}', [ApprovalController::class, 'show'])->name('approval.show');
         Route::post('/approval/{id}/approve', [ApprovalController::class, 'approve'])->name('approval.approve');
-        Route::post('/approval/{id}/reject', [ApprovalController::class, 'reject'])->name('approval.reject');
+        Route::post('/approval/{id}/revise', [ApprovalController::class, 'revise'])->name('approval.revise');
+        // Backward compatibility
+        Route::post('/approval/{id}/reject', [ApprovalController::class, 'revise'])->name('approval.reject');
     });
 
-    // Tracking (Available to all authenticated roles)
-    Route::get('/tracking', [TrackingController::class, 'index'])->name('tracking.index');
+    // Timeline Data (JSON Endpoint for History Modal)
+    Route::get('/tracking', fn() => redirect()->route('monitoring.index'));
     Route::get('/tracking/{id}', [TrackingController::class, 'show'])->name('tracking.show');
+    Route::get('/general-journals/{id}/history', [TrackingController::class, 'show'])->name('general-journals.history');
 
     // Files
     Route::get('/files/{id}/download', [FileController::class, 'download'])->name('files.download');

@@ -20,7 +20,6 @@ export default function EditProfile({ user }) {
         new_password_confirmation: '',
     });
 
-    // State untuk toggle show/hide password
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmationPassword, setShowConfirmationPassword] = useState(false);
@@ -29,7 +28,7 @@ export default function EditProfile({ user }) {
         e.preventDefault();
         profileForm.put('/profile', {
             preserveScroll: true,
-            onSuccess: () => toast.success('Profil berhasil diperbarui.'),
+            onSuccess: () => toast.success('Profile updated successfully.'),
         });
     };
 
@@ -39,7 +38,7 @@ export default function EditProfile({ user }) {
             preserveScroll: true,
             onSuccess: () => {
                 passwordForm.reset();
-                toast.success('Password berhasil diubah.');
+                toast.success('Password changed successfully.');
             },
         });
     };
@@ -50,23 +49,22 @@ export default function EditProfile({ user }) {
     const labelStyle = { color: 'var(--text-muted)' };
 
     return (
-        <MainLayout title="Akun Saya">
-            <Head title="Akun Saya" />
+        <MainLayout title="My Account">
+            <Head title="My Account" />
 
             <div className="max-w-5xl mx-auto space-y-6">
                 <PageHeader
-                    title="Akun Saya"
-                    subtitle="Kelola data diri dan keamanan kata sandi akun Anda"
+                    title="My Account"
+                    subtitle="Manage your personal profile and account security settings"
                 />
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
 
-                    {/* Kiri: Informasi Profil */}
+                    {/* Profile Information */}
                     <div
                         className="rounded-[10px] p-6"
                         style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border)' }}
                     >
-                        {/* Card header */}
                         <div className="flex items-center gap-3 pb-4 mb-5" style={{ borderBottom: '0.5px solid var(--border)' }}>
                             <div
                                 className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
@@ -75,15 +73,15 @@ export default function EditProfile({ user }) {
                                 <User size={15} color="#ffffff" />
                             </div>
                             <div>
-                                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Informasi Profil</p>
-                                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Perbarui nama, email, dan NPK Anda</p>
+                                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Profile Information</p>
+                                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Update your name, email, and NPK</p>
                             </div>
                         </div>
 
                         <form onSubmit={handleProfileSubmit} className="space-y-4">
                             <div>
                                 <label className={labelClass} style={labelStyle}>
-                                    Nama Lengkap <span style={{ color: '#e05c5c' }}>*</span>
+                                    Full Name <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
                                 <input
                                     type="text"
@@ -100,7 +98,7 @@ export default function EditProfile({ user }) {
 
                             <div>
                                 <label className={labelClass} style={labelStyle}>
-                                    Alamat Email <span style={{ color: '#e05c5c' }}>*</span>
+                                    Email Address <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
                                 <input
                                     type="email"
@@ -117,13 +115,13 @@ export default function EditProfile({ user }) {
 
                             <div>
                                 <label className={labelClass} style={labelStyle}>
-                                    NPK (Nomor Pokok Karyawan)
+                                    NPK (Employee ID Number)
                                 </label>
                                 <input
                                     type="text"
                                     value={profileForm.data.npk}
                                     onChange={e => profileForm.setData('npk', e.target.value)}
-                                    placeholder="Contoh: 123456"
+                                    placeholder="e.g. 123456"
                                     className={inputClass}
                                     style={inputStyle}
                                 />
@@ -134,7 +132,7 @@ export default function EditProfile({ user }) {
 
                             <div>
                                 <label className={labelClass} style={labelStyle}>
-                                    Role / Jabatan
+                                    Role / Designation
                                 </label>
                                 <div
                                     className="flex items-center gap-2 px-3 py-2 text-[13px] rounded-[7px]"
@@ -155,18 +153,17 @@ export default function EditProfile({ user }) {
                                     onMouseLeave={e => e.currentTarget.style.background = '#1a2540'}
                                 >
                                     <Save size={14} />
-                                    {profileForm.processing ? 'Menyimpan...' : 'Simpan Profil'}
+                                    {profileForm.processing ? 'Saving...' : 'Save Profile'}
                                 </button>
                             </div>
                         </form>
                     </div>
 
-                    {/* Kanan: Ubah Password */}
+                    {/* Change Password */}
                     <div
                         className="rounded-[10px] p-6"
                         style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border)' }}
                     >
-                        {/* Card header */}
                         <div className="flex items-center gap-3 pb-4 mb-5" style={{ borderBottom: '0.5px solid var(--border)' }}>
                             <div
                                 className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
@@ -175,16 +172,15 @@ export default function EditProfile({ user }) {
                                 <Lock size={15} color="#ffffff" />
                             </div>
                             <div>
-                                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Ubah Password</p>
-                                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Ganti kata sandi untuk mengamankan akun</p>
+                                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Change Password</p>
+                                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Update your password to keep your account secure</p>
                             </div>
                         </div>
 
                         <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                            {/* Password Saat Ini */}
                             <div>
                                 <label className={labelClass} style={labelStyle}>
-                                    Password Saat Ini <span style={{ color: '#e05c5c' }}>*</span>
+                                    Current Password <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
                                 <div className="relative">
                                     <input
@@ -202,7 +198,7 @@ export default function EditProfile({ user }) {
                                         tabIndex={-1}
                                     >
                                         {showCurrentPassword ? (
-                                            <EyeOff size={15} style={{ color: 'var(--text-muted)' }} />
+                                             <EyeOff size={15} style={{ color: 'var(--text-muted)' }} />
                                         ) : (
                                             <Eye size={15} style={{ color: 'var(--text-muted)' }} />
                                         )}
@@ -213,17 +209,16 @@ export default function EditProfile({ user }) {
                                 )}
                             </div>
 
-                            {/* Password Baru */}
                             <div>
                                 <label className={labelClass} style={labelStyle}>
-                                    Password Baru <span style={{ color: '#e05c5c' }}>*</span>
+                                    New Password <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
                                 <div className="relative">
                                     <input
                                         type={showNewPassword ? 'text' : 'password'}
                                         value={passwordForm.data.new_password}
                                         onChange={e => passwordForm.setData('new_password', e.target.value)}
-                                        placeholder="Minimal 8 karakter"
+                                        placeholder="Minimum 8 characters"
                                         className={`${inputClass} pr-10`}
                                         style={inputStyle}
                                         required
@@ -242,17 +237,16 @@ export default function EditProfile({ user }) {
                                     </button>
                                 </div>
                                 <p className="mt-1 text-right text-[11px]" style={{ color: (passwordForm.data.new_password?.length || 0) < 8 ? '#e05c5c' : 'var(--text-muted)' }}>
-                                    {passwordForm.data.new_password?.length || 0} / 8 karakter minimum
+                                    {passwordForm.data.new_password?.length || 0} / 8 minimum characters
                                 </p>
                                 {passwordForm.errors.new_password && (
                                     <p className="mt-1 text-[12px]" style={{ color: '#e05c5c' }}>{passwordForm.errors.new_password}</p>
                                 )}
                             </div>
 
-                            {/* Konfirmasi Password Baru */}
                             <div>
                                 <label className={labelClass} style={labelStyle}>
-                                    Konfirmasi Password Baru <span style={{ color: '#e05c5c' }}>*</span>
+                                    Confirm New Password <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
                                 <div className="relative">
                                     <input
@@ -288,7 +282,7 @@ export default function EditProfile({ user }) {
                                     onMouseLeave={e => e.currentTarget.style.background = '#1a2540'}
                                 >
                                     <Lock size={14} />
-                                    {passwordForm.processing ? 'Memproses...' : 'Ubah Password'}
+                                    {passwordForm.processing ? 'Processing...' : 'Change Password'}
                                 </button>
                             </div>
                         </form>

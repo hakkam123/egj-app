@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, CheckCircle, XCircle, FileText, Send, RefreshCw, X } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, FileText, Send, RefreshCw, X, AlertCircle } from 'lucide-react';
 
 export default function HistoryModal({ open, journalId, onClose }) {
     const [history, setHistory] = useState([]);
@@ -29,7 +29,13 @@ export default function HistoryModal({ open, journalId, onClose }) {
     if (!open) return null;
 
     const actionLabel = (action) => {
-        const labels = { 'submit': 'Submitted', 'approve': 'Approved', 'reject': 'Rejected', 'resubmit': 'Resubmitted' };
+        const labels = { 
+            'submit': 'Submitted', 
+            'approve': 'Approved', 
+            'reject': 'Rejected', 
+            'revise': 'Revision Requested',
+            'resubmit': 'Resubmitted' 
+        };
         return labels[action] || action;
     };
 
@@ -38,6 +44,7 @@ export default function HistoryModal({ open, journalId, onClose }) {
             'submit': 'text-blue-600',
             'approve': 'text-emerald-600',
             'reject': 'text-red-600',
+            'revise': 'text-orange-600',
             'resubmit': 'text-amber-600',
         };
         return colors[action] || 'text-gray-600';
@@ -48,13 +55,18 @@ export default function HistoryModal({ open, journalId, onClose }) {
             'submit': <Send size={16} className="text-blue-500 bg-white" />,
             'approve': <CheckCircle size={16} className="text-emerald-500 bg-white" />,
             'reject': <XCircle size={16} className="text-red-500 bg-white" />,
+            'revise': <AlertCircle size={16} className="text-orange-500 bg-white" />,
             'resubmit': <RefreshCw size={16} className="text-amber-500 bg-white" />,
         };
         return icons[action] || <Clock size={16} className="text-gray-500 bg-white" />;
     };
 
     const levelLabel = (level) => {
-        const labels = { 'accounting': 'Accounting', 'superior': 'Superior', 'superior_of_superior': 'Superior of Superior' };
+        const labels = { 
+            'accounting': 'Accounting', 
+            'superior': 'Superior', 
+            'superior_of_superior': 'Superior of Superior' 
+        };
         return labels[level] || level;
     };
 
@@ -67,9 +79,9 @@ export default function HistoryModal({ open, journalId, onClose }) {
                     <div className="flex items-center justify-between px-6 py-4 border-b-[0.5px] border-[var(--border)] bg-[#fafafa]">
                         <div>
                             <h3 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
-                                Timeline Dokumen
+                                Document Timeline
                             </h3>
-                            {journal && <p className="text-[13px] font-mono text-[var(--text-secondary)] mt-0.5">No. Dokumen :  {journal.document_number}</p>}
+                            {journal && <p className="text-[13px] font-mono text-[var(--text-secondary)] mt-0.5">Doc No: {journal.document_number}</p>}
                         </div>
                         <button onClick={onClose} className="p-1.5 text-[var(--text-muted)] hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
                             <X size={20} />
@@ -87,7 +99,7 @@ export default function HistoryModal({ open, journalId, onClose }) {
                             </div>
                         ) : history.length > 0 ? (
                             <div className="relative border-l-[0.5px] border-[var(--border)] ml-3 space-y-6">
-                                {history.map((h, i) => (
+                                {history.map((h) => (
                                     <div key={h.id} className="relative pl-6">
                                         <div className="absolute -left-[8px] top-1">
                                             {actionIcon(h.action)}
@@ -97,7 +109,7 @@ export default function HistoryModal({ open, journalId, onClose }) {
                                                 <span className={`text-[13px] font-bold ${actionColor(h.action)}`}>
                                                     {actionLabel(h.action)}
                                                 </span>
-                                                <span className="text-[11px] text-[var(--text-muted)]">• {new Date(h.created_at).toLocaleString('id-ID')}</span>
+                                                <span className="text-[11px] text-[var(--text-muted)]">• {new Date(h.created_at).toLocaleString('en-US')}</span>
                                             </div>
                                             <p className="text-[13px] font-semibold text-[var(--text-primary)] mt-1">
                                                 {h.actor?.name}
@@ -111,7 +123,7 @@ export default function HistoryModal({ open, journalId, onClose }) {
                                             
                                             {h.notes && (
                                                 <div className="mt-2 p-3 bg-gray-50 border-[0.5px] border-[var(--border)] rounded-[7px] text-[12px] text-[var(--text-secondary)] italic">
-                                                    "{h.notes}"
+                                                    &ldquo;{h.notes}&rdquo;
                                                 </div>
                                             )}
                                         </div>
@@ -121,7 +133,7 @@ export default function HistoryModal({ open, journalId, onClose }) {
                         ) : (
                             <div className="flex flex-col items-center justify-center py-8 text-[var(--text-muted)]">
                                 <FileText className="w-10 h-10 mb-2 opacity-50" />
-                                <p className="text-[13px]">Belum ada riwayat aktivitas.</p>
+                                <p className="text-[13px]">No activity history recorded yet.</p>
                             </div>
                         )}
                     </div>

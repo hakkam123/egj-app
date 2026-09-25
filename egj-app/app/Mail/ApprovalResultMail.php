@@ -17,13 +17,18 @@ class ApprovalResultMail extends Mailable
     public function __construct(
         public GeneralJournal $journal,
         public User $requester,
-        public string $result, // 'approved' or 'rejected'
+        public string $result, // 'approved', 'revised', 'rejected'
         public ?string $notes = null,
     ) {}
 
     public function envelope(): Envelope
     {
-        $status = $this->result === 'approved' ? 'Approved' : 'Rejected';
+        $status = match (strtolower($this->result)) {
+            'approved' => 'Approved',
+            'revised' => 'Revision Requested',
+            'rejected' => 'Rejected',
+            default => ucfirst($this->result),
+        };
 
         return new Envelope(
             subject: "General Journal {$this->journal->document_number} - {$status}",
@@ -44,3 +49,4 @@ class ApprovalResultMail extends Mailable
         );
     }
 }
+

@@ -21,7 +21,7 @@ export default function Login() {
 
     return (
         <>
-            <Head title="Login" />
+            <Head title="Sign In" />
 
             <div className="min-h-screen flex items-center justify-center bg-dashboard px-4 py-12">
                 <div
@@ -42,10 +42,10 @@ export default function Login() {
                         {/* Title */}
                         <div className="mb-6 text-center">
                             <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                                Masuk
+                                Sign In
                             </h1>
                             <p className="mt-1 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-                                Silakan masuk menggunakan akun Anda
+                                Please sign in with your corporate account
                             </p>
                         </div>
 
@@ -54,7 +54,7 @@ export default function Login() {
                             {/* Email */}
                             <div>
                                 <label htmlFor="email" className={labelClass} style={labelStyle}>
-                                    Email <span style={{ color: '#e05c5c' }}>*</span>
+                                    Email Address <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -67,7 +67,7 @@ export default function Login() {
                                         onChange={(e) => setData('email', e.target.value)}
                                         className={`${inputClass} pl-10`}
                                         style={inputStyle}
-                                        placeholder="nama@astra-visteon.com"
+                                        placeholder="name@astra-visteon.com"
                                         required
                                         autoFocus
                                     />
@@ -124,7 +124,7 @@ export default function Login() {
                                 onMouseEnter={e => !processing && (e.currentTarget.style.background = '#243355')}
                                 onMouseLeave={e => e.currentTarget.style.background = '#1a2540'}
                             >
-                                {processing ? 'Masuk...' : 'Masuk'}
+                                {processing ? 'Signing In...' : 'Sign In'}
                             </button>
                         </form>
 

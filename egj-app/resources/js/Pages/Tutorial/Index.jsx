@@ -29,19 +29,19 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
     const handleUploadSubmit = (e) => {
         e.preventDefault();
         if (!uploadForm.data.file) {
-            toast.error('Silakan pilih file PDF terlebih dahulu.');
+            toast.error('Please select a PDF file first.');
             return;
         }
 
         uploadForm.post('/tutorial', {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success('Tutorial PDF berhasil diunggah.');
+                toast.success('Tutorial PDF uploaded successfully.');
                 uploadForm.reset();
                 setUploadModalOpen(false);
             },
             onError: (err) => {
-                const msg = err.file || err.title || 'Gagal mengunggah tutorial.';
+                const msg = err.file || err.title || 'Failed to upload tutorial.';
                 toast.error(msg);
             }
         });
@@ -51,21 +51,21 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
         router.delete(`/tutorial/${id}`, {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success('Tutorial berhasil dihapus.');
+                toast.success('Tutorial deleted successfully.');
                 setDeleteConfirmId(null);
             },
-            onError: () => toast.error('Gagal menghapus tutorial.')
+            onError: () => toast.error('Failed to delete tutorial.')
         });
     };
 
     return (
-        <MainLayout title="Panduan Pengguna">
-            <Head title="Tutorial & Panduan" />
+        <MainLayout title="User Guide">
+            <Head title="User Guide & Tutorials" />
 
             <div className="space-y-6 max-w-5xl mx-auto">
                 <PageHeader
-                    title="Panduan Pengguna JAGO"
-                    subtitle="Pelajari alur pengajuan, verifikasi, serta persetujuan Journal Approval General Operations (JAGO)"
+                    title="JAGO User Guide"
+                    subtitle="Learn the workflow for submission, verification, revision, and approval in Journal Approval General Operations (JAGO)"
                     actions={
                         <>
                             {isAdmin && (
@@ -73,10 +73,9 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
                                     onClick={() => setUploadModalOpen(true)}
                                     className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-xs"
                                 >
-                                    <Plus size={15} /> Tambah
+                                    <Plus size={15} /> Add Tutorial
                                 </button>
                             )}
-                            
                         </>
                     }
                 />
@@ -86,7 +85,7 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs text-amber-800 flex items-start gap-3">
                         <HelpCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                         <div>
-                            <span className="font-semibold">Catatan:</span> Belum ada file tutorial atau manual book PDF yang diunggah. Administrator dapat menggunakan tombol &ldquo;Upload PDF Tutorial&rdquo; di atas untuk menambahkan dokumen panduan.
+                            <span className="font-semibold">Notice:</span> No tutorial files or PDF manual books have been uploaded yet. Administrators can use the &ldquo;Add Tutorial&rdquo; button above to upload guide documents.
                         </div>
                     </div>
                 )}
@@ -95,14 +94,14 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
                 <div>
                     <div className="flex items-center justify-between mb-3">
                         <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-                            Daftar Dokumen Panduan
+                            Guide Documents List
                         </p>
                     </div>
 
                     {tutorials.length === 0 ? (
                         <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-8 text-center text-xs text-gray-500">
-                            <p className="font-medium text-gray-700">Belum ada file tutorial tambahan</p>
-                            <p className="text-gray-400 mt-0.5">Silakan unduh manual book utama melalui tombol di banner atas.</p>
+                            <p className="font-medium text-gray-700">No additional tutorial documents available</p>
+                            <p className="text-gray-400 mt-0.5">Please check back later or contact your system administrator.</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -126,11 +125,12 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
                                             </div>
                                         </div>
 
-                                        {/* Tombol aksi di kanan atas */}
+                                        {/* Action buttons */}
                                         <div className="flex items-center gap-2 shrink-0">
                                             <a
                                                 href={`/tutorial/download/${t.id}`}
                                                 className="px-3 py-1.5 bg-[#e6f2ef] text-[#2b6b5c] rounded-md text-xs font-semibold hover:brightness-95 transition-all flex items-center gap-1.5"
+                                                title="Download PDF"
                                             >
                                                 <Download size={14} />
                                             </a>
@@ -138,7 +138,7 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
                                                 <button
                                                     onClick={() => setDeleteConfirmId(t.id)}
                                                     className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
-                                                    title="Hapus Tutorial"
+                                                    title="Delete Tutorial"
                                                 >
                                                     <Trash2 size={15} />
                                                 </button>
@@ -160,7 +160,7 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
                 {/* Workflow Cards */}
                 <div>
                     <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-3">
-                        Ringkasan Alur Proses
+                        Process Workflow Summary
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -170,14 +170,14 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
                                 <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold bg-[#1a2540] text-white shrink-0">
                                     1
                                 </span>
-                                Buat & Ajukan Draft
+                                Create & Submit Draft
                             </h3>
                             <p className="text-xs text-[var(--text-secondary)] leading-relaxed flex-1 mb-4">
-                                Staff atau Section Head mengisi Document Number, Tanggal Journal, Reference, serta mengunggah file PDF General Journal dan dokumen pendukung.
+                                Staff or Section Head fills in Document Number (prefixed with JOT), Journal Date, Reference, and uploads General Journal and Supporting Document PDFs. Save as draft or submit immediately.
                             </p>
                             <ul className="text-xs text-[var(--text-secondary)] space-y-1.5 pt-3 border-t border-[var(--border)]">
-                                <li className="flex items-center gap-2">✓ Format file PDF maks 10MB</li>
-                                <li className="flex items-center gap-2">✓ Auto stamp stempel Accounting</li>
+                                <li className="flex items-center gap-2">✓ PDF format, max 10MB each</li>
+                                <li className="flex items-center gap-2">✓ Auto Accounting stamp with journal date</li>
                             </ul>
                         </div>
 
@@ -187,14 +187,14 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
                                 <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold bg-[#1a2540] text-white shrink-0">
                                     2
                                 </span>
-                                Proses Persetujuan
+                                Review & Approval
                             </h3>
                             <p className="text-xs text-[var(--text-secondary)] leading-relaxed flex-1 mb-4">
-                                Section Head dan Dept/Div Head meninjau dokumen pada menu Approval atau melalui tautan email. Dokumen di-stamp otomatis secara digital saat disetujui.
+                                Section Head and Dept/Div Head review documents via web or email. Approvers can Approve or Request Revision. If revised, requester can re-upload files or self-reject.
                             </p>
                             <ul className="text-xs text-[var(--text-secondary)] space-y-1.5 pt-3 border-t border-[var(--border)]">
-                                <li className="flex items-center gap-2">✓ Penolakan wajib mengisi catatan</li>
-                                <li className="flex items-center gap-2">✓ Approval bertingkat</li>
+                                <li className="flex items-center gap-2">✓ Notes required for revision</li>
+                                <li className="flex items-center gap-2">✓ Sequential multi-tier approvals</li>
                             </ul>
                         </div>
 
@@ -204,14 +204,14 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
                                 <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold bg-[#1a2540] text-white shrink-0">
                                     3
                                 </span>
-                                Monitoring & Tracking
+                                Monitoring & Timeline
                             </h3>
                             <p className="text-xs text-[var(--text-secondary)] leading-relaxed flex-1 mb-4">
-                                Pantau posisi dokumen secara real-time pada menu Monitoring dan lihat timeline riwayat pergerakan dokumen pada menu Tracking.
+                                Monitor document progress in real time on Monitoring with in-column filters, and view full audit timeline and stamped PDF copies directly from the table.
                             </p>
                             <ul className="text-xs text-[var(--text-secondary)] space-y-1.5 pt-3 border-t border-[var(--border)]">
-                                <li className="flex items-center gap-2">✓ Ekspor data ke Excel</li>
-                                <li className="flex items-center gap-2">✓ Preview file di-stamp versi terbaru</li>
+                                <li className="flex items-center gap-2">✓ Export filtered data to Excel</li>
+                                <li className="flex items-center gap-2">✓ Instant timeline history & stamped PDF previews</li>
                             </ul>
                         </div>
                     </div>
@@ -224,7 +224,7 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
                     <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-150">
                         <div className="flex items-center justify-between pb-3 border-b border-gray-200">
                             <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                                <Upload size={18} className="text-blue-600" /> Unggah Tutorial PDF
+                                <Upload size={18} className="text-blue-600" /> Upload Tutorial PDF
                             </h3>
                             <button
                                 onClick={() => setUploadModalOpen(false)}
@@ -237,13 +237,13 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
                         <form onSubmit={handleUploadSubmit} className="space-y-4 pt-4">
                             <div>
                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-600 mb-1">
-                                    Judul Panduan <span className="text-red-500">*</span>
+                                    Guide Title <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     value={uploadForm.data.title}
                                     onChange={e => uploadForm.setData('title', e.target.value)}
-                                    placeholder="Contoh: Petunjuk Pengajuan General Journal Staff"
+                                    placeholder="e.g. General Journal Submission Guidelines"
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     required
                                 />
@@ -254,12 +254,12 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
 
                             <div>
                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-600 mb-1">
-                                    Deskripsi Singkat
+                                    Brief Description
                                 </label>
                                 <textarea
                                     value={uploadForm.data.description}
                                     onChange={e => uploadForm.setData('description', e.target.value)}
-                                    placeholder="Penjelasan ringkas mengenai dokumen ini..."
+                                    placeholder="Brief summary of this document..."
                                     rows={2}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
@@ -267,7 +267,7 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
 
                             <div>
                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-600 mb-1">
-                                    File Dokumen PDF <span className="text-red-500">* (Maks 20MB)</span>
+                                    PDF Document File <span className="text-red-500">* (Max 20MB)</span>
                                 </label>
                                 <input
                                     type="file"
@@ -287,14 +287,14 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
                                     onClick={() => setUploadModalOpen(false)}
                                     className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                                 >
-                                    Batal
+                                    Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={uploadForm.processing}
                                     className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg transition-colors shadow-xs flex items-center gap-1.5"
                                 >
-                                    <Upload size={14} /> {uploadForm.processing ? 'Mengunggah...' : 'Unggah File'}
+                                    <Upload size={14} /> {uploadForm.processing ? 'Uploading...' : 'Upload File'}
                                 </button>
                             </div>
                         </form>
@@ -306,22 +306,22 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
             {deleteConfirmId && (
                 <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
                     <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-xl relative animate-in fade-in zoom-in duration-150">
-                        <h3 className="text-base font-bold text-gray-900 mb-2">Hapus Tutorial?</h3>
+                        <h3 className="text-base font-bold text-gray-900 mb-2">Delete Tutorial?</h3>
                         <p className="text-xs text-gray-600 mb-5">
-                            Apakah Anda yakin ingin menghapus file tutorial ini? Tindakan ini tidak dapat dibatalkan.
+                            Are you sure you want to delete this tutorial document? This action cannot be undone.
                         </p>
                         <div className="flex justify-end gap-2">
                             <button
                                 onClick={() => setDeleteConfirmId(null)}
                                 className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                             >
-                                Batal
+                                Cancel
                             </button>
                             <button
                                 onClick={() => handleDelete(deleteConfirmId)}
                                 className="px-4 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
                             >
-                                Ya, Hapus
+                                Yes, Delete
                             </button>
                         </div>
                     </div>

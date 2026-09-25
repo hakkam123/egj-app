@@ -101,43 +101,44 @@ export default function TrackingIndex({ journals, filters, users }) {
         const styleMap = {
             'Waiting Approval': 'bg-[var(--badge-waiting-bg)] text-[var(--badge-waiting-text)]',
             'Approved': 'bg-[var(--badge-approved-bg)] text-[var(--badge-approved-text)]',
+            'Revised': 'bg-amber-100 text-amber-800 border border-amber-300',
             'Rejected': 'bg-[var(--badge-rejected-bg)] text-[var(--badge-rejected-text)]',
             'Draft': 'bg-[var(--badge-draft-bg)] text-[var(--badge-draft-text)]',
         };
         return (
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${styleMap[s] || styleMap['Draft']}`}>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${styleMap[s] || styleMap['Draft']}`}>
                 {s}
             </span>
         );
     };
 
     return (
-        <MainLayout title="Tracking Jurnal">
+        <MainLayout title="Document Tracking">
             <Head title="Tracking" />
 
             <div className="space-y-6">
                 <PageHeader
-                    title="Tracking Dokumen"
-                    subtitle="Lacak posisi dan riwayat alur persetujuan dokumen secara real-time"
+                    title="Document Tracking"
+                    subtitle="Track document approval progress and lifecycle history in real-time"
                 />
 
                 {/* Combined Card: Header + Filters + Table + Pagination */}
                 <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] overflow-hidden shadow-xs">
                     {/* Card Header */}
                     <div className="px-5 py-4 border-b-[0.5px] border-[var(--border)]">
-                        <h3 className="text-base font-semibold text-[var(--text-primary)]">Riwayat Pergerakan Dokumen</h3>
-                        <p className="text-xs text-[var(--text-secondary)] mt-0.5">Daftar dokumen beserta status perjalanan persetujuan</p>
+                        <h3 className="text-base font-semibold text-[var(--text-primary)]">Document Movement History</h3>
+                        <p className="text-xs text-[var(--text-secondary)] mt-0.5">List of documents with active approval step and tracking timeline</p>
                     </div>
 
                     {/* Filters */}
                     <div className="p-5 border-b-[0.5px] border-[var(--border)] bg-gray-50/50">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
                             <div className="lg:col-span-2">
-                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Pencarian</label>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Search</label>
                                 <div className="relative">
                                     <input
                                         type="text"
-                                        placeholder="Cari No. Dokumen / Reference..."
+                                        placeholder="Search Document No. / Reference..."
                                         value={searchQuery}
                                         onChange={e => setSearchQuery(e.target.value)}
                                         className="w-full pl-9 pr-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
@@ -153,15 +154,17 @@ export default function TrackingIndex({ journals, filters, users }) {
                                     onChange={handleStatusChange}
                                     className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                                 >
-                                    <option value="">Semua Status</option>
+                                    <option value="">All Statuses</option>
                                     <option value="Waiting Approval">Waiting Approval</option>
+                                    <option value="Revised">Revised</option>
                                     <option value="Approved">Approved</option>
                                     <option value="Rejected">Rejected</option>
+                                    <option value="Draft">Draft</option>
                                 </select>
                             </div>
 
                             <div>
-                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Dari Tanggal</label>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">From Date</label>
                                 <input
                                     type="date"
                                     value={dateFrom}
@@ -171,7 +174,7 @@ export default function TrackingIndex({ journals, filters, users }) {
                             </div>
 
                             <div>
-                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Sampai Tanggal</label>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">To Date</label>
                                 <input
                                     type="date"
                                     value={dateTo}
@@ -181,14 +184,14 @@ export default function TrackingIndex({ journals, filters, users }) {
                             </div>
 
                             <div>
-                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">User / Requester</label>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Person Request</label>
                                 <div className="flex gap-2">
                                     <select
                                         value={requestedBy}
                                         onChange={handleRequestedByChange}
                                         className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                                     >
-                                        <option value="">Semua User</option>
+                                        <option value="">All Users</option>
                                         {users?.map(u => (
                                             <option key={u.id} value={u.id}>{u.name}</option>
                                         ))}
@@ -197,7 +200,7 @@ export default function TrackingIndex({ journals, filters, users }) {
                                         type="button"
                                         onClick={handleReset}
                                         className="px-3 py-2 bg-white border-[0.5px] border-[var(--border)] text-[var(--text-secondary)] text-[13px] font-semibold rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center shrink-0"
-                                        title="Reset Filter"
+                                        title="Reset Filters"
                                     >
                                         <RotateCcw size={16} />
                                     </button>
@@ -211,28 +214,32 @@ export default function TrackingIndex({ journals, filters, users }) {
                         <table className="w-full text-left text-sm text-[var(--text-primary)]">
                             <thead className="bg-[#fafafa] border-b-[0.5px] border-[var(--border)] text-[11px] uppercase text-[var(--text-muted)] font-semibold">
                                 <tr>
-                                    <th className="px-5 py-3 whitespace-nowrap">No. Dokumen</th>
-                                    <th className="px-5 py-3 whitespace-nowrap">Tanggal</th>
+                                    <th className="px-4 py-3 text-center w-12">#</th>
+                                    <th className="px-5 py-3 whitespace-nowrap">Document Number</th>
+                                    <th className="px-5 py-3 whitespace-nowrap">Journal Date</th>
                                     <th className="px-5 py-3">Reference</th>
                                     <th className="px-5 py-3 whitespace-nowrap">Status</th>
                                     <th className="px-5 py-3 whitespace-nowrap">Person Request</th>
                                     <th className="px-5 py-3 whitespace-nowrap">Last Approval</th>
                                     <th className="px-5 py-3 whitespace-nowrap">Last Updated</th>
-                                    <th className="px-5 py-3 text-center whitespace-nowrap">Aksi</th>
+                                    <th className="px-5 py-3 text-center whitespace-nowrap">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--border)]">
                                 {journals?.data?.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="px-5 py-12 text-center text-[var(--text-muted)] text-[13px]">
-                                            Tidak ada data ditemukan.
+                                        <td colSpan={9} className="px-5 py-12 text-center text-[var(--text-muted)] text-[13px]">
+                                            No tracking records found.
                                         </td>
                                     </tr>
                                 ) : (
-                                    journals?.data?.map(journal => (
+                                    journals?.data?.map((journal, index) => (
                                         <tr key={journal.id} className="hover:bg-[#f9fafb] transition-colors">
+                                            <td className="px-4 py-3 text-center text-xs text-[var(--text-muted)] font-mono">
+                                                {(journals?.from || 1) + index}
+                                            </td>
                                             <td className="px-5 py-3">
-                                                <span className="font-mono text-[var(--text-primary)]">
+                                                <span className="font-mono text-[var(--text-primary)] font-medium">
                                                     {journal.document_number}
                                                 </span>
                                             </td>
@@ -249,7 +256,7 @@ export default function TrackingIndex({ journals, filters, users }) {
                                                 <div className="flex items-center gap-2">
                                                     {journal.requester ? (
                                                         <>
-                                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-600">
+                                                            <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-700">
                                                                 {journal.requester.name.charAt(0).toUpperCase()}
                                                             </div>
                                                             <span className="text-[13px]">{journal.requester.name}</span>
@@ -274,14 +281,14 @@ export default function TrackingIndex({ journals, filters, users }) {
                                                 </div>
                                             </td>
                                             <td className="px-5 py-3 text-[12px] text-[var(--text-secondary)] whitespace-nowrap">
-                                                {journal.last_updated_at ? new Date(journal.last_updated_at).toLocaleString('id-ID') : '-'}
+                                                {journal.last_updated_at ? new Date(journal.last_updated_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '-'}
                                             </td>
                                             <td className="px-5 py-3">
                                                 <div className="flex items-center justify-center">
                                                     <button
                                                         onClick={() => setHistoryModal({ open: true, journalId: journal.id })}
                                                         className="flex items-center gap-1.5 px-3 py-1.5 border-[0.5px] border-[var(--border)] rounded-md text-[12px] font-medium text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
-                                                        title="Lihat timeline"
+                                                        title="View History Timeline"
                                                     >
                                                         <Clock size={14} />
                                                     </button>
@@ -298,7 +305,7 @@ export default function TrackingIndex({ journals, filters, users }) {
                     <div className="px-5 py-3 border-t-[0.5px] border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                             <div className="flex items-center gap-2">
-                                <span className="text-[12px] text-[var(--text-secondary)]">Tampilkan</span>
+                                <span className="text-[12px] text-[var(--text-secondary)]">Show</span>
                                 <select
                                     value={perPage}
                                     onChange={handlePerPageChange}
@@ -309,11 +316,11 @@ export default function TrackingIndex({ journals, filters, users }) {
                                     <option value="50">50</option>
                                     <option value="100">100</option>
                                 </select>
-                                <span className="text-[12px] text-[var(--text-secondary)]">data</span>
+                                <span className="text-[12px] text-[var(--text-secondary)]">entries</span>
                             </div>
                             {journals?.from && (
                                 <p className="text-[12px] text-[var(--text-secondary)]">
-                                    Menampilkan <span className="font-medium text-[var(--text-primary)]">{journals.from}</span> - <span className="font-medium text-[var(--text-primary)]">{journals.to}</span> dari <span className="font-medium text-[var(--text-primary)]">{journals.total}</span> data
+                                    Showing <span className="font-medium text-[var(--text-primary)]">{journals.from}</span> to <span className="font-medium text-[var(--text-primary)]">{journals.to}</span> of <span className="font-medium text-[var(--text-primary)]">{journals.total}</span> entries
                                 </p>
                             )}
                         </div>

@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import MainLayout from '../../Layouts/MainLayout';
 import PageHeader from '../../Components/PageHeader';
-import { FileText, Clock, CheckCircle, XCircle, Users, ArrowRight } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, Users, ArrowRight, RotateCcw, Edit3 } from 'lucide-react';
 import { STATUS_COLORS } from '../../constants/statusColors';
 
 export default function DashboardIndex({ role, stats, recentData, actionRequiredDocs = [], thresholdDays = 3 }) {
@@ -9,27 +9,31 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
     const isStaff = role === 'Staff';
     const isAdmin = role === 'Admin';
 
-    // Status Badge matching the tone-down palette
-    const statusBadge = (status) => {
-        const config = STATUS_COLORS[status] || STATUS_COLORS['Draft'];
+    // Status Badge matching the exact Monitoring style
+    const renderStatusBadge = (status) => {
+        const conf = STATUS_COLORS[status] || STATUS_COLORS['Neutral'];
+
         return (
-            <span
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                style={{
-                    backgroundColor: config.bgSoft,
-                    color: config.solid,
-                }}
-            >
-                {status}
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold">
+                <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${conf.dotClass || 'bg-slate-500'
+                        }`}
+                />
+                <span className={conf.text || 'text-slate-500'}>
+                    {conf.label || status}
+                </span>
             </span>
         );
     };
 
+
     // Calculate count values for Vertical Bar Chart
+    const draftCount = stats?.draft ?? 0;
     const waitingCount = stats?.waiting ?? stats?.pending_approval ?? 0;
+    const revisedCount = stats?.revised ?? stats?.total_revised ?? 0;
     const approvedCount = stats?.approved ?? stats?.total_approved ?? 0;
     const rejectedCount = stats?.rejected ?? stats?.total_rejected ?? 0;
-    const totalDistribution = waitingCount + approvedCount + rejectedCount;
+    const totalDistribution = draftCount + waitingCount + revisedCount + approvedCount + rejectedCount;
 
     const chartItems = [
         {
@@ -38,8 +42,17 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
             shortLabel: 'Waiting',
             count: waitingCount,
             percent: totalDistribution > 0 ? Math.round((waitingCount / totalDistribution) * 100) : 0,
-            color: STATUS_COLORS['Waiting Approval'].solid,
-            bgSoft: STATUS_COLORS['Waiting Approval'].bgSoft,
+            color: STATUS_COLORS['Waiting Approval']?.solid || '#2563eb',
+            bgSoft: STATUS_COLORS['Waiting Approval']?.bgSoft || '#eff6ff',
+        },
+        {
+            key: 'revised',
+            label: 'Revised',
+            shortLabel: 'Revised',
+            count: revisedCount,
+            percent: totalDistribution > 0 ? Math.round((revisedCount / totalDistribution) * 100) : 0,
+            color: STATUS_COLORS['Revised']?.solid || '#d97706',
+            bgSoft: STATUS_COLORS['Revised']?.bgSoft || '#fffbeb',
         },
         {
             key: 'approved',
@@ -47,8 +60,8 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
             shortLabel: 'Approved',
             count: approvedCount,
             percent: totalDistribution > 0 ? Math.round((approvedCount / totalDistribution) * 100) : 0,
-            color: STATUS_COLORS['Approved'].solid,
-            bgSoft: STATUS_COLORS['Approved'].bgSoft,
+            color: STATUS_COLORS['Approved']?.solid || '#16a34a',
+            bgSoft: STATUS_COLORS['Approved']?.bgSoft || '#f0fdf4',
         },
         {
             key: 'rejected',
@@ -56,8 +69,8 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
             shortLabel: 'Rejected',
             count: rejectedCount,
             percent: totalDistribution > 0 ? Math.round((rejectedCount / totalDistribution) * 100) : 0,
-            color: STATUS_COLORS['Rejected'].solid,
-            bgSoft: STATUS_COLORS['Rejected'].bgSoft,
+            color: STATUS_COLORS['Rejected']?.solid || '#dc2626',
+            bgSoft: STATUS_COLORS['Rejected']?.bgSoft || '#fef2f2',
         },
     ];
 
@@ -68,170 +81,281 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
             <div className="space-y-6">
                 <PageHeader
                     title="Dashboard Overview"
-                    subtitle="Ringkasan aktivitas dan status General Journal"
-                    
+                    subtitle="Summary of activities, metrics, and General Journal status"
                 />
 
-                {/* 4 Summary Cards (Toned-down soft backgrounds) */}
+                {/* Summary Cards for Staff */}
                 {isStaff && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {/* Total Diajukan (Neutral) */}
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                        {/* Drafts */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Total Diajukan</p>
-                                <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{stats?.total || 0}</p>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    Drafts
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                    {stats?.draft || 0}
+                                </p>
                             </div>
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: STATUS_COLORS.Neutral.bgSoft, color: STATUS_COLORS.Neutral.solid }}>
-                                <FileText size={20} />
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <Edit3 size={18} strokeWidth={1.8} />
                             </div>
                         </div>
 
                         {/* Waiting Approval */}
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Waiting Approval</p>
-                                <p className="text-2xl font-bold mt-1" style={{ color: STATUS_COLORS['Waiting Approval'].solid }}>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    Waiting Approval
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
                                     {stats?.waiting || 0}
                                 </p>
                             </div>
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: STATUS_COLORS['Waiting Approval'].bgSoft, color: STATUS_COLORS['Waiting Approval'].solid }}>
-                                <Clock size={20} />
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <Clock size={18} strokeWidth={1.8} />
                             </div>
                         </div>
 
-                        {/* Disetujui */}
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+                        {/* Revised */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Disetujui</p>
-                                <p className="text-2xl font-bold mt-1" style={{ color: STATUS_COLORS['Approved'].solid }}>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    Revised
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                    {stats?.revised || 0}
+                                </p>
+                            </div>
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <RotateCcw size={18} strokeWidth={1.8} />
+                            </div>
+                        </div>
+
+                        {/* Approved */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    Approved
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
                                     {stats?.approved || 0}
                                 </p>
                             </div>
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: STATUS_COLORS['Approved'].bgSoft, color: STATUS_COLORS['Approved'].solid }}>
-                                <CheckCircle size={20} />
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <CheckCircle size={18} strokeWidth={1.8} />
                             </div>
                         </div>
 
-                        {/* Ditolak */}
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+                        {/* Rejected */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Ditolak</p>
-                                <p className="text-2xl font-bold mt-1" style={{ color: STATUS_COLORS['Rejected'].solid }}>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    Rejected
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
                                     {stats?.rejected || 0}
                                 </p>
                             </div>
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: STATUS_COLORS['Rejected'].bgSoft, color: STATUS_COLORS['Rejected'].solid }}>
-                                <XCircle size={20} />
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <XCircle size={18} strokeWidth={1.8} />
                             </div>
                         </div>
                     </div>
                 )}
 
+                {/* Summary Cards for Approver */}
                 {isApprover && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {/* Antrean Approval */}
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                        {/* Pending Approval */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Antrean Approval</p>
-                                <p className="text-2xl font-bold mt-1" style={{ color: STATUS_COLORS['Waiting Approval'].solid }}>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    Pending Approval
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
                                     {stats?.pending_approval || 0}
                                 </p>
                             </div>
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: STATUS_COLORS['Waiting Approval'].bgSoft, color: STATUS_COLORS['Waiting Approval'].solid }}>
-                                <Clock size={20} />
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <Clock size={18} strokeWidth={1.8} />
                             </div>
                         </div>
 
-                        {/* Telah Anda Approve */}
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+                        {/* Approved by You */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Telah Diapprove</p>
-                                <p className="text-2xl font-bold mt-1" style={{ color: STATUS_COLORS['Approved'].solid }}>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    Approved
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
                                     {stats?.total_approved || 0}
                                 </p>
                             </div>
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: STATUS_COLORS['Approved'].bgSoft, color: STATUS_COLORS['Approved'].solid }}>
-                                <CheckCircle size={20} />
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <CheckCircle size={18} strokeWidth={1.8} />
                             </div>
                         </div>
 
-                        {/* Telah Anda Reject */}
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+                        {/* Revised by You */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Telah Direject</p>
-                                <p className="text-2xl font-bold mt-1" style={{ color: STATUS_COLORS['Rejected'].solid }}>
-                                    {stats?.total_rejected || 0}
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    Revisions Requested
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                    {stats?.total_revised || 0}
                                 </p>
                             </div>
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: STATUS_COLORS['Rejected'].bgSoft, color: STATUS_COLORS['Rejected'].solid }}>
-                                <XCircle size={20} />
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <RotateCcw size={18} strokeWidth={1.8} />
                             </div>
                         </div>
 
-                        {/* Dokumen Saya */}
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+                        {/* My Drafts */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Dokumen Saya</p>
-                                <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{stats?.total_submitted_by_me || 0}</p>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    My Drafts
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                    {stats?.draft || 0}
+                                </p>
                             </div>
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: STATUS_COLORS.Neutral.bgSoft, color: STATUS_COLORS.Neutral.solid }}>
-                                <FileText size={20} />
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <Edit3 size={18} strokeWidth={1.8} />
+                            </div>
+                        </div>
+
+                        {/* My Submissions */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    My Submissions
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                    {stats?.total_submitted_by_me || 0}
+                                </p>
+                            </div>
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <FileText size={18} strokeWidth={1.8} />
                             </div>
                         </div>
                     </div>
                 )}
 
+                {/* Summary Cards for Admin */}
                 {isAdmin && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                        {/* Total Users */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Total User</p>
-                                <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{stats?.total_users || 0}</p>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    Total Users
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                    {stats?.total_users || 0}
+                                </p>
                             </div>
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: STATUS_COLORS.Neutral.bgSoft, color: STATUS_COLORS.Neutral.solid }}>
-                                <Users size={20} />
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <Users size={18} strokeWidth={1.8} />
                             </div>
                         </div>
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+
+                        {/* Total Documents */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Total Dokumen</p>
-                                <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{stats?.total_journals || 0}</p>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    Total Documents
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                    {stats?.total_journals || 0}
+                                </p>
                             </div>
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: STATUS_COLORS.Neutral.bgSoft, color: STATUS_COLORS.Neutral.solid }}>
-                                <FileText size={20} />
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <FileText size={18} strokeWidth={1.8} />
                             </div>
                         </div>
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+
+                        {/* Waiting */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Waiting</p>
-                                <p className="text-2xl font-bold mt-1" style={{ color: STATUS_COLORS['Waiting Approval'].solid }}>{stats?.waiting || 0}</p>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    Waiting
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                    {stats?.waiting || 0}
+                                </p>
                             </div>
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: STATUS_COLORS['Waiting Approval'].bgSoft, color: STATUS_COLORS['Waiting Approval'].solid }}>
-                                <Clock size={20} />
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <Clock size={18} strokeWidth={1.8} />
                             </div>
                         </div>
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+
+                        {/* Revised */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Approved</p>
-                                <p className="text-2xl font-bold mt-1" style={{ color: STATUS_COLORS['Approved'].solid }}>{stats?.approved || 0}</p>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    Revised
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                    {stats?.revised || 0}
+                                </p>
                             </div>
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: STATUS_COLORS['Approved'].bgSoft, color: STATUS_COLORS['Approved'].solid }}>
-                                <CheckCircle size={20} />
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <RotateCcw size={18} strokeWidth={1.8} />
                             </div>
                         </div>
-                        <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+
+                        {/* Approved */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Rejected</p>
-                                <p className="text-2xl font-bold mt-1" style={{ color: STATUS_COLORS['Rejected'].solid }}>{stats?.rejected || 0}</p>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    Approved
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                    {stats?.approved || 0}
+                                </p>
                             </div>
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: STATUS_COLORS['Rejected'].bgSoft, color: STATUS_COLORS['Rejected'].solid }}>
-                                <XCircle size={20} />
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <CheckCircle size={18} strokeWidth={1.8} />
+                            </div>
+                        </div>
+
+                        {/* Rejected */}
+                        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                    Rejected
+                                </p>
+                                <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                    {stats?.rejected || 0}
+                                </p>
+                            </div>
+
+                            <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                                <XCircle size={18} strokeWidth={1.8} />
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* Dokumen Perlu Tindakan (Action Required / Priority Queue) - Approvers & Admin Only */}
+                {/* Documents Requiring Action / Priority Queue - Approvers & Admin Only */}
                 {(isApprover || isAdmin) && (
                     <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] overflow-hidden shadow-xs">
                         <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b-[0.5px] border-[var(--border)]">
@@ -239,16 +363,16 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <h3 className="text-base font-semibold text-[var(--text-primary)]">
-                                            Dokumen Perlu Tindakan
+                                            Documents Requiring Action
                                         </h3>
                                         {actionRequiredDocs?.length > 0 && (
                                             <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#faf1e2] text-[#b8791f] border border-amber-200">
-                                                {actionRequiredDocs.length} Dokumen
+                                                {actionRequiredDocs.length} Documents
                                             </span>
                                         )}
                                     </div>
                                     <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                                        Dokumen yang telah menunggu persetujuan lebih dari {thresholdDays || 3} hari
+                                        Documents pending approval for more than {thresholdDays || 3} business days
                                     </p>
                                 </div>
                             </div>
@@ -258,7 +382,7 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
                                     href={isApprover ? '/approval' : '/monitoring?status=Waiting%20Approval'}
                                     className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-900 transition-colors"
                                 >
-                                    Buka Semua Antrean <ArrowRight size={14} />
+                                    View All Pending <ArrowRight size={14} />
                                 </Link>
                             )}
                         </div>
@@ -266,9 +390,9 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
                         {/* Content: List or Empty State */}
                         {!actionRequiredDocs?.length ? (
                             <div className="py-8 px-5 text-center">
-                                <p className="text-sm font-semibold text-[var(--text-primary)]">Semua dokumen tertangani dengan baik</p>
+                                <p className="text-sm font-semibold text-[var(--text-primary)]">All documents are up to date</p>
                                 <p className="text-xs text-[var(--text-secondary)] mt-0.5 max-w-md mx-auto">
-                                    Tidak ada dokumen yang melebihi batas waktu tunggu persetujuan (&gt;{thresholdDays || 3} hari).
+                                    There are no documents exceeding the approval waiting threshold (&gt;{thresholdDays || 3} days).
                                 </p>
                             </div>
                         ) : (
@@ -276,20 +400,23 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
                                 <table className="w-full text-left text-sm text-[var(--text-primary)]">
                                     <thead className="bg-[#fafafa] border-b-[0.5px] border-[var(--border)] text-[11px] uppercase text-[var(--text-muted)] font-semibold">
                                         <tr>
-                                            <th className="px-5 py-3 whitespace-nowrap">No. Dokumen</th>
-                                            <th className="px-5 py-3 whitespace-nowrap">Diajukan Oleh</th>
-                                            <th className="px-5 py-3 whitespace-nowrap">Tanggal Pengajuan</th>
-                                            <th className="px-5 py-3 whitespace-nowrap">Lama Menunggu</th>
-                                            <th className="px-5 py-3 text-right whitespace-nowrap">Aksi</th>
+                                            <th className="px-5 py-3 whitespace-nowrap">Document Number</th>
+                                            <th className="px-5 py-3 whitespace-nowrap">Person Request</th>
+                                            <th className="px-5 py-3 whitespace-nowrap">Submission Date</th>
+                                            <th className="px-5 py-3 whitespace-nowrap">Waiting Time</th>
+                                            <th className="px-5 py-3 text-right whitespace-nowrap">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-[var(--border)]">
                                         {actionRequiredDocs.map((doc) => (
                                             <tr key={doc.id} className="hover:bg-[#f9fafb] transition-colors">
                                                 <td className="px-5 py-3.5">
-                                                    <span className="font-mono text-xs font-bold text-blue-600">
+                                                    <Link
+                                                        href={isApprover ? `/approval/${doc.id}` : `/general-journals/${doc.id}`}
+                                                        className="font-mono text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline"
+                                                    >
                                                         {doc.document_number}
-                                                    </span>
+                                                    </Link>
                                                     {doc.reference && (
                                                         <p className="text-[11px] text-[var(--text-secondary)] truncate max-w-[220px] mt-0.5">
                                                             {doc.reference}
@@ -303,25 +430,23 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
                                                     {doc.submitted_at || doc.journal_date || '-'}
                                                 </td>
                                                 <td className="px-5 py-3.5 whitespace-nowrap">
-                                                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-                                                        doc.days_waiting >= 5
+                                                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${doc.days_waiting >= 5
                                                             ? 'bg-[#fbeceb] text-[#b8433c] border border-red-200'
                                                             : 'bg-[#faf1e2] text-[#b8791f] border border-amber-200'
-                                                    }`}>
+                                                        }`}>
                                                         <Clock size={12} />
-                                                        {doc.days_waiting} Hari
+                                                        {doc.days_waiting} Days
                                                     </span>
                                                 </td>
                                                 <td className="px-5 py-3.5 text-right whitespace-nowrap">
                                                     <Link
                                                         href={isApprover ? `/approval/${doc.id}` : `/general-journals/${doc.id}`}
-                                                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-2xs transition-colors ${
-                                                            isApprover
+                                                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-2xs transition-colors ${isApprover
                                                                 ? 'bg-blue-600 hover:bg-blue-700 text-white'
                                                                 : 'border-[0.5px] border-[var(--border)] bg-white text-[var(--text-secondary)] hover:bg-gray-50'
-                                                        }`}
+                                                            }`}
                                                     >
-                                                        {isApprover ? 'Review' : 'Detail'}
+                                                        {isApprover ? 'Review' : 'View Detail'}
                                                     </Link>
                                                 </td>
                                             </tr>
@@ -333,14 +458,14 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
                     </div>
                 )}
 
-                {/* Main Content Grid: Distribusi Status Dokumen (40%) + Dokumen Terbaru (60%) */}
+                {/* Main Content Grid: Status Distribution (40%) + Recent Documents (60%) */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    {/* Left Column: Distribusi Status Dokumen (5/12 cols) */}
+                    {/* Left Column: Status Distribution (5/12 cols) */}
                     <div className="lg:col-span-5 bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 sm:p-6 shadow-xs">
                         <div className="flex items-center justify-between mb-4">
                             <div>
-                                <h3 className="text-base font-semibold text-[var(--text-primary)]">Distribusi Status</h3>
-                                <p className="text-xs text-[var(--text-secondary)] mt-0.5">Proporsi status terkini</p>
+                                <h3 className="text-base font-semibold text-[var(--text-primary)]">Status Distribution</h3>
+                                <p className="text-xs text-[var(--text-secondary)] mt-0.5">Current workflow proportions</p>
                             </div>
                             <div className="text-right">
                                 <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-semibold">Total</span>
@@ -361,13 +486,13 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
                             </div>
 
                             {/* Vertical Bars */}
-                            <div className="relative pl-8 pr-1 h-[150px] flex items-end justify-around gap-3 sm:gap-6">
+                            <div className="relative pl-8 pr-1 h-[150px] flex items-end justify-around gap-2 sm:gap-4">
                                 {chartItems.map((item) => {
                                     const isZero = item.count === 0;
                                     const barHeightPercent = isZero ? 4 : Math.max(item.percent, 6);
 
                                     return (
-                                        <div key={item.key} className="flex-1 flex flex-col items-center max-w-[70px] h-full justify-end group">
+                                        <div key={item.key} className="flex-1 flex flex-col items-center max-w-[60px] h-full justify-end group">
                                             {/* Number Count above bar */}
                                             <span
                                                 className="text-xs font-bold mb-1.5 transition-transform group-hover:-translate-y-0.5"
@@ -396,7 +521,7 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
                             </div>
 
                             {/* Labels & Percentages below each bar */}
-                            <div className="pl-8 pr-1 pt-3 grid grid-cols-3 gap-2 sm:gap-4 text-center">
+                            <div className="pl-8 pr-1 pt-3 grid grid-cols-4 gap-1 sm:gap-2 text-center">
                                 {chartItems.map((item) => (
                                     <div key={item.key} className="flex flex-col items-center min-w-0">
                                         <div className="flex items-center gap-1 justify-center max-w-full">
@@ -422,15 +547,15 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
                         <div className="px-5 py-4 flex items-center justify-between border-b-[0.5px] border-[var(--border)]">
                             <div>
                                 <h3 className="text-base font-semibold text-[var(--text-primary)]">
-                                    {isApprover ? 'Antrean Approval Terbaru' : 'Dokumen Terbaru'}
+                                    {isApprover ? 'Recent Approval Queue' : 'Recent Documents'}
                                 </h3>
-                                <p className="text-xs text-[var(--text-secondary)] mt-0.5">5 aktivitas/dokumen terbaru</p>
+                                <p className="text-xs text-[var(--text-secondary)] mt-0.5">Last 5 active documents</p>
                             </div>
                             <Link
                                 href={isApprover ? '/approval' : '/monitoring'}
                                 className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
                             >
-                                Lihat Semua
+                                View All
                             </Link>
                         </div>
 
@@ -438,28 +563,33 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
                             <table className="w-full text-left text-sm text-[var(--text-primary)]">
                                 <thead className="bg-[#fafafa] border-b-[0.5px] border-[var(--border)] text-[11px] uppercase text-[var(--text-muted)] font-semibold">
                                     <tr>
-                                        <th className="px-4 py-3 whitespace-nowrap">No. Dokumen</th>
-                                        <th className="px-4 py-3 whitespace-nowrap">Tanggal</th>
+                                        <th className="px-4 py-3 whitespace-nowrap">Document Number</th>
+                                        <th className="px-4 py-3 whitespace-nowrap">Journal Date</th>
                                         <th className="px-4 py-3">Reference</th>
                                         <th className="px-4 py-3 whitespace-nowrap">Status</th>
                                         <th className="px-4 py-3 whitespace-nowrap">
                                             {isStaff ? 'Assign To' : 'Person Request'}
                                         </th>
-                                        <th className="px-4 py-3 text-right whitespace-nowrap">Aksi</th>
+                                        <th className="px-4 py-3 text-right whitespace-nowrap">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[var(--border)]">
                                     {!recentData?.length ? (
                                         <tr>
                                             <td colSpan={6} className="px-4 py-8 text-center text-[var(--text-muted)] text-[13px]">
-                                                Tidak ada dokumen terbaru.
+                                                No recent documents found.
                                             </td>
                                         </tr>
                                     ) : (
                                         recentData?.map(journal => (
                                             <tr key={journal.id} className="hover:bg-[#f9fafb] transition-colors">
-                                                <td className="px-4 py-3 font-mono text-blue-600 font-medium text-xs whitespace-nowrap">
-                                                    {journal.document_number}
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    <Link
+                                                        href={isApprover ? `/approval/${journal.id}` : `/general-journals/${journal.id}`}
+                                                        className="font-mono text-blue-600 hover:text-blue-800 hover:underline font-semibold text-xs"
+                                                    >
+                                                        {journal.document_number}
+                                                    </Link>
                                                 </td>
                                                 <td className="px-4 py-3 text-xs whitespace-nowrap text-gray-600">
                                                     {journal.journal_date?.split('T')[0]}
@@ -468,7 +598,7 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
                                                     {journal.reference || '-'}
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap">
-                                                    {statusBadge(journal.status)}
+                                                    {renderStatusBadge(journal.status)}
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-700">
                                                     {isStaff ? (
@@ -482,7 +612,7 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
                                                         href={isApprover ? `/approval/${journal.id}` : `/general-journals/${journal.id}`}
                                                         className="px-2.5 py-1 border-[0.5px] border-[var(--border)] rounded-md text-[11px] font-medium text-[var(--text-secondary)] hover:bg-gray-50 transition-colors shadow-2xs"
                                                     >
-                                                        Detail
+                                                        View Detail
                                                     </Link>
                                                 </td>
                                             </tr>

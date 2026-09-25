@@ -2,17 +2,17 @@ import { Head, Link, router } from '@inertiajs/react';
 import MainLayout from '../../Layouts/MainLayout';
 import PageHeader from '../../Components/PageHeader';
 import { useState, useEffect, useRef } from 'react';
-import { 
-    AlertTriangle, 
-    Search, 
-    RotateCcw, 
-    Eye, 
-    CheckCircle2, 
-    XCircle, 
-    MinusCircle, 
-    Trash2, 
-    X, 
-    Copy, 
+import {
+    AlertTriangle,
+    Search,
+    RotateCcw,
+    Eye,
+    CheckCircle2,
+    XCircle,
+    MinusCircle,
+    Trash2,
+    X,
+    Copy,
     Check,
     Globe,
     User,
@@ -110,7 +110,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
         router.patch(`/error-monitoring/${id}/status`, { status: newStatus }, {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success(`Status error log diubah menjadi ${newStatus}`);
+                toast.success(`Error log status changed to ${newStatus}`);
                 if (selectedLog && selectedLog.id === id) {
                     setSelectedLog(prev => ({ ...prev, status: newStatus }));
                 }
@@ -122,7 +122,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
         router.delete(`/error-monitoring/${id}`, {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success('Error log berhasil dihapus');
+                toast.success('Error log deleted successfully');
                 if (selectedLog && selectedLog.id === id) {
                     setSelectedLog(null);
                 }
@@ -134,7 +134,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
         if (!selectedLog?.stack_trace) return;
         navigator.clipboard.writeText(selectedLog.stack_trace);
         setCopied(true);
-        toast.success('Stack trace disalin ke clipboard');
+        toast.success('Stack trace copied to clipboard');
         setTimeout(() => setCopied(false), 2000);
     };
 
@@ -162,64 +162,92 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
             <div className="space-y-6">
                 <PageHeader
                     title="Error Monitoring"
-                    subtitle="Pemantauan log exception dan kendala teknis aplikasi"
+                    subtitle="System exception logs and technical diagnostics"
                 />
 
                 {/* Stat Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {/* Total Errors */}
+                    <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                         <div>
-                            <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Total Error</p>
-                            <p className="text-2xl font-bold text-[var(--text-primary)] mt-1">{stats?.total || 0}</p>
+                            <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                Total Errors
+                            </p>
+                            <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                {stats?.total || 0}
+                            </p>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                            <AlertTriangle size={20} />
+
+                        <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                            <AlertTriangle size={18} strokeWidth={1.8} />
                         </div>
                     </div>
-                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+
+                    {/* New Errors */}
+                    <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                         <div>
-                            <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Error Baru</p>
-                            <p className="text-2xl font-bold text-[#b8433c] mt-1">{stats?.new || 0}</p>
+                            <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                New Errors
+                            </p>
+                            <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                {stats?.new || 0}
+                            </p>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-[#fbeceb] text-[#b8433c] flex items-center justify-center">
-                            <XCircle size={20} />
+
+                        <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                            <XCircle size={18} strokeWidth={1.8} />
                         </div>
                     </div>
-                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+
+                    {/* Resolved */}
+                    <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                         <div>
-                            <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Terselesaikan</p>
-                            <p className="text-2xl font-bold text-[#2b6b5c] mt-1">{stats?.resolved || 0}</p>
+                            <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                Resolved
+                            </p>
+                            <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                {stats?.resolved || 0}
+                            </p>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-[#e6f2ef] text-[#2b6b5c] flex items-center justify-center">
-                            <CheckCircle2 size={20} />
+
+                        <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                            <CheckCircle2 size={18} strokeWidth={1.8} />
                         </div>
                     </div>
-                    <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] p-5 flex items-center justify-between shadow-xs">
+
+                    {/* Ignored */}
+                    <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-5 py-4 flex items-center justify-between">
                         <div>
-                            <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">Diabaikan</p>
-                            <p className="text-2xl font-bold text-gray-600 mt-1">{stats?.ignored || 0}</p>
+                            <p className="text-xs font-medium text-[var(--text-secondary)]">
+                                Ignored
+                            </p>
+                            <p className="text-2xl font-semibold text-[var(--text-primary)] mt-1">
+                                {stats?.ignored || 0}
+                            </p>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center">
-                            <MinusCircle size={20} />
+
+                        <div className="w-9 h-9 rounded-lg bg-[var(--surface-muted)] flex items-center justify-center text-[var(--text-secondary)]">
+                            <MinusCircle size={18} strokeWidth={1.8} />
                         </div>
                     </div>
                 </div>
 
+
                 {/* Main Table Card */}
                 <div className="bg-[var(--card-bg)] rounded-[10px] border-[0.5px] border-[var(--border)] overflow-hidden shadow-xs">
                     <div className="px-5 py-4 border-b-[0.5px] border-[var(--border)] flex items-center justify-between">
-                        <h3 className="text-base font-semibold text-[var(--text-primary)]">Daftar Log Error</h3>
+                        <h3 className="text-base font-semibold text-[var(--text-primary)]">Error Logs</h3>
                     </div>
 
                     {/* Standard Card Filters */}
                     <div className="p-5 border-b-[0.5px] border-[var(--border)] bg-gray-50/50">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
                             <div className="lg:col-span-2">
-                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Pencarian</label>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Search</label>
                                 <div className="relative">
                                     <input
                                         type="text"
-                                        placeholder="Cari pesan, class, URL, atau file..."
+                                        placeholder="Search message, class, URL, or file..."
                                         value={searchQuery}
                                         onChange={e => setSearchQuery(e.target.value)}
                                         className="w-full pl-9 pr-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
@@ -235,7 +263,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                                     onChange={handleStatusChange}
                                     className="w-full px-3 py-2 border-[0.5px] border-[var(--border)] rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                                 >
-                                    <option value="">Semua Status</option>
+                                    <option value="">All Statuses</option>
                                     <option value="New">New</option>
                                     <option value="Resolved">Resolved</option>
                                     <option value="Ignored">Ignored</option>
@@ -243,7 +271,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                             </div>
 
                             <div>
-                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Dari Tanggal</label>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">From Date</label>
                                 <input
                                     type="date"
                                     value={dateFrom}
@@ -253,7 +281,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                             </div>
 
                             <div>
-                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">Sampai Tanggal</label>
+                                <label className="block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wide mb-1.5">To Date</label>
                                 <input
                                     type="date"
                                     value={dateTo}
@@ -268,7 +296,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                                     type="button"
                                     onClick={handleReset}
                                     className="w-full px-3 py-2 bg-white border-[0.5px] border-[var(--border)] text-[var(--text-secondary)] text-[13px] font-semibold rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-                                    title="Reset Filter"
+                                    title="Reset Filters"
                                 >
                                     <RotateCcw size={15} />
                                 </button>
@@ -281,26 +309,26 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                         <table className="w-full text-left text-sm text-[var(--text-primary)]">
                             <thead className="bg-[#fafafa] border-b-[0.5px] border-[var(--border)] text-[11px] uppercase text-[var(--text-muted)] font-semibold">
                                 <tr>
-                                    <th className="px-5 py-3 whitespace-nowrap">Waktu</th>
+                                    <th className="px-5 py-3 whitespace-nowrap">Timestamp</th>
                                     <th className="px-5 py-3 whitespace-nowrap">Method & URL</th>
-                                    <th className="px-5 py-3">Exception & Pesan</th>
+                                    <th className="px-5 py-3">Exception & Message</th>
                                     <th className="px-5 py-3 whitespace-nowrap">User</th>
                                     <th className="px-5 py-3 whitespace-nowrap">Status</th>
-                                    <th className="px-5 py-3 text-center whitespace-nowrap">Aksi</th>
+                                    <th className="px-5 py-3 text-center whitespace-nowrap">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--border)]">
                                 {logs?.data?.length === 0 ? (
                                     <tr>
                                         <td colSpan={6} className="px-5 py-12 text-center text-[var(--text-muted)] text-[13px]">
-                                            Tidak ada error log yang ditemukan.
+                                            No error logs found.
                                         </td>
                                     </tr>
                                 ) : (
                                     logs?.data?.map(log => (
                                         <tr key={log.id} className="hover:bg-[#f9fafb] transition-colors">
                                             <td className="px-5 py-3 text-[12px] text-[var(--text-secondary)] whitespace-nowrap">
-                                                {log.created_at ? new Date(log.created_at).toLocaleString('id-ID') : '-'}
+                                                {log.created_at ? new Date(log.created_at).toLocaleString('en-US') : '-'}
                                             </td>
                                             <td className="px-5 py-3 whitespace-nowrap">
                                                 <div className="flex items-center gap-1.5">
@@ -335,7 +363,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                                                     <button
                                                         onClick={() => setSelectedLog(log)}
                                                         className="px-2.5 py-1.5 border-[0.5px] border-[var(--border)] rounded-md text-[12px] font-medium text-[var(--text-secondary)] hover:bg-gray-50 transition-colors flex items-center gap-1"
-                                                        title="Lihat Detail Stack Trace"
+                                                        title="View Stack Trace"
                                                     >
                                                         <Eye size={14} /> Detail
                                                     </button>
@@ -343,7 +371,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                                                         <button
                                                             onClick={() => updateLogStatus(log.id, 'Resolved')}
                                                             className="px-2.5 py-1.5 bg-[#e6f2ef] text-[#2b6b5c] rounded-md text-[12px] font-semibold hover:brightness-95 transition-all"
-                                                            title="Tandai Resolved"
+                                                            title="Mark as Resolved"
                                                         >
                                                             Resolve
                                                         </button>
@@ -361,7 +389,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                     <div className="px-5 py-3 border-t-[0.5px] border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                             <div className="flex items-center gap-2">
-                                <span className="text-[12px] text-[var(--text-secondary)]">Tampilkan</span>
+                                <span className="text-[12px] text-[var(--text-secondary)]">Show</span>
                                 <select
                                     value={perPage}
                                     onChange={handlePerPageChange}
@@ -372,11 +400,11 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                                     <option value="50">50</option>
                                     <option value="100">100</option>
                                 </select>
-                                <span className="text-[12px] text-[var(--text-secondary)]">data per halaman</span>
+                                <span className="text-[12px] text-[var(--text-secondary)]">entries</span>
                             </div>
                             {logs?.from && (
                                 <p className="text-[12px] text-[var(--text-secondary)]">
-                                    Menampilkan <span className="font-medium text-[var(--text-primary)]">{logs.from}</span> - <span className="font-medium text-[var(--text-primary)]">{logs.to}</span> dari <span className="font-medium text-[var(--text-primary)]">{logs.total}</span> log
+                                    Showing <span className="font-medium text-[var(--text-primary)]">{logs.from}</span> to <span className="font-medium text-[var(--text-primary)]">{logs.to}</span> of <span className="font-medium text-[var(--text-primary)]">{logs.total}</span> logs
                                 </p>
                             )}
                         </div>
@@ -386,13 +414,12 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                                     <Link
                                         key={i}
                                         href={link.url || '#'}
-                                        className={`px-3 py-1.5 text-[12px] rounded-md transition-colors ${
-                                            link.active
+                                        className={`px-3 py-1.5 text-[12px] rounded-md transition-colors ${link.active
                                                 ? 'bg-blue-600 text-white font-medium'
                                                 : link.url
                                                     ? 'text-[var(--text-secondary)] hover:bg-gray-100'
                                                     : 'text-gray-300 cursor-not-allowed'
-                                        }`}
+                                            }`}
                                         dangerouslySetInnerHTML={{ __html: link.label }}
                                         preserveState
                                     />
@@ -419,7 +446,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                                     </h3>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                                    <Clock size={13} /> {selectedLog.created_at ? new Date(selectedLog.created_at).toLocaleString('id-ID') : '-'}
+                                    <Clock size={13} /> {selectedLog.created_at ? new Date(selectedLog.created_at).toLocaleString('en-US') : '-'}
                                 </p>
                             </div>
                             <button
@@ -435,7 +462,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                             {/* Message */}
                             <div>
                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">
-                                    Pesan Exception
+                                    Exception Message
                                 </label>
                                 <div className="p-3 bg-red-50/80 border border-red-200 rounded-lg text-xs font-mono text-[#b8433c] break-all leading-relaxed">
                                     {selectedLog.message}
@@ -445,7 +472,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                             {/* Location (File & Line) */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs">
-                                    <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-0.5">Lokasi File</span>
+                                    <span className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-0.5">File Location</span>
                                     <p className="font-mono text-gray-800 break-all">{selectedLog.file || '-'} : {selectedLog.line}</p>
                                 </div>
                                 <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-xs">
@@ -483,7 +510,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                                             className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
                                         >
                                             {copied ? <Check size={13} /> : <Copy size={13} />}
-                                            {copied ? 'Tersalin' : 'Salin Trace'}
+                                            {copied ? 'Copied' : 'Copy Trace'}
                                         </button>
                                     </div>
                                     <pre className="p-3 bg-gray-900 text-gray-200 rounded-lg text-[11px] font-mono overflow-x-auto max-h-56 scrollbar-thin">
@@ -496,34 +523,31 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                         {/* Modal Footer / Status Switch */}
                         <div className="pt-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3">
                             <div className="flex items-center gap-2">
-                                <span className="text-xs font-medium text-gray-600">Ubah Status:</span>
+                                <span className="text-xs font-medium text-gray-600">Change Status:</span>
                                 <button
                                     onClick={() => updateLogStatus(selectedLog.id, 'New')}
-                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                                        selectedLog.status === 'New'
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${selectedLog.status === 'New'
                                             ? 'bg-[#b8433c] text-white'
                                             : 'bg-[#fbeceb] text-[#b8433c] hover:brightness-95'
-                                    }`}
+                                        }`}
                                 >
                                     New
                                 </button>
                                 <button
                                     onClick={() => updateLogStatus(selectedLog.id, 'Resolved')}
-                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                                        selectedLog.status === 'Resolved'
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${selectedLog.status === 'Resolved'
                                             ? 'bg-[#2b6b5c] text-white'
                                             : 'bg-[#e6f2ef] text-[#2b6b5c] hover:brightness-95'
-                                    }`}
+                                        }`}
                                 >
                                     Resolved
                                 </button>
                                 <button
                                     onClick={() => updateLogStatus(selectedLog.id, 'Ignored')}
-                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                                        selectedLog.status === 'Ignored'
+                                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${selectedLog.status === 'Ignored'
                                             ? 'bg-gray-700 text-white'
                                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                    }`}
+                                        }`}
                                 >
                                     Ignored
                                 </button>
@@ -534,13 +558,13 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                                     onClick={() => deleteLog(selectedLog.id)}
                                     className="px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1.5"
                                 >
-                                    <Trash2 size={14} /> Hapus Log
+                                    <Trash2 size={14} /> Delete Log
                                 </button>
                                 <button
                                     onClick={() => setSelectedLog(null)}
                                     className="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                                 >
-                                    Tutup
+                                    Close
                                 </button>
                             </div>
                         </div>
@@ -550,4 +574,5 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
         </MainLayout>
     );
 }
+
 

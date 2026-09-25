@@ -1,45 +1,57 @@
-# Route & Controller Map
+# Route & Controller Architecture Map
+## JAGO (Journal Approval General Operations) System
 
-## Struktur Route (web.php)
+---
 
-| Method | URI | Controller@Method | Middleware | Keterangan |
-|--------|-----|-------------------|------------|------------|
-| GET | `/login` | `Auth\LoginController@showLoginForm` | guest | Halaman login |
-| POST | `/login` | `Auth\LoginController@login` | guest | Proses login |
-| POST | `/logout` | `Auth\LoginController@logout` | auth | Logout |
-| GET | `/` | `DashboardController@index` | auth | Redirect ke monitoring |
-| GET | `/monitoring` | `MonitoringController@index` | auth | Halaman monitoring GJ |
-| GET | `/monitoring/export` | `MonitoringController@export` | auth | Export data ke Excel |
-| GET | `/general-journals/create` | `GeneralJournalController@create` | auth | Form buat draft (Staff/Section Head) |
-| POST | `/general-journals` | `GeneralJournalController@store` | auth | Simpan draft |
-| GET | `/general-journals/{id}/edit` | `GeneralJournalController@edit` | auth | Edit draft sebelum submit |
-| PUT | `/general-journals/{id}` | `GeneralJournalController@update` | auth | Update draft |
-| POST | `/general-journals/{id}/submit` | `GeneralJournalController@submit` | auth | Submit draft ke alur approval |
-| GET | `/general-journals/{id}` | `GeneralJournalController@show` | auth | Detail GJ (modal/page) |
-| GET | `/approval` | `ApprovalController@index` | auth, role:Section Head/Dept Div Head | Daftar antrian approval |
-| GET | `/approval/{id}` | `ApprovalController@show` | auth, role:Section Head/Dept Div Head | Detail approval |
-| POST | `/approval/{id}/approve` | `ApprovalController@approve` | auth, role:Section Head/Dept Div Head | Aksi approve |
-| POST | `/approval/{id}/reject` | `ApprovalController@reject` | auth, role:Section Head/Dept Div Head | Aksi reject + notes |
-| GET | `/tracking` | `TrackingController@index` | auth | Daftar GJ untuk tracking |
-| GET | `/tracking/{id}` | `TrackingController@show` | auth | Timeline history (modal) |
-| GET | `/preview/{token}` | `PreviewController@show` | guest, token valid | Preview dokumen tanpa login |
-| GET | `/approve-email/{token}` | `EmailApprovalController@approve` | guest, token valid | Approve via email (khusus Bu Alisa) |
-| GET | `/files/{id}/download` | `FileController@download` | auth | Download file (versi aktif) |
-| GET | `/files/{id}/preview` | `FileController@preview` | auth | Preview file di modal |
+### 1. Web Routes (`routes/web.php`)
 
-## Catatan Middleware
-- `auth`: hanya user yang sudah login.
-- `role:Section Head/Dept Div Head`: custom middleware untuk membatasi akses berdasarkan role.
-- `guest`: khusus untuk user yang belum login (login page).
-- Token route (`/preview/{token}` dan `/approve-email/{token}`) menggunakan validasi token dari tabel `email_tokens`.
+| Method | URI | Controller Action | Middleware | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/login` | `Auth\LoginController@showLoginForm` | `guest` | Login page |
+| `POST` | `/login` | `Auth\LoginController@login` | `guest` | Authenticate user session |
+| `POST` | `/logout` | `Auth\LoginController@logout` | `auth` | Destroy session & logout |
+| `GET` | `/` | `DashboardController@index` | `auth` | Main dashboard with KPI metrics & charts |
+| `GET` | `/monitoring` | `MonitoringController@index` | `auth` | Monitoring table with in-column searchbars & `#` column |
+| `GET` | `/monitoring/export` | `MonitoringController@export` | `auth` | Export filtered monitoring data to Excel |
+| `GET` | `/drafts` | `GeneralJournalController@drafts` | `auth` | Drafts management page with bulk submit |
+| `POST` | `/general-journals/bulk-submit` | `GeneralJournalController@bulkSubmit` | `auth` | Bulk submit multiple selected draft journals |
+| `GET` | `/general-journals/create` | `GeneralJournalController@create` | `auth` | Create General Journal draft or submit |
+| `POST` | `/general-journals` | `GeneralJournalController@store` | `auth` | Store new draft or direct submission |
+| `GET` | `/general-journals/{id}` | `GeneralJournalController@show` | `auth` | Document details page with file & stamp viewer |
+| `GET` | `/general-journals/{id}/edit` | `GeneralJournalController@edit` | `auth` | Edit draft or prepare revision files |
+| `POST` | `/general-journals/{id}` | `GeneralJournalController@update` | `auth` | Save updated draft |
+| `POST` | `/general-journals/{id}/submit` | `GeneralJournalController@submitSingle`| `auth` | Submit single draft to approval queue |
+| `POST` | `/general-journals/{id}/resubmit` | `GeneralJournalController@resubmit` | `auth` | Resubmit revised journal with new files |
+| `POST` | `/general-journals/{id}/self-reject`| `GeneralJournalController@selfReject` | `auth` | Self-reject revised journal by requester |
+| `DELETE`| `/general-journals/{id}` | `GeneralJournalController@destroy` | `auth` | Delete draft document |
+| `GET` | `/approval` | `ApprovalController@index` | `auth`, `role:Section Head,Dept/Div Head` | Approval queue list |
+| `GET` | `/approval/{id}` | `ApprovalController@show` | `auth`, `role:Section Head,Dept/Div Head` | Review journal, live PDF & stamp preview |
+| `POST` | `/approval/{id}/approve` | `ApprovalController@approve` | `auth`, `role:Section Head,Dept/Div Head` | Approve journal with digital stamp |
+| `POST` | `/approval/{id}/revise` | `ApprovalController@revise` | `auth`, `role:Section Head,Dept/Div Head` | Request revision with feedback notes |
+| `GET` | `/tracking/{id}` | `TrackingController@show` | `auth` | Fetch JSON journal audit timeline data for History Modal |
+| `GET` | `/general-journals/{id}/history` | `TrackingController@show` | `auth` | Fetch JSON journal audit timeline data |
+| `GET` | `/preview/{token}` | `PreviewController@show` | `guest` | Secure token document preview |
+| `GET` | `/approve-email/{token}` | `EmailApprovalController@approve` | `guest` | One-click remote email approval |
+| `GET` | `/revise-email/{token}` | `EmailApprovalController@showRevise` | `guest` | Email revision form |
+| `POST` | `/revise-email/{token}` | `EmailApprovalController@revise` | `guest` | Submit revision notes via email link |
+| `GET` | `/files/{id}/download` | `FileController@download` | `auth` | Download attached file |
+| `GET` | `/files/{id}/preview` | `FileController@preview` | `auth` | Stream attached PDF/image file for preview |
+| `GET` | `/profile` | `ProfileController@edit` | `auth` | User profile & password management |
+| `PUT` | `/profile` | `ProfileController@update` | `auth` | Update profile information |
+| `PUT` | `/profile/password` | `ProfileController@updatePassword` | `auth` | Update account password |
+| `GET` | `/tutorial` | `TutorialController@index` | `auth` | User guide and downloadable PDF manuals |
+| `POST` | `/tutorial` | `TutorialController@store` | `auth`, `role:Admin` | Upload tutorial PDF |
+| `DELETE`| `/tutorial/{id}` | `TutorialController@destroy` | `auth`, `role:Admin` | Delete tutorial document |
+| `GET` | `/users` | `UserController@index` | `auth`, `role:Admin` | Admin user directory |
+| `POST` | `/users` | `UserController@store` | `auth`, `role:Admin` | Create new system user |
+| `PUT` | `/users/{id}` | `UserController@update` | `auth`, `role:Admin` | Update system user |
+| `DELETE`| `/users/{id}` | `UserController@destroy` | `auth`, `role:Admin` | Delete system user |
+| `GET` | `/error-monitoring` | `ErrorMonitoringController@index` | `auth`, `role:Admin` | System error log viewer |
 
-## Controller Utama
-1. `Auth\LoginController` – autentikasi session.
-2. `DashboardController` – halaman awal (redirect).
-3. `MonitoringController` – daftar GJ, filter, export Excel.
-4. `GeneralJournalController` – CRUD draft, submit, resubmit.
-5. `ApprovalController` – daftar antrian, approve, reject.
-6. `TrackingController` – daftar tracking, timeline.
-7. `PreviewController` – preview dokumen tanpa login.
-8. `EmailApprovalController` – approve via email token.
-9. `FileController` – download/preview file.
+---
+
+### 2. Core Controller Responsibilities
+1. **`GeneralJournalController`**: Manages the end-to-end lifecycle of journals: Draft creation, Drafts page listing, single and bulk submissions, file replacement on revision, and requester self-rejection.
+2. **`ApprovalController`**: Handles the approver workflow: queue listing, detailed document review with stamped preview, approving, and requesting revisions.
+3. **`MonitoringController`**: Powers real-time search, multi-column filtering, and Excel export.
+4. **`EmailApprovalController`**: Implements remote token-based approval and revision requests without requiring prior login.

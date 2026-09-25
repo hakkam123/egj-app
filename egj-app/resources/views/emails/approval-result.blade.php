@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>General Journal {{ $result === 'approved' ? 'Approved' : 'Rejected' }} — JAGO</title>
+    <title>General Journal {{ $result === 'approved' ? 'Approved' : ($result === 'revised' ? 'Revision Requested' : 'Rejected') }} — JAGO</title>
     <!-- Google Fonts: Plus Jakarta Sans & Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,18 +45,26 @@
 
                             <!-- Main Title -->
                             <h1 style="margin:0 0 18px 0;font-size:24px;font-weight:800;color:#1a2540;letter-spacing:-0.5px;text-align:center;font-family:'Plus Jakarta Sans','Poppins',sans-serif;line-height:1.3;">
-                                {{ $result === 'approved' ? 'General Journal Disetujui' : 'General Journal Ditolak' }}
+                                @if($result === 'approved')
+                                    General Journal Approved
+                                @elseif($result === 'revised')
+                                    Revision Requested
+                                @else
+                                    General Journal Rejected
+                                @endif
                             </h1>
 
                             <!-- Intro Paragraph -->
                             <p style="margin:0 0 16px 0;font-size:14px;color:#475569;line-height:1.65;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                Yth. <strong>{{ $requester->name }}</strong>,
+                                Dear <strong>{{ $requester->name }}</strong>,
                             </p>
                             <p style="margin:0 0 24px 0;font-size:14px;color:#475569;line-height:1.65;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                 @if($result === 'approved')
-                                    Pengajuan dokumen General Journal Anda telah <strong>selesai disetujui</strong> di semua tingkatan persetujuan dan telah distempel secara elektronik.
+                                    Your General Journal document submission has been <strong>fully approved</strong> across all approval levels and electronically stamped.
+                                @elseif($result === 'revised')
+                                    Your General Journal document requires <strong>revision</strong> requested by the reviewer. Please inspect the feedback below, re-upload the updated files, and resubmit.
                                 @else
-                                    Pengajuan dokumen General Journal Anda telah <strong>ditolak</strong> oleh approver. Silakan periksa catatan penolakan dan lakukan perbaikan.
+                                    Your General Journal document has been <strong>rejected / cancelled</strong>.
                                 @endif
                             </p>
 
@@ -64,7 +72,7 @@
                             <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:28px;overflow:hidden;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                 <tr>
                                     <td style="padding:13px 18px;border-bottom:1px solid #e2e8f0;width:38%;color:#64748b;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                        No. Dokumen
+                                        Document Number
                                     </td>
                                     <td style="padding:13px 18px;border-bottom:1px solid #e2e8f0;color:#1a2540;font-size:14px;font-weight:800;font-family:'Plus Jakarta Sans',monospace;">
                                         {{ $journal->document_number }}
@@ -72,7 +80,7 @@
                                 </tr>
                                 <tr>
                                     <td style="padding:13px 18px;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                        Tanggal Journal
+                                        Journal Date
                                     </td>
                                     <td style="padding:13px 18px;border-bottom:1px solid #e2e8f0;color:#1e293b;font-size:13.5px;font-weight:600;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                         {{ $journal->journal_date->format('d M Y') }}
@@ -90,16 +98,16 @@
                                     <td style="padding:13px 18px;color:#64748b;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                         Status
                                     </td>
-                                    <td style="padding:13px 18px;font-size:13.5px;font-weight:800;color:{{ $result === 'approved' ? '#047857' : '#b91c1c' }};font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                        {{ $result === 'approved' ? 'Approved' : 'Rejected' }}
+                                    <td style="padding:13px 18px;font-size:13.5px;font-weight:800;color:{{ $result === 'approved' ? '#047857' : ($result === 'revised' ? '#b45309' : '#b91c1c') }};font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                        {{ $result === 'approved' ? 'Approved' : ($result === 'revised' ? 'Revised' : 'Rejected') }}
                                     </td>
                                 </tr>
                                 @if($notes)
                                 <tr>
-                                    <td style="padding:13px 18px;border-top:1px solid #e2e8f0;color:#b91c1c;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                        Alasan Penolakan
+                                    <td style="padding:13px 18px;border-top:1px solid #e2e8f0;color:{{ $result === 'revised' ? '#92400e' : '#b91c1c' }};font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                        {{ $result === 'revised' ? 'Revision Notes' : 'Rejection Notes' }}
                                     </td>
-                                    <td style="padding:13px 18px;border-top:1px solid #e2e8f0;color:#b91c1c;font-size:13.5px;font-weight:600;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
+                                    <td style="padding:13px 18px;border-top:1px solid #e2e8f0;color:{{ $result === 'revised' ? '#92400e' : '#b91c1c' }};font-size:13.5px;font-weight:600;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                         {{ $notes }}
                                     </td>
                                 </tr>
@@ -111,7 +119,7 @@
                                 <tr>
                                     <td align="center">
                                         <a href="{{ $portalUrl }}" style="background-color:#1a2540;color:#ffffff;display:inline-block;padding:13px 36px;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;box-shadow:0 2px 6px rgba(26,37,64,0.25);text-align:center;font-family:'Plus Jakarta Sans','Poppins',sans-serif;letter-spacing:-0.2px;">
-                                            Buka Portal Monitoring
+                                            Open Monitoring Portal
                                         </a>
                                     </td>
                                 </tr>
@@ -120,18 +128,18 @@
                             <!-- Fallback Link Section -->
                             <div style="border-top:1px solid #e2e8f0;padding-top:22px;margin-top:24px;">
                                 <p style="margin:0 0 6px 0;font-size:12px;color:#64748b;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                    Jika tombol di atas tidak berfungsi, salin dan tempel tautan berikut ke browser Anda:
+                                    If the button above does not work, copy and paste this link into your browser:
                                 </p>
                                 <p style="margin:0 0 20px 0;font-size:12px;word-break:break-all;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                     <a href="{{ $portalUrl }}" style="color:#2563eb;text-decoration:none;font-weight:500;">{{ $portalUrl }}</a>
                                 </p>
 
                                 <p style="margin:0 0 4px 0;font-size:13px;color:#64748b;line-height:1.55;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                    Jika Anda memiliki pertanyaan mengenai dokumen ini, silakan hubungi tim terkait.
+                                    If you have questions regarding this document, please contact the relevant team.
                                 </p>
                                 <p style="margin:16px 0 0 0;font-size:13px;color:#475569;line-height:1.55;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                    Salam hormat,<br>
-                                    <strong style="color:#1a2540;">Tim JAGO &mdash; PT Astra Visteon Indonesia</strong>
+                                    Best regards,<br>
+                                    <strong style="color:#1a2540;">JAGO Team &mdash; PT Astra Visteon Indonesia</strong>
                                 </p>
                             </div>
 
@@ -144,11 +152,11 @@
                     <tr>
                         <td style="padding:20px 24px;">
                             <p style="margin:0 0 4px 0;font-size:13px;font-weight:700;color:#1a2540;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                Butuh Bantuan atau Ingin Melihat Dokumen Lain?
+                                Need Help or Want to Check Other Documents?
                             </p>
                             <p style="margin:0;font-size:12.5px;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                 <a href="{{ url('/monitoring') }}" style="color:#2563eb;font-weight:600;text-decoration:none;">
-                                    Kunjungi Halaman Monitoring Dokumen &rarr;
+                                    Visit Document Monitoring Portal &rarr;
                                 </a>
                             </p>
                         </td>
@@ -163,11 +171,11 @@
                             <p style="margin:0 0 12px 0;font-size:12px;font-weight:600;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
                                 <a href="{{ url('/dashboard') }}" style="color:#475569;text-decoration:none;margin:0 8px;">Dashboard</a> &bull;
                                 <a href="{{ url('/monitoring') }}" style="color:#475569;text-decoration:none;margin:0 8px;">Monitoring</a> &bull;
-                                <a href="{{ url('/tutorial') }}" style="color:#475569;text-decoration:none;margin:0 8px;">Panduan</a>
+                                <a href="{{ url('/tutorial') }}" style="color:#475569;text-decoration:none;margin:0 8px;">User Guide</a>
                             </p>
                             
                             <p style="margin:0 0 8px 0;font-size:11.5px;color:#94a3b8;line-height:1.55;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                Email ini dikirim otomatis oleh Journal Approval General Operations (JAGO).
+                                This email was sent automatically by Journal Approval General Operations (JAGO).
                             </p>
                             
                             <p style="margin:0;font-size:11.5px;color:#94a3b8;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
@@ -183,3 +191,4 @@
 
 </body>
 </html>
+

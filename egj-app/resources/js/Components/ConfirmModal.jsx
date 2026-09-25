@@ -4,10 +4,10 @@ import { AlertTriangle, CheckCircle2, X, Loader2 } from 'lucide-react';
 export default function ConfirmModal({ 
     open,
     isOpen, 
-    title = 'Konfirmasi', 
-    message = 'Apakah Anda yakin?', 
-    confirmText = 'Ya, Lanjutkan', 
-    cancelText = 'Batal', 
+    title = 'Confirmation', 
+    message = 'Are you sure you want to proceed?', 
+    confirmText = 'Yes, Proceed', 
+    cancelText = 'Cancel', 
     onConfirm, 
     onClose,
     onCancel,
@@ -85,7 +85,7 @@ export default function ConfirmModal({
                         {loading ? (
                             <>
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                <span>Memproses...</span>
+                                <span>Processing...</span>
                             </>
                         ) : (
                             confirmText
