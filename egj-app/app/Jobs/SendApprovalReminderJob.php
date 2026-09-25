@@ -63,11 +63,10 @@ class SendApprovalReminderJob implements ShouldQueue
             ->whereNull('used_at')
             ->update(['expires_at' => now()->subSecond()]);
 
-        // Generate token baru
-        // Token berlaku 24 jam x hari threshold berikutnya
-        // Reminder 1 (hari ke-3): token berlaku 2 hari (sampai hari ke-5)
-        // Reminder 2 (hari ke-5): token berlaku 2 hari
-        $tokenHours = 48;
+        // Generate token baru:
+        // - Reminder 1 (hari ke-3): token berlaku 72 jam (3 hari) sampai Reminder 2 di hari ke-5
+        // - Reminder 2 (hari ke-5): token berlaku 168 jam (7 hari) agar Dept Head leluasa approve via email
+        $tokenHours = ($this->reminderNumber === 1) ? 72 : 168;
 
         $approveToken = EmailToken::create([
             'general_journal_id' => $journal->id,

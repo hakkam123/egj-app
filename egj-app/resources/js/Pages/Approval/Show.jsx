@@ -149,7 +149,7 @@ export default function ApprovalShow({ journal }) {
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 space-y-4">
                             <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
                                 <div>
-                                    <h3 className="text-base font-black text-slate-900 font-mono tracking-tight">{journal.document_number}</h3>
+                                    <h3 className="text-base font-bold text-slate-900 font-mono tracking-tight">{journal.document_number}</h3>
                                     <p className="text-xs text-slate-400">Document Overview</p>
                                 </div>
                                 {renderStatusBadge(journal.status)}

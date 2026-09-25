@@ -199,7 +199,7 @@
                             </p>
                             
                             <p style="margin:0 0 8px 0;font-size:11.5px;color:#94a3b8;line-height:1.55;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                This email was sent automatically by Journal Approval General Operations (JAGO). Approval tokens are valid for 5 business days.
+                                This email was sent automatically by Journal Approval General Operations (JAGO). Approval tokens are valid during the active review period.
                             </p>
                             
                             <p style="margin:0;font-size:11.5px;color:#94a3b8;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">

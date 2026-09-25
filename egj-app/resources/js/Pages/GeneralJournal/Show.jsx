@@ -186,7 +186,7 @@ export default function Show({ journal }) {
                             <ArrowLeft size={14} /> Back to Monitoring
                         </Link>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-black text-slate-900 tracking-tight font-mono">
+                            <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-mono">
                                 {journal.document_number}
                             </h1>
                             {renderStatusBadge(journal.status)}

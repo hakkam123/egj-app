@@ -890,25 +890,16 @@ class GeneralJournalController extends Controller
     }
 
     /**
-     * Create an email token with 5 business days expiry.
+     * Create an email token with 3 days (72 hours) expiry.
      */
     private function createEmailToken(GeneralJournal $journal, string $email, string $purpose): EmailToken
     {
-        $expiresAt = Carbon::now();
-        $businessDays = 0;
-        while ($businessDays < 5) {
-            $expiresAt->addDay();
-            if (!$expiresAt->isWeekend()) {
-                $businessDays++;
-            }
-        }
-
         return EmailToken::create([
             'general_journal_id' => $journal->id,
             'token' => Str::uuid()->toString(),
             'email' => $email,
             'purpose' => $purpose,
-            'expires_at' => $expiresAt,
+            'expires_at' => Carbon::now()->addDays(3),
             'created_at' => now(),
         ]);
     }

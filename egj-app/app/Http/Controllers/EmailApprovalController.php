@@ -34,7 +34,7 @@ class EmailApprovalController extends Controller
 
         if ($emailToken->isExpired()) {
             return Inertia::render('EmailApproval/Invalid', [
-                'message' => 'Token has expired (5 business days limit exceeded). Please request a new notification.',
+                'message' => 'This approval link has expired. Please use the link in your latest email reminder or log in to the JAGO portal.',
             ]);
         }
 
