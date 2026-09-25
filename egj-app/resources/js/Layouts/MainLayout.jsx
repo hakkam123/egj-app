@@ -39,13 +39,13 @@ export default function MainLayout({ children, title }) {
     // Flash message handling
     useEffect(() => {
         if (flash?.success) {
-            toast.success(flash.success, { position: 'top-right' });
+            toast.success(flash.success, { id: 'flash-toast-success' });
         }
         if (flash?.error) {
-            toast.error(flash.error, { position: 'top-right' });
+            toast.error(flash.error, { id: 'flash-toast-error' });
         }
         if (flash?.warning) {
-            toast(flash.warning, { icon: '⚠️', position: 'top-right' });
+            toast(flash.warning, { icon: '⚠️', id: 'flash-toast-warning' });
         }
     }, [flash]);
 
@@ -161,7 +161,7 @@ export default function MainLayout({ children, title }) {
 
     return (
         <div className="min-h-screen bg-[var(--page-bg)] bg-dashboard flex flex-col font-sans relative">
-            <Toaster />
+            <Toaster position="top-right" reverseOrder={false} />
 
             {/* Top Navbar */}
             <header className="bg-[var(--sidebar-bg)] border-b border-gray-800 text-white sticky top-0 z-30 shadow-sm">

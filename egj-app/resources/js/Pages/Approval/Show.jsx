@@ -55,7 +55,6 @@ export default function ApprovalShow({ journal }) {
             onSuccess: () => {
                 setApproveModalOpen(false);
                 setIsApproving(false);
-                toast.success('General Journal approved successfully.');
             },
             onError: (errors) => {
                 setIsApproving(false);
@@ -80,7 +79,6 @@ export default function ApprovalShow({ journal }) {
             onSuccess: () => {
                 setReviseModalOpen(false);
                 setIsRevising(false);
-                toast.success('Revision request sent to requester.');
             },
             onError: (errors) => {
                 setIsRevising(false);

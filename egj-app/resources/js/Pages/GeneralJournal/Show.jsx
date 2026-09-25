@@ -74,7 +74,6 @@ export default function Show({ journal }) {
             onSuccess: () => {
                 setApproveModalOpen(false);
                 setIsApproving(false);
-                toast.success('Document approved successfully.');
             },
             onError: (errs) => {
                 setIsApproving(false);
@@ -99,7 +98,6 @@ export default function Show({ journal }) {
             onSuccess: () => {
                 setReviseModalOpen(false);
                 setIsRevising(false);
-                toast.success('Revision request sent to requester.');
             },
             onError: (errs) => {
                 setIsRevising(false);
@@ -117,7 +115,6 @@ export default function Show({ journal }) {
             onSuccess: () => {
                 setSelfRejectModalOpen(false);
                 setIsSelfRejecting(false);
-                toast.success('Document cancelled and closed.');
             },
             onError: (errs) => {
                 setIsSelfRejecting(false);
