@@ -218,19 +218,21 @@ export default function Show({ journal }) {
                             <>
                                 <Link
                                     href={`/general-journals/${journal.id}/edit`}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition-all"
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors"
                                 >
-                                    <RefreshCw size={14} /> Revise & Resubmit
+                                    Revise
                                 </Link>
+
                                 <button
                                     type="button"
                                     onClick={() => setSelfRejectModalOpen(true)}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors cursor-pointer"
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] bg-[var(--card-bg)] hover:bg-[var(--surface-muted)] border border-[var(--border)] rounded-lg transition-colors cursor-pointer"
                                 >
-                                    <XCircle size={14} /> Self-Reject (Cancel)
+                                    Reject
                                 </button>
                             </>
                         )}
+
                     </div>
                 </div>
 
@@ -349,13 +351,22 @@ export default function Show({ journal }) {
                                                     <p className="text-xs font-bold text-slate-900">
                                                         {approvalLevelLabel(app.approval_level)}
                                                     </p>
-                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${app.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                                                        app.status === 'Revised' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                                                            app.status === 'Rejected' ? 'bg-red-50 text-red-700 border border-red-200' :
-                                                                'bg-blue-50 text-blue-700 border border-blue-200'
-                                                        }`}>
-                                                        {app.status}
-                                                    </span>
+                                                    {(() => {
+                                                        const conf =
+                                                            STATUS_COLORS[app.status] ||
+                                                            STATUS_COLORS['Neutral'];
+
+                                                        return (
+                                                            <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[var(--text-primary)]">
+                                                                <span
+                                                                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${conf.dotClass || 'bg-slate-400'
+                                                                        }`}
+                                                                />
+                                                                {app.status}
+                                                            </span>
+                                                        );
+                                                    })()}
+
                                                 </div>
 
                                                 <p className="text-[11px] text-slate-500 mt-0.5">
@@ -433,7 +444,6 @@ export default function Show({ journal }) {
                         {supFiles.length > 0 && (
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 space-y-3">
                                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
-                                    <Paperclip size={14} className="text-slate-500" />
                                     Supporting Documents ({supFiles.length})
                                 </h4>
 

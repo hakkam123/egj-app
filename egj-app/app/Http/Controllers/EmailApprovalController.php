@@ -110,7 +110,7 @@ class EmailApprovalController extends Controller
                 'assigned_user_id' => $approver->id,
                 'approved_by_user_id' => $approver->id,
                 'approved_at' => now(),
-                'notes' => 'Approved ' . now()->format('Y-m-d') . ' ' . $approver->name . ' (via email)',
+                'notes' => 'Approved ' . now()->format('Y-m-d') . ' ' . $approver->name,
             ]);
 
             EmailToken::where('general_journal_id', $journal->id)
@@ -129,7 +129,7 @@ class EmailApprovalController extends Controller
                 'action' => 'approve',
                 'actor_user_id' => $approver->id,
                 'target_level' => $currentApproval->approval_level,
-                'notes' => 'Approved via email ' . now()->format('Y-m-d') . ' ' . $approver->name,
+                'notes' => 'Approved ' . now()->format('Y-m-d') . ' ' . $approver->name,
                 'created_at' => now(),
             ]);
 
@@ -259,7 +259,7 @@ class EmailApprovalController extends Controller
                 'assigned_user_id' => $approver->id,
                 'approved_by_user_id' => $approver->id,
                 'approved_at' => now(),
-                'notes' => $request->notes . ' (via email)',
+                'notes' => $request->notes,
             ]);
 
             EmailToken::where('general_journal_id', $journal->id)
@@ -278,7 +278,7 @@ class EmailApprovalController extends Controller
                 'action' => 'revise',
                 'actor_user_id' => $approver->id,
                 'target_level' => $currentApproval->approval_level,
-                'notes' => $request->notes . ' (via email)',
+                'notes' => $request->notes,
                 'created_at' => now(),
             ]);
 

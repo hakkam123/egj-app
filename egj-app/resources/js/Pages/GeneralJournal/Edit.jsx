@@ -277,9 +277,6 @@ export default function Edit({ journal }) {
                 {isRevised && (
                     <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4.5 shadow-xs">
                         <div className="flex items-start gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
-                                <AlertTriangle size={18} />
-                            </div>
                             <div className="flex-1">
                                 <h4 className="text-sm font-bold text-amber-900">
                                     Revision Requested by Approver
@@ -288,7 +285,7 @@ export default function Edit({ journal }) {
                                     {latestRevision?.notes || "Please revise the journal details and upload updated files."}
                                 </p>
                                 <p className="text-[11px] text-amber-700/80 mt-2">
-                                    💡 <em>Uploading new files below will automatically replace the old files. You can also self-reject this document if you wish to cancel it permanently.</em>
+                                    <em>Uploading new files below will automatically replace the old files. You can also self-reject this document if you wish to cancel it permanently.</em>
                                 </p>
                             </div>
                         </div>
