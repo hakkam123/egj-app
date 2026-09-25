@@ -13,7 +13,8 @@ import {
     XCircle,
     CheckCircle2,
     Clock,
-    History
+    History,
+    Loader2
 } from 'lucide-react';
 import MainLayout from '@/Layouts/MainLayout';
 import ConfirmModal from '@/Components/ConfirmModal';
@@ -30,6 +31,8 @@ export default function Edit({ journal }) {
     const [docSuffix, setDocSuffix] = useState(
         journal.document_number.replace(/^JOT\s*[-_]?\s*/i, '')
     );
+    const [actionType, setActionType] = useState('update');
+    const [isSubmittingDraft, setIsSubmittingDraft] = useState(false);
 
     const { data, setData, post, processing, errors } = useForm({
         document_number: journal.document_number,
@@ -123,6 +126,7 @@ export default function Edit({ journal }) {
         }
 
         setClientErrors({});
+        setActionType('update');
         post(`/general-journals/${journal.id}/update`, {
             forceFormData: true,
             preserveScroll: true,
@@ -151,12 +155,18 @@ export default function Edit({ journal }) {
         }
 
         setClientErrors({});
+        setIsSubmittingDraft(true);
         router.post(`/general-journals/${journal.id}/submit`, {}, {
-            onSuccess: () => toast.success('Draft submitted for approval.'),
+            onSuccess: () => {
+                setIsSubmittingDraft(false);
+                toast.success('Draft submitted for approval.');
+            },
             onError: (errs) => {
+                setIsSubmittingDraft(false);
                 const first = Object.values(errs)[0];
                 if (first) toast.error(first);
-            }
+            },
+            onFinish: () => setIsSubmittingDraft(false)
         });
     };
 
@@ -221,7 +231,7 @@ export default function Edit({ journal }) {
                             {isRevised ? `Revise Document: ${journal.document_number}` : `Edit Draft: ${journal.document_number}`}
                         </h1>
                         <p className="text-xs text-slate-500 mt-0.5">
-                            {isRevised 
+                            {isRevised
                                 ? "Update your documents based on the auditor notes and resubmit for approval review."
                                 : "Modify draft information and attachments before submitting into workflow."
                             }
@@ -292,9 +302,6 @@ export default function Edit({ journal }) {
                         <div className="lg:col-span-7 space-y-6">
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
                                 <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-xs">
-                                        <FileText size={16} />
-                                    </div>
                                     <div>
                                         <h3 className="text-sm font-bold text-slate-900">Document Details</h3>
                                         <p className="text-[11px] text-slate-500">Document identification and reference remarks</p>
@@ -307,9 +314,8 @@ export default function Edit({ journal }) {
                                         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
                                             Document Number <span className="text-red-500">*</span>
                                         </label>
-                                        <div className={`flex rounded-xl shadow-xs overflow-hidden border ${
-                                            mergedErrors.document_number ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/20'
-                                        } transition-all`}>
+                                        <div className={`flex rounded-xl shadow-xs overflow-hidden border ${mergedErrors.document_number ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/20'
+                                            } transition-all`}>
                                             <span className="inline-flex items-center px-3.5 bg-slate-100 border-r border-slate-200 text-slate-800 font-extrabold text-xs tracking-wider">
                                                 JOT
                                             </span>
@@ -318,9 +324,8 @@ export default function Edit({ journal }) {
                                                 disabled={isRevised}
                                                 value={docSuffix}
                                                 onChange={handleDocSuffixChange}
-                                                className={`w-full px-3.5 py-2.5 text-xs text-slate-800 ${
-                                                    isRevised ? 'bg-slate-50 cursor-not-allowed' : 'bg-white'
-                                                } focus:outline-none font-medium`}
+                                                className={`w-full px-3.5 py-2.5 text-xs text-slate-800 ${isRevised ? 'bg-slate-50 cursor-not-allowed' : 'bg-white'
+                                                    } focus:outline-none font-medium`}
                                                 required
                                             />
                                         </div>
@@ -344,11 +349,9 @@ export default function Edit({ journal }) {
                                                 setData('journal_date', e.target.value);
                                                 if (e.target.value) setClientErrors(prev => ({ ...prev, journal_date: null }));
                                             }}
-                                            className={`w-full px-3.5 py-2.5 text-xs text-slate-800 ${
-                                                isRevised ? 'bg-slate-50 cursor-not-allowed' : 'bg-white'
-                                            } border ${
-                                                mergedErrors.journal_date ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20'
-                                            } rounded-xl focus:outline-none`}
+                                            className={`w-full px-3.5 py-2.5 text-xs text-slate-800 ${isRevised ? 'bg-slate-50 cursor-not-allowed' : 'bg-white'
+                                                } border ${mergedErrors.journal_date ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20'
+                                                } rounded-xl focus:outline-none`}
                                             required
                                         />
                                         <p className="text-[11px] text-blue-600/90 mt-1 flex items-center gap-1">
@@ -374,9 +377,8 @@ export default function Edit({ journal }) {
                                                 if (e.target.value.trim()) setClientErrors(prev => ({ ...prev, reference: null }));
                                             }}
                                             rows={4}
-                                            className={`w-full px-3.5 py-2.5 text-xs text-slate-800 bg-white border ${
-                                                mergedErrors.reference ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20'
-                                            } rounded-xl focus:outline-none transition-all placeholder:text-slate-400 resize-y`}
+                                            className={`w-full px-3.5 py-2.5 text-xs text-slate-800 bg-white border ${mergedErrors.reference ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20'
+                                                } rounded-xl focus:outline-none transition-all placeholder:text-slate-400 resize-y`}
                                             placeholder="Provide updated notes or journal description (Required)..."
                                             required
                                         />
@@ -394,30 +396,46 @@ export default function Edit({ journal }) {
                                         <>
                                             <button
                                                 type="button"
-                                                disabled={processing}
+                                                disabled={processing || isSubmittingDraft}
                                                 onClick={handleUpdateDraft}
-                                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
+                                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
                                             >
-                                                <Save size={15} />
-                                                Save Draft Changes
+                                                {processing && actionType === 'update' ? (
+                                                    <>
+                                                        <Loader2 size={14} className="animate-spin" />
+                                                        Saving Draft...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Save size={15} />
+                                                        Save Draft Changes
+                                                    </>
+                                                )}
                                             </button>
 
                                             <button
                                                 type="button"
-                                                disabled={processing}
+                                                disabled={processing || isSubmittingDraft}
                                                 onClick={handleSubmitDraft}
-                                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                             >
-                                                <Send size={15} />
-                                                Submit for Approval
+                                                {isSubmittingDraft ? (
+                                                    <>
+                                                        <Loader2 size={14} className="animate-spin" />
+                                                        Submitting...
+                                                    </>
+                                                ) : (
+                                                    'Submit for Approval'
+                                                )}
                                             </button>
                                         </>
                                     ) : (
                                         <>
                                             <button
                                                 type="button"
+                                                disabled={processing}
                                                 onClick={() => setSelfRejectModalOpen(true)}
-                                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold transition-colors cursor-pointer"
+                                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition-colors cursor-pointer"
                                             >
                                                 <XCircle size={15} />
                                                 Self-Reject
@@ -439,9 +457,8 @@ export default function Edit({ journal }) {
                                                     }
                                                     setResubmitModalOpen(true);
                                                 }}
-                                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                             >
-                                                <Send size={15} />
                                                 Resubmit for Approval
                                             </button>
                                         </>
@@ -496,12 +513,12 @@ export default function Edit({ journal }) {
                                     )}
 
                                     {/* New Upload Selector */}
-                                    <input 
-                                        ref={gjInputRef} 
-                                        type="file" 
-                                        accept=".pdf" 
-                                        onChange={handleGjFileChange} 
-                                        className="hidden" 
+                                    <input
+                                        ref={gjInputRef}
+                                        type="file"
+                                        accept=".pdf"
+                                        onChange={handleGjFileChange}
+                                        className="hidden"
                                     />
 
                                     {gjPreviewUrl ? (
@@ -517,8 +534,8 @@ export default function Edit({ journal }) {
                                                     </div>
                                                 </div>
 
-                                                <button 
-                                                    type="button" 
+                                                <button
+                                                    type="button"
                                                     onClick={removeNewGjFile}
                                                     className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                                                 >
@@ -536,9 +553,8 @@ export default function Edit({ journal }) {
                                         <button
                                             type="button"
                                             onClick={() => gjInputRef.current?.click()}
-                                            className={`w-full flex items-center justify-center gap-2 py-3 px-4 border border-dashed ${
-                                                mergedErrors.general_journal_file ? 'border-red-400 bg-red-50/30' : 'border-slate-300 hover:border-blue-500 hover:bg-blue-50/30'
-                                            } rounded-xl text-xs font-bold text-slate-700 transition-all cursor-pointer`}
+                                            className={`w-full flex items-center justify-center gap-2 py-3 px-4 border border-dashed ${mergedErrors.general_journal_file ? 'border-red-400 bg-red-50/30' : 'border-slate-300 hover:border-blue-500 hover:bg-blue-50/30'
+                                                } rounded-xl text-xs font-bold text-slate-700 transition-all cursor-pointer`}
                                         >
                                             <UploadCloud size={16} className={mergedErrors.general_journal_file ? 'text-red-600' : 'text-blue-600'} />
                                             {existingGjFile ? "Upload Replacement PDF" : "Upload General Journal PDF"}
@@ -592,13 +608,13 @@ export default function Edit({ journal }) {
                                     )}
 
                                     {/* Upload Replacement Files */}
-                                    <input 
-                                        ref={sdInputRef} 
-                                        type="file" 
-                                        accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls" 
-                                        multiple 
-                                        onChange={handleSdFilesChange} 
-                                        className="hidden" 
+                                    <input
+                                        ref={sdInputRef}
+                                        type="file"
+                                        accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls"
+                                        multiple
+                                        onChange={handleSdFilesChange}
+                                        className="hidden"
                                     />
 
                                     <button
@@ -623,8 +639,8 @@ export default function Edit({ journal }) {
                                                             <p className="text-[10px] text-slate-400">{formatFileSize(file.size)}</p>
                                                         </div>
                                                     </div>
-                                                    <button 
-                                                        type="button" 
+                                                    <button
+                                                        type="button"
                                                         onClick={() => removeSdFile(i)}
                                                         className="p-1 text-slate-400 hover:text-red-600 transition-colors"
                                                     >
@@ -649,9 +665,10 @@ export default function Edit({ journal }) {
                 message="Are you sure you want to resubmit this document for approval review? The approval chain will be restarted and notifications will be sent to the approver."
                 confirmText="Yes, Resubmit"
                 cancelText="Cancel"
-                confirmVariant="primary"
+                type="primary"
+                loading={processing}
                 onConfirm={handleConfirmResubmit}
-                onCancel={() => setResubmitModalOpen(false)}
+                onCancel={() => !processing && setResubmitModalOpen(false)}
             />
 
             {/* Confirm Self-Reject Modal */}
@@ -661,9 +678,10 @@ export default function Edit({ journal }) {
                 message="Are you sure you want to cancel and reject this document permanently? Once rejected, this document will be closed and cannot be edited or resubmitted again."
                 confirmText="Yes, Reject Permanently"
                 cancelText="Keep Document"
-                confirmVariant="danger"
+                type="danger"
+                loading={processing}
                 onConfirm={handleConfirmSelfReject}
-                onCancel={() => setSelfRejectModalOpen(false)}
+                onCancel={() => !processing && setSelfRejectModalOpen(false)}
             />
         </MainLayout>
     );

@@ -13,7 +13,8 @@ import {
     HelpCircle,
     CheckCircle2,
     AlertTriangle,
-    AlertCircle
+    AlertCircle,
+    Loader2
 } from 'lucide-react';
 import MainLayout from '@/Layouts/MainLayout';
 import { useState, useRef, useEffect } from 'react';
@@ -208,9 +209,8 @@ export default function Create() {
                                         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
                                             Document Number <span className="text-red-500">*</span>
                                         </label>
-                                        <div className={`flex rounded-xl shadow-xs overflow-hidden border ${
-                                            mergedErrors.document_number ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/20'
-                                        } transition-all`}>
+                                        <div className={`flex rounded-xl shadow-xs overflow-hidden border ${mergedErrors.document_number ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/20'
+                                            } transition-all`}>
                                             <span className="inline-flex items-center px-3.5 bg-slate-100 border-r border-slate-200 text-slate-800 font-extrabold text-xs tracking-wider">
                                                 JOT
                                             </span>
@@ -246,9 +246,8 @@ export default function Create() {
                                                     setData('journal_date', e.target.value);
                                                     if (e.target.value) setClientErrors(prev => ({ ...prev, journal_date: null }));
                                                 }}
-                                                className={`w-full px-3.5 py-2.5 text-xs text-slate-800 bg-white border ${
-                                                    mergedErrors.journal_date ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20'
-                                                } rounded-xl focus:outline-none transition-all`}
+                                                className={`w-full px-3.5 py-2.5 text-xs text-slate-800 bg-white border ${mergedErrors.journal_date ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20'
+                                                    } rounded-xl focus:outline-none transition-all`}
                                                 required
                                             />
                                         </div>
@@ -275,9 +274,8 @@ export default function Create() {
                                                 if (e.target.value.trim()) setClientErrors(prev => ({ ...prev, reference: null }));
                                             }}
                                             rows={4}
-                                            className={`w-full px-3.5 py-2.5 text-xs text-slate-800 bg-white border ${
-                                                mergedErrors.reference ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20'
-                                            } rounded-xl focus:outline-none transition-all placeholder:text-slate-400 resize-y`}
+                                            className={`w-full px-3.5 py-2.5 text-xs text-slate-800 bg-white border ${mergedErrors.reference ? 'border-red-400 ring-2 ring-red-400/20' : 'border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20'
+                                                } rounded-xl focus:outline-none transition-all placeholder:text-slate-400 resize-y`}
                                             placeholder="Provide transaction details, reason, or journal remarks (Required)..."
                                             required
                                         />
@@ -295,10 +293,19 @@ export default function Create() {
                                         type="button"
                                         disabled={processing}
                                         onClick={() => handleFormSubmit('draft')}
-                                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
+                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
                                     >
-                                        <Save size={15} />
-                                        {processing && actionType === 'draft' ? 'Saving Draft...' : 'Save as Draft'}
+                                        {processing && actionType === 'draft' ? (
+                                            <>
+                                                <Loader2 size={14} className="animate-spin" />
+                                                Saving Draft...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save size={15} />
+                                                Save as Draft
+                                            </>
+                                        )}
                                     </button>
 
                                     <button
@@ -307,8 +314,14 @@ export default function Create() {
                                         onClick={() => handleFormSubmit('submit')}
                                         className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                     >
-                                        <Send size={14} />
-                                        {processing && actionType === 'submit' ? 'Submitting...' : 'Submit for Approval'}
+                                        {processing && actionType === 'submit' ? (
+                                            <>
+                                                <Loader2 size={14} className="animate-spin" />
+                                                Submitting...
+                                            </>
+                                        ) : (
+                                            'Submit for Approval'
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -371,15 +384,13 @@ export default function Create() {
                                     ) : (
                                         <div
                                             onClick={() => gjInputRef.current?.click()}
-                                            className={`flex flex-col items-center justify-center p-6 border-2 border-dashed ${
-                                                mergedErrors.general_journal_file 
-                                                    ? 'border-red-400 bg-red-50/30' 
+                                            className={`flex flex-col items-center justify-center p-6 border-2 border-dashed ${mergedErrors.general_journal_file
+                                                    ? 'border-red-400 bg-red-50/30'
                                                     : 'border-slate-200 hover:border-blue-500/50 hover:bg-blue-50/20'
-                                            } rounded-2xl cursor-pointer transition-all text-center`}
+                                                } rounded-2xl cursor-pointer transition-all text-center`}
                                         >
-                                            <div className={`w-12 h-12 rounded-2xl ${
-                                                mergedErrors.general_journal_file ? 'bg-red-100 text-red-600' : 'bg-blue-50 text-blue-600'
-                                            } flex items-center justify-center mb-2.5`}>
+                                            <div className={`w-12 h-12 rounded-2xl ${mergedErrors.general_journal_file ? 'bg-red-100 text-red-600' : 'bg-blue-50 text-blue-600'
+                                                } flex items-center justify-center mb-2.5`}>
                                                 <UploadCloud size={24} />
                                             </div>
                                             <p className="text-xs font-bold text-slate-800">Click to upload General Journal PDF</p>

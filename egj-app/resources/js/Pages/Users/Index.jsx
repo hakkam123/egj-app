@@ -14,6 +14,7 @@ import {
     XCircle,
     Mail,
     IdCard,
+    Loader2,
 } from 'lucide-react';
 import MainLayout from '../../Layouts/MainLayout';
 import PageHeader from '../../Components/PageHeader';
@@ -35,6 +36,7 @@ export default function UsersIndex({ users, filters }) {
     // Delete modal state
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [userToDelete, setUserToDelete] = useState(null);
+    const [isDeactivating, setIsDeactivating] = useState(false);
 
     const isInitialMount = useRef(true);
 
@@ -191,14 +193,17 @@ export default function UsersIndex({ users, filters }) {
     const confirmDelete = () => {
         if (!userToDelete) return;
 
+        setIsDeactivating(true);
         router.delete(`/users/${userToDelete.id}`, {
             preserveScroll: true,
             onSuccess: () => {
                 setShowDeleteModal(false);
                 setUserToDelete(null);
+                setIsDeactivating(false);
                 toast.success('User deactivated successfully.');
             },
             onError: () => {
+                setIsDeactivating(false);
                 toast.error('Failed to deactivate user.');
             }
         });
@@ -630,12 +635,19 @@ export default function UsersIndex({ users, filters }) {
                                 <button
                                     type="submit"
                                     disabled={userForm.processing}
-                                    className="inline-flex items-center gap-2 px-5 py-2 text-[13px] font-semibold rounded-lg text-white transition-colors disabled:opacity-50 shadow-xs"
+                                    className="inline-flex items-center gap-2 px-5 py-2 text-[13px] font-semibold rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-xs"
                                     style={{ background: '#1a2540' }}
                                     onMouseEnter={e => !userForm.processing && (e.currentTarget.style.background = '#243355')}
                                     onMouseLeave={e => e.currentTarget.style.background = '#1a2540'}
                                 >
-                                    {userForm.processing ? 'Saving...' : isEditing ? 'Save Changes' : 'Add User'}
+                                    {userForm.processing ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" />
+                                            <span>{isEditing ? 'Saving Changes...' : 'Adding User...'}</span>
+                                        </>
+                                    ) : (
+                                        isEditing ? 'Save Changes' : 'Add User'
+                                    )}
                                 </button>
                             </div>
                         </form>
@@ -662,16 +674,25 @@ export default function UsersIndex({ users, filters }) {
                             <button
                                 type="button"
                                 onClick={() => setShowDeleteModal(false)}
-                                className="px-4 py-2 text-[13px] font-medium rounded-lg border-[0.5px] border-[var(--border)] text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
+                                disabled={isDeactivating}
+                                className="px-4 py-2 text-[13px] font-medium rounded-lg border-[0.5px] border-[var(--border)] text-[var(--text-secondary)] hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="button"
                                 onClick={confirmDelete}
-                                className="px-4 py-2 text-[13px] font-bold rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors shadow-xs"
+                                disabled={isDeactivating}
+                                className="inline-flex items-center gap-2 px-4 py-2 text-[13px] font-bold rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
-                                Yes, Deactivate
+                                {isDeactivating ? (
+                                    <>
+                                        <Loader2 size={14} className="animate-spin" />
+                                        <span>Deactivating...</span>
+                                    </>
+                                ) : (
+                                    'Yes, Deactivate'
+                                )}
                             </button>
                         </div>
                     </div>

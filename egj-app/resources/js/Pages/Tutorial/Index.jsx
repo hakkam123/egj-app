@@ -9,7 +9,8 @@ import {
     Trash2, 
     X, 
     Plus, 
-    HelpCircle
+    HelpCircle,
+    Loader2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -19,6 +20,7 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
 
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
     const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const uploadForm = useForm({
         title: '',
@@ -48,13 +50,18 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
     };
 
     const handleDelete = (id) => {
+        setIsDeleting(true);
         router.delete(`/tutorial/${id}`, {
             preserveScroll: true,
             onSuccess: () => {
                 toast.success('Tutorial deleted successfully.');
                 setDeleteConfirmId(null);
+                setIsDeleting(false);
             },
-            onError: () => toast.error('Failed to delete tutorial.')
+            onError: () => {
+                setIsDeleting(false);
+                toast.error('Failed to delete tutorial.');
+            }
         });
     };
 
@@ -285,16 +292,27 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
                                 <button
                                     type="button"
                                     onClick={() => setUploadModalOpen(false)}
-                                    className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                    disabled={uploadForm.processing}
+                                    className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={uploadForm.processing}
-                                    className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg transition-colors shadow-xs flex items-center gap-1.5"
+                                    className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer rounded-lg transition-colors shadow-xs flex items-center gap-1.5"
                                 >
-                                    <Upload size={14} /> {uploadForm.processing ? 'Uploading...' : 'Upload File'}
+                                    {uploadForm.processing ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" />
+                                            <span>Uploading...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload size={14} />
+                                            <span>Upload File</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </form>
@@ -313,15 +331,24 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
                         <div className="flex justify-end gap-2">
                             <button
                                 onClick={() => setDeleteConfirmId(null)}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                disabled={isDeleting}
+                                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={() => handleDelete(deleteConfirmId)}
-                                className="px-4 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                                disabled={isDeleting}
+                                className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
-                                Yes, Delete
+                                {isDeleting ? (
+                                    <>
+                                        <Loader2 size={13} className="animate-spin" />
+                                        <span>Deleting...</span>
+                                    </>
+                                ) : (
+                                    'Yes, Delete'
+                                )}
                             </button>
                         </div>
                     </div>

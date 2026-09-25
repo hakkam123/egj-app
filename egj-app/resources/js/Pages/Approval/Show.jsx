@@ -182,9 +182,12 @@ export default function ApprovalShow({ journal }) {
 
                             {/* Action Buttons */}
                             {isCurrentApprover && (
-                                <div className="mt-5 pt-4 border-t border-slate-100 space-y-2">
-                                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Your Approval Decision</p>
-                                    <div className="flex gap-2.5">
+                                <div className="mt-5 pt-4 border-t border-[var(--border)] space-y-2">
+                                    <p className="text-[11px] font-medium text-[var(--text-secondary)]">
+                                        Your Approval Decision
+                                    </p>
+
+                                    <div className="flex gap-2">
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -193,20 +196,22 @@ export default function ApprovalShow({ journal }) {
                                                 setReviseModalOpen(true);
                                             }}
                                             disabled={isApproving || isRevising}
-                                            className="flex-1 px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 disabled:opacity-50 text-xs font-bold rounded-xl transition-all shadow-2xs cursor-pointer"
+                                            className="flex-1 px-4 py-2.5 bg-[var(--card-bg)] hover:bg-[var(--surface-muted)] text-[var(--text-primary)] border border-[var(--border)] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                                         >
                                             Request Revision
                                         </button>
+
                                         <button
                                             type="button"
                                             onClick={() => setApproveModalOpen(true)}
                                             disabled={isApproving || isRevising}
-                                            className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-600/20 cursor-pointer"
+                                            className="flex-1 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                                         >
                                             Approve Document
                                         </button>
                                     </div>
                                 </div>
+
                             )}
                         </div>
 
@@ -214,7 +219,7 @@ export default function ApprovalShow({ journal }) {
                         {journal.approvals?.length > 0 && (
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 space-y-4">
                                 <h4 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                                    <HistoryIcon size={16} className="text-blue-600" /> Approval Workflow Progress
+                                    Approval Workflow Progress
                                 </h4>
 
                                 <div className="relative border-l border-slate-200 ml-3 space-y-5 pl-5 pt-1">
@@ -306,7 +311,6 @@ export default function ApprovalShow({ journal }) {
                         {sdFiles.length > 0 && (
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 space-y-3">
                                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
-                                    <Paperclip size={14} className="text-slate-500" />
                                     Supporting Documents ({sdFiles.length})
                                 </h4>
 
@@ -352,79 +356,110 @@ export default function ApprovalShow({ journal }) {
                 message="By approving this document, you certify that the journal details and supporting documents have been verified and approved. Proceed?"
                 confirmText="Yes, Approve"
                 cancelText="Cancel"
-                confirmVariant="primary"
+                type="success"
+                loading={isApproving}
                 onConfirm={confirmApprove}
-                onCancel={() => setApproveModalOpen(false)}
+                onCancel={() => !isApproving && setApproveModalOpen(false)}
             />
 
             {/* Modal Revise */}
             {reviseModalOpen && (
-                <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs" onClick={() => !isRevising && setReviseModalOpen(false)}>
+                <div
+                    className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/40"
+                    onClick={() => !isRevising && setReviseModalOpen(false)}
+                >
                     <div
-                        className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in duration-150"
-                        onClick={e => e.stopPropagation()}
+                        className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg max-w-md w-full p-5 shadow-xl relative"
+                        onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                                <AlertTriangle className="text-amber-500" size={20} />
+                        <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+                            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
                                 Request Document Revision
                             </h3>
+
                             <button
                                 type="button"
                                 onClick={() => !isRevising && setReviseModalOpen(false)}
-                                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                                className="p-1.5 rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)] transition-colors"
                             >
-                                <X size={18} />
+                                <X size={17} strokeWidth={1.8} />
                             </button>
                         </div>
 
                         <form onSubmit={confirmRevise} className="space-y-4 pt-4">
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-wide text-slate-700 mb-1.5">
-                                    Revision Notes <span className="text-red-500">* (Min 5 characters)</span>
+                                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
+                                    Revision Notes
+                                    <span className="text-[var(--text-secondary)] ml-1">
+                                        * (Min 5 characters)
+                                    </span>
                                 </label>
+
                                 <textarea
                                     value={reviseNotes}
                                     onChange={(e) => {
                                         setReviseNotes(e.target.value);
-                                        if (reviseError && e.target.value.trim().length >= 5) {
+
+                                        if (
+                                            reviseError &&
+                                            e.target.value.trim().length >= 5
+                                        ) {
                                             setReviseError('');
                                         }
                                     }}
                                     rows={4}
                                     placeholder="Explain clearly what corrections are needed from the requester..."
-                                    className="w-full px-3.5 py-2.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 bg-white"
+                                    className="w-full px-3 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--card-bg)] border border-[var(--border)] rounded-lg focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-200 placeholder:text-[var(--text-secondary)]"
                                     required
                                 />
-                                <div className="flex justify-between items-center mt-1 text-[11px]">
-                                    <span className="text-red-500">{reviseError}</span>
-                                    <span className={reviseNotes.length < 5 ? "text-red-500 font-semibold" : "text-slate-400"}>
+
+                                <div className="flex justify-between items-center mt-1.5 text-[11px]">
+                                    <span className="text-red-500">
+                                        {reviseError}
+                                    </span>
+
+                                    <span
+                                        className={
+                                            reviseNotes.length < 5
+                                                ? 'text-red-500 font-medium'
+                                                : 'text-[var(--text-secondary)]'
+                                        }
+                                    >
                                         {reviseNotes.length} / 5 min characters
                                     </span>
                                 </div>
                             </div>
 
-                            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                            <div className="pt-3 border-t border-[var(--border)] flex items-center justify-end gap-2">
                                 <button
                                     type="button"
                                     onClick={() => setReviseModalOpen(false)}
                                     disabled={isRevising}
-                                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                                    className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Cancel
                                 </button>
+
                                 <button
                                     type="submit"
                                     disabled={isRevising || reviseNotes.trim().length < 5}
-                                    className="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 rounded-xl transition-colors shadow-sm cursor-pointer"
+                                    className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors cursor-pointer"
                                 >
-                                    {isRevising ? 'Sending...' : 'Send Revision Request'}
+                                    {isRevising ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" />
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        'Send Revision Request'
+                                    )}
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
+
         </MainLayout>
     );
 }

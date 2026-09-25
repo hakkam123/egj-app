@@ -1,6 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import { User, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function Login() {
     const { data, setData, post, processing, errors } = useForm({
@@ -119,12 +119,19 @@ export default function Login() {
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-white font-medium text-[13px] transition-colors disabled:opacity-50 mt-2"
+                                className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-white font-medium text-[13px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-2"
                                 style={{ background: '#1a2540' }}
                                 onMouseEnter={e => !processing && (e.currentTarget.style.background = '#243355')}
                                 onMouseLeave={e => e.currentTarget.style.background = '#1a2540'}
                             >
-                                {processing ? 'Signing In...' : 'Sign In'}
+                                {processing ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        <span>Signing In...</span>
+                                    </>
+                                ) : (
+                                    'Sign In'
+                                )}
                             </button>
                         </form>
 

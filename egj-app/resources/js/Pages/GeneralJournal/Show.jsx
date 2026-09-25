@@ -14,7 +14,8 @@ import {
     History as HistoryIcon,
     Calendar,
     User as UserIcon,
-    RefreshCw
+    RefreshCw,
+    Loader2
 } from 'lucide-react';
 import MainLayout from '@/Layouts/MainLayout';
 import ConfirmModal from '@/Components/ConfirmModal';
@@ -49,6 +50,8 @@ export default function Show({ journal }) {
     const [reviseError, setReviseError] = useState('');
     const [isApproving, setIsApproving] = useState(false);
     const [isRevising, setIsRevising] = useState(false);
+    const [isSelfRejecting, setIsSelfRejecting] = useState(false);
+    const [isSubmittingSingle, setIsSubmittingSingle] = useState(false);
     const [pdfLoading, setPdfLoading] = useState(true);
 
     const markNotifRead = (journalId) => {
@@ -106,21 +109,35 @@ export default function Show({ journal }) {
     };
 
     const confirmSelfReject = () => {
+        setIsSelfRejecting(true);
         router.post(`/general-journals/${journal.id}/self-reject`, {
             notes: 'Document cancelled and rejected by requester.'
         }, {
+            preserveScroll: true,
             onSuccess: () => {
                 setSelfRejectModalOpen(false);
+                setIsSelfRejecting(false);
                 toast.success('Document cancelled and closed.');
+            },
+            onError: (errs) => {
+                setIsSelfRejecting(false);
+                toast.error(Object.values(errs)[0] || 'Failed to cancel document.');
             }
         });
     };
 
     const confirmSingleSubmit = () => {
+        setIsSubmittingSingle(true);
         router.post(`/general-journals/${journal.id}/submit`, {}, {
+            preserveScroll: true,
             onSuccess: () => {
                 setSingleSubmitModalOpen(false);
+                setIsSubmittingSingle(false);
                 toast.success('Draft submitted for approval.');
+            },
+            onError: (errs) => {
+                setIsSubmittingSingle(false);
+                toast.error(Object.values(errs)[0] || 'Failed to submit draft.');
             }
         });
     };
@@ -469,8 +486,9 @@ export default function Show({ journal }) {
                 confirmText="Yes, Approve Document"
                 cancelText="Cancel"
                 confirmVariant="primary"
+                loading={isApproving}
                 onConfirm={confirmApprove}
-                onCancel={() => setApproveModalOpen(false)}
+                onCancel={() => !isApproving && setApproveModalOpen(false)}
             />
 
             {/* Confirm Single Submit Modal (for Draft) */}
@@ -481,8 +499,9 @@ export default function Show({ journal }) {
                 confirmText="Yes, Submit Document"
                 cancelText="Cancel"
                 confirmVariant="primary"
+                loading={isSubmittingSingle}
                 onConfirm={confirmSingleSubmit}
-                onCancel={() => setSingleSubmitModalOpen(false)}
+                onCancel={() => !isSubmittingSingle && setSingleSubmitModalOpen(false)}
             />
 
             {/* Confirm Self-Reject Modal */}
@@ -493,8 +512,9 @@ export default function Show({ journal }) {
                 confirmText="Yes, Reject Permanently"
                 cancelText="Keep Document"
                 confirmVariant="danger"
+                loading={isSelfRejecting}
                 onConfirm={confirmSelfReject}
-                onCancel={() => setSelfRejectModalOpen(false)}
+                onCancel={() => !isSelfRejecting && setSelfRejectModalOpen(false)}
             />
 
             {/* Request Revision Modal */}
@@ -552,16 +572,23 @@ export default function Show({ journal }) {
                                     type="button"
                                     onClick={() => setReviseModalOpen(false)}
                                     disabled={isRevising}
-                                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isRevising || reviseNotes.trim().length < 5}
-                                    className="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 rounded-xl transition-colors shadow-sm"
+                                    className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-colors shadow-sm cursor-pointer"
                                 >
-                                    {isRevising ? 'Sending...' : 'Send Revision Request'}
+                                    {isRevising ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" />
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        'Send Revision Request'
+                                    )}
                                 </button>
                             </div>
                         </form>

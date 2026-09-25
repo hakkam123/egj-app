@@ -2,7 +2,7 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import MainLayout from '../../Layouts/MainLayout';
 import PageHeader from '../../Components/PageHeader';
-import { User, Lock, Save, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Save, ShieldCheck, Eye, EyeOff, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function EditProfile({ user }) {
@@ -147,13 +147,22 @@ export default function EditProfile({ user }) {
                                 <button
                                     type="submit"
                                     disabled={profileForm.processing}
-                                    className="inline-flex items-center gap-2 px-4 py-2 text-[13px] rounded-lg transition-colors disabled:opacity-50"
+                                    className="inline-flex items-center gap-2 px-4 py-2 text-[13px] rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
                                     style={{ background: '#1a2540', color: '#ffffff' }}
                                     onMouseEnter={e => !profileForm.processing && (e.currentTarget.style.background = '#243355')}
                                     onMouseLeave={e => e.currentTarget.style.background = '#1a2540'}
                                 >
-                                    <Save size={14} />
-                                    {profileForm.processing ? 'Saving...' : 'Save Profile'}
+                                    {profileForm.processing ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" />
+                                            Saving Profile...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save size={14} />
+                                            Save Profile
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </form>
@@ -276,13 +285,22 @@ export default function EditProfile({ user }) {
                                 <button
                                     type="submit"
                                     disabled={passwordForm.processing}
-                                    className="inline-flex items-center gap-2 px-4 py-2 text-[13px] rounded-lg transition-colors disabled:opacity-50"
+                                    className="inline-flex items-center gap-2 px-4 py-2 text-[13px] rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
                                     style={{ background: '#1a2540', color: '#ffffff' }}
                                     onMouseEnter={e => !passwordForm.processing && (e.currentTarget.style.background = '#243355')}
                                     onMouseLeave={e => e.currentTarget.style.background = '#1a2540'}
                                 >
-                                    <Lock size={14} />
-                                    {passwordForm.processing ? 'Processing...' : 'Change Password'}
+                                    {passwordForm.processing ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" />
+                                            Changing Password...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Lock size={14} />
+                                            Change Password
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </form>

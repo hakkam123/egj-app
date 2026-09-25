@@ -20,13 +20,17 @@ import {
     Eye,
     Download,
     X,
-    CheckCircle2
+    CheckCircle2,
+    Loader2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Drafts({ drafts, filters, stats }) {
     const [selectedIds, setSelectedIds] = useState([]);
-    
+    const [isSubmittingSingle, setIsSubmittingSingle] = useState(false);
+    const [isSubmittingBulk, setIsSubmittingBulk] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     // Filters & in-column search states
     const [search, setSearch] = useState(filters?.search || '');
     const [docNumber, setDocNumber] = useState(filters?.doc_number || '');
@@ -52,10 +56,10 @@ export default function Drafts({ drafts, filters, stats }) {
 
     // Calculate ready vs incomplete drafts for selected IDs
     const selectedDrafts = draftList.filter(d => selectedIds.includes(d.id));
-    const readySelectedDrafts = selectedDrafts.filter(d => 
+    const readySelectedDrafts = selectedDrafts.filter(d =>
         d.active_files?.some(f => f.category === 'general_journal') && d.reference && d.journal_date
     );
-    const incompleteSelectedDrafts = selectedDrafts.filter(d => 
+    const incompleteSelectedDrafts = selectedDrafts.filter(d =>
         !d.active_files?.some(f => f.category === 'general_journal') || !d.reference || !d.journal_date
     );
 
@@ -127,17 +131,21 @@ export default function Drafts({ drafts, filters, stats }) {
     };
 
     const handleConfirmDelete = () => {
-        if (!deleteTargetId) return;
+        if (!deleteTargetId || isDeleting) return;
+        setIsDeleting(true);
         router.delete(`/general-journals/${deleteTargetId}`, {
             onSuccess: () => {
+                setIsDeleting(false);
                 setDeleteModalOpen(false);
                 setDeleteTargetId(null);
                 setSelectedIds(prev => prev.filter(id => id !== deleteTargetId));
                 toast.success('Draft deleted successfully.');
             },
             onError: () => {
+                setIsDeleting(false);
                 toast.error('Failed to delete draft.');
-            }
+            },
+            onFinish: () => setIsDeleting(false)
         });
     };
 
@@ -162,43 +170,51 @@ export default function Drafts({ drafts, filters, stats }) {
     };
 
     const handleConfirmSingleSubmit = () => {
-        if (!singleSubmitTarget) return;
+        if (!singleSubmitTarget || isSubmittingSingle) return;
+        setIsSubmittingSingle(true);
         router.post(`/general-journals/${singleSubmitTarget.id}/submit`, {}, {
             onSuccess: () => {
+                setIsSubmittingSingle(false);
                 setSingleSubmitModalOpen(false);
                 setSingleSubmitTarget(null);
                 setSelectedIds(prev => prev.filter(id => id !== singleSubmitTarget.id));
                 toast.success('Draft submitted successfully for approval.');
             },
             onError: (errs) => {
+                setIsSubmittingSingle(false);
                 const first = typeof errs === 'object' ? Object.values(errs)[0] : null;
                 toast.error(first || 'Failed to submit draft.');
-            }
+            },
+            onFinish: () => setIsSubmittingSingle(false)
         });
     };
 
     const handleConfirmBulkSubmit = (onlyReady = false) => {
-        const targetIds = onlyReady 
-            ? readySelectedDrafts.map(d => d.id) 
+        const targetIds = onlyReady
+            ? readySelectedDrafts.map(d => d.id)
             : (readySelectedDrafts.length > 0 ? readySelectedDrafts.map(d => d.id) : selectedIds);
 
-        if (targetIds.length === 0) {
-            toast.error('No valid drafts to submit.');
+        if (targetIds.length === 0 || isSubmittingBulk) {
+            if (targetIds.length === 0) toast.error('No valid drafts to submit.');
             return;
         }
 
+        setIsSubmittingBulk(true);
         router.post('/general-journals/bulk-submit', {
             ids: targetIds,
         }, {
             onSuccess: () => {
+                setIsSubmittingBulk(false);
                 setBulkSubmitModalOpen(false);
                 setSelectedIds([]);
                 toast.success(`${targetIds.length} draft(s) submitted for approval.`);
             },
             onError: (errs) => {
+                setIsSubmittingBulk(false);
                 const first = typeof errs === 'object' ? Object.values(errs)[0] : null;
                 toast.error(first || 'Failed to bulk submit drafts.');
-            }
+            },
+            onFinish: () => setIsSubmittingBulk(false)
         });
     };
 
@@ -232,7 +248,7 @@ export default function Drafts({ drafts, filters, stats }) {
 
                     <Link
                         href="/general-journals/create"
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
                     >
                         <Plus size={16} />
                         Create New Draft
@@ -242,29 +258,27 @@ export default function Drafts({ drafts, filters, stats }) {
 
             {/* Bulk Actions Banner */}
             {selectedIds.length > 0 && (
-                <div className="bg-blue-50 border border-blue-200/80 rounded-2xl p-3.5 mb-5 flex items-center justify-between shadow-xs animate-in fade-in slide-in-from-top-2 duration-150">
-                    <div className="flex items-center gap-2.5 text-xs font-semibold text-blue-900">
-                        <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-blue-600 text-white font-bold text-xs">
-                            {selectedIds.length}
-                        </span>
-                        <span>draft document(s) selected for bulk submission</span>
+                <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-lg px-4 py-3 mb-4 flex items-center justify-between shadow-xs animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="flex items-center gap-2.5">
+                        <p className="text-xs font-semibold text-[var(--text-primary)]">
+                            {selectedIds.length} {selectedIds.length === 1 ? 'draft document selected' : 'draft documents selected'}
+                        </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                         <button
                             type="button"
                             onClick={() => setSelectedIds([])}
-                            className="px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100/70 rounded-lg transition-colors cursor-pointer"
+                            className="px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-muted)] rounded-lg transition-colors cursor-pointer"
                         >
-                            Deselect All
+                            Deselect
                         </button>
                         <button
                             type="button"
                             onClick={() => setBulkSubmitModalOpen(true)}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
-                            <Send size={14} />
-                            Bulk Submit ({selectedIds.length})
+                            Submit Selected ({selectedIds.length})
                         </button>
                     </div>
                 </div>
@@ -300,7 +314,7 @@ export default function Drafts({ drafts, filters, stats }) {
                             <tr className="bg-slate-100/70 border-b border-slate-200/80">
                                 <td className="py-1.5 px-2 text-center"></td>
                                 <td className="py-1.5 px-2 text-center text-slate-400 font-mono text-[10px]">-</td>
-                                
+
                                 {/* In Search: Document Number */}
                                 <td className="py-1.5 px-2.5">
                                     <div className="relative">
@@ -496,14 +510,13 @@ export default function Drafts({ drafts, filters, stats }) {
                                                     <button
                                                         type="button"
                                                         onClick={() => handleRowSubmitClick(journal)}
-                                                        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs ${
-                                                            gjFile && journal.reference
-                                                                ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
-                                                                : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 cursor-pointer'
-                                                        }`}
+                                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${gjFile && journal.reference
+                                                            ? 'bg-slate-900 hover:bg-slate-800 text-white cursor-pointer'
+                                                            : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 cursor-pointer'
+                                                            }`}
                                                         title={gjFile && journal.reference ? 'Submit for Approval' : 'Incomplete draft - click to view details'}
                                                     >
-                                                        <Send size={12} /> Submit
+                                                        Submit
                                                     </button>
 
                                                     <button
@@ -561,25 +574,25 @@ export default function Drafts({ drafts, filters, stats }) {
                 confirmText="Yes, Submit"
                 cancelText="Cancel"
                 type="primary"
+                loading={isSubmittingSingle}
                 onConfirm={handleConfirmSingleSubmit}
                 onClose={() => {
-                    setSingleSubmitModalOpen(false);
-                    setSingleSubmitTarget(null);
+                    if (!isSubmittingSingle) {
+                        setSingleSubmitModalOpen(false);
+                        setSingleSubmitTarget(null);
+                    }
                 }}
             />
 
             {/* Incomplete Draft Warning Modal */}
             {incompleteModalOpen && incompleteTarget && (
                 <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs" onClick={() => setIncompleteModalOpen(false)}>
-                    <div 
+                    <div
                         className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-auto overflow-hidden animate-in fade-in zoom-in duration-150"
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="p-6">
-                            <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                                    <AlertTriangle size={20} />
-                                </div>
+                            <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
                                     <h3 className="text-base font-bold text-slate-900">
                                         Cannot Submit Incomplete Draft
@@ -609,8 +622,8 @@ export default function Drafts({ drafts, filters, stats }) {
                                         )}
                                     </div>
                                 </div>
-                                <button 
-                                    onClick={() => setIncompleteModalOpen(false)} 
+                                <button
+                                    onClick={() => setIncompleteModalOpen(false)}
                                     className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
                                 >
                                     <X size={16} />
@@ -628,7 +641,7 @@ export default function Drafts({ drafts, filters, stats }) {
                             </button>
                             <Link
                                 href={`/general-journals/${incompleteTarget.journal?.id}/edit`}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-colors"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
                             >
                                 <FileEdit size={14} /> Edit Draft & Complete
                             </Link>
@@ -640,19 +653,12 @@ export default function Drafts({ drafts, filters, stats }) {
             {/* Bulk Submit Modal with Incomplete Draft Detection */}
             {bulkSubmitModalOpen && (
                 <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs" onClick={() => setBulkSubmitModalOpen(false)}>
-                    <div 
+                    <div
                         className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-auto overflow-hidden animate-in fade-in zoom-in duration-150"
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="p-6">
-                            <div className="flex items-start gap-4">
-                                <div className={`w-10 h-10 rounded-xl ${
-                                    incompleteSelectedDrafts.length > 0 
-                                        ? (readySelectedDrafts.length > 0 ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600')
-                                        : 'bg-blue-100 text-blue-600'
-                                } flex items-center justify-center shrink-0`}>
-                                    {incompleteSelectedDrafts.length > 0 ? <AlertTriangle size={20} /> : <Send size={20} />}
-                                </div>
+                            <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
                                     <h3 className="text-base font-bold text-slate-900">
                                         Bulk Submit Drafts ({selectedIds.length} Selected)
@@ -695,8 +701,8 @@ export default function Drafts({ drafts, filters, stats }) {
                                         </div>
                                     )}
                                 </div>
-                                <button 
-                                    onClick={() => setBulkSubmitModalOpen(false)} 
+                                <button
+                                    onClick={() => setBulkSubmitModalOpen(false)}
                                     className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
                                 >
                                     <X size={16} />
@@ -716,25 +722,41 @@ export default function Drafts({ drafts, filters, stats }) {
                             {incompleteSelectedDrafts.length === 0 ? (
                                 <button
                                     type="button"
+                                    disabled={isSubmittingBulk}
                                     onClick={() => handleConfirmBulkSubmit(false)}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
                                 >
-                                    <Send size={14} /> Submit {selectedIds.length} Drafts
+                                    {isSubmittingBulk ? (
+                                        <>
+                                            <Loader2 size={14} className="animate-spin" />
+                                            Submitting...
+                                        </>
+                                    ) : (
+                                        `Submit ${selectedIds.length} Drafts`
+                                    )}
                                 </button>
                             ) : (
                                 readySelectedDrafts.length > 0 ? (
                                     <button
                                         type="button"
+                                        disabled={isSubmittingBulk}
                                         onClick={() => handleConfirmBulkSubmit(true)}
-                                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
                                     >
-                                        <Send size={14} /> Submit {readySelectedDrafts.length} Ready Drafts
+                                        {isSubmittingBulk ? (
+                                            <>
+                                                <Loader2 size={14} className="animate-spin" />
+                                                Submitting...
+                                            </>
+                                        ) : (
+                                            `Submit ${readySelectedDrafts.length} Ready Drafts`
+                                        )}
                                     </button>
                                 ) : (
                                     <button
                                         type="button"
                                         onClick={() => setBulkSubmitModalOpen(false)}
-                                        className="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-300 transition-colors cursor-pointer"
+                                        className="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-300 transition-colors cursor-pointer"
                                     >
                                         Close
                                     </button>
@@ -753,10 +775,13 @@ export default function Drafts({ drafts, filters, stats }) {
                 confirmText="Yes, Delete Draft"
                 cancelText="Cancel"
                 type="danger"
+                loading={isDeleting}
                 onConfirm={handleConfirmDelete}
                 onClose={() => {
-                    setDeleteModalOpen(false);
-                    setDeleteTargetId(null);
+                    if (!isDeleting) {
+                        setDeleteModalOpen(false);
+                        setDeleteTargetId(null);
+                    }
                 }}
             />
 
