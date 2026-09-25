@@ -3,6 +3,7 @@ import MainLayout from '@/Layouts/MainLayout';
 import { useState, useEffect, useRef } from 'react';
 import { Eye, Search, RotateCcw, FileText } from 'lucide-react';
 import { STATUS_COLORS } from '@/constants/statusColors';
+import { formatDate, formatDateTime } from '@/utils/dateFormat';
 
 export default function ApprovalIndex({ journals, filters }) {
     // In-column filter states
@@ -147,6 +148,7 @@ export default function ApprovalIndex({ journals, filters }) {
                                     <th className="py-3 px-3 min-w-[160px]">Reference</th>
                                     <th className="py-3 px-3 min-w-[130px]">Status</th>
                                     <th className="py-3 px-3 min-w-[150px]">Created by</th>
+                                    <th className="py-3 px-3 min-w-[150px]">Created At</th>
                                     <th className="py-3 px-3 text-center min-w-[100px]">Actions</th>
                                 </tr>
 
@@ -239,6 +241,11 @@ export default function ApprovalIndex({ journals, filters }) {
                                         </div>
                                     </td>
 
+                                    {/* Created At Placeholder */}
+                                    <td className="py-2 px-3 text-center text-slate-400 font-mono text-[10px]">
+                                        -
+                                    </td>
+
                                     {/* Actions Reset */}
                                     <td className="py-1.5 px-2.5 text-center">
                                         {hasActiveFilters && (
@@ -259,7 +266,7 @@ export default function ApprovalIndex({ journals, filters }) {
                                 {journalList.length === 0 ? (
                                     <tr>
                                         <td
-                                            colSpan={7}
+                                            colSpan={8}
                                             className="py-16 text-center text-slate-400"
                                         >
                                             <div className="max-w-sm mx-auto flex flex-col items-center">
@@ -322,13 +329,7 @@ export default function ApprovalIndex({ journals, filters }) {
 
                                                 {/* Date */}
                                                 <td className="py-3 px-3 font-medium text-slate-700 whitespace-nowrap">
-                                                    {journal.journal_date
-                                                        ? new Date(journal.journal_date).toLocaleDateString('en-US', {
-                                                            year: 'numeric',
-                                                            month: 'short',
-                                                            day: 'numeric',
-                                                        })
-                                                        : '-'}
+                                                    {formatDate(journal.journal_date)}
                                                 </td>
 
                                                 {/* Reference */}
@@ -353,6 +354,11 @@ export default function ApprovalIndex({ journals, filters }) {
                                                             {journal.requester?.name || '-'}
                                                         </span>
                                                     </div>
+                                                </td>
+
+                                                {/* Created At */}
+                                                <td className="py-3 px-3 text-slate-500 text-[11px] whitespace-nowrap font-medium">
+                                                    {formatDateTime(journal.submitted_at || journal.created_at)}
                                                 </td>
 
                                                 {/* Actions */}

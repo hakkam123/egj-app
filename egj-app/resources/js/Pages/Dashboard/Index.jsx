@@ -3,6 +3,7 @@ import MainLayout from '../../Layouts/MainLayout';
 import PageHeader from '../../Components/PageHeader';
 import { FileText, Clock, CheckCircle, XCircle, Users, ArrowRight, RotateCcw, Edit3 } from 'lucide-react';
 import { STATUS_COLORS } from '../../constants/statusColors';
+import { formatDate } from '@/utils/dateFormat';
 
 export default function DashboardIndex({ role, stats, recentData, actionRequiredDocs = [], thresholdDays = 3 }) {
     const isApprover = role === 'Section Head' || role === 'Dept/Div Head';
@@ -591,8 +592,8 @@ export default function DashboardIndex({ role, stats, recentData, actionRequired
                                                         {journal.document_number}
                                                     </Link>
                                                 </td>
-                                                <td className="px-4 py-3 text-xs whitespace-nowrap text-gray-600">
-                                                    {journal.journal_date?.split('T')[0]}
+                                                <td className="px-4 py-3 text-xs whitespace-nowrap text-gray-600 font-medium">
+                                                    {formatDate(journal.journal_date)}
                                                 </td>
                                                 <td className="px-4 py-3 text-xs max-w-[140px] truncate text-gray-600">
                                                     {journal.reference || '-'}

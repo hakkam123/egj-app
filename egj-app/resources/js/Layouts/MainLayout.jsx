@@ -19,6 +19,7 @@ import {
     AlertTriangle,
     FilePlus
 } from 'lucide-react';
+import { formatDateTime } from '@/utils/dateFormat';
 
 export default function MainLayout({ children, title }) {
     const { auth, flash } = usePage().props;
@@ -253,7 +254,7 @@ export default function MainLayout({ children, title }) {
                                                             )}
                                                         </div>
                                                         <p className="text-[10px] text-gray-400 mt-1">
-                                                            {n.created_at ? new Date(n.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : ''}
+                                                            {n.created_at ? formatDateTime(n.created_at) : ''}
                                                         </p>
                                                     </div>
                                                 ))

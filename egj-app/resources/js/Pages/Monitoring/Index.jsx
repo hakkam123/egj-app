@@ -18,6 +18,7 @@ import {
 import FileModal from '@/Components/FileModal';
 import HistoryModal from '@/Components/HistoryModal';
 import { STATUS_COLORS } from '@/constants/statusColors';
+import { formatDate, formatDateTime } from '@/utils/dateFormat';
 
 export default function MonitoringIndex({ journals, filters, users, stats }) {
     // In-column filter states
@@ -332,7 +333,7 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
 
                                                 {/* Date */}
                                                 <td className="py-3 px-3 font-medium text-slate-700 whitespace-nowrap">
-                                                    {journal.journal_date ? new Date(journal.journal_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'}
+                                                    {formatDate(journal.journal_date)}
                                                 </td>
 
                                                 {/* Reference */}
@@ -367,8 +368,8 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                                                 </td>
 
                                                 {/* Last Updated */}
-                                                <td className="py-3 px-3 text-slate-400 text-[11px] whitespace-nowrap">
-                                                    {journal.last_updated_at ? new Date(journal.last_updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+                                                <td className="py-3 px-3 text-slate-500 text-[11px] whitespace-nowrap font-medium">
+                                                    {formatDateTime(journal.last_updated_at)}
                                                 </td>
 
                                                 {/* Actions */}

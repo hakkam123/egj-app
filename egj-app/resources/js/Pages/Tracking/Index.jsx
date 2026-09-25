@@ -4,6 +4,7 @@ import { Clock, Search, RotateCcw } from 'lucide-react';
 import MainLayout from '../../Layouts/MainLayout';
 import PageHeader from '../../Components/PageHeader';
 import HistoryModal from '../../Components/HistoryModal';
+import { formatDateTime } from '@/utils/dateFormat';
 
 export default function TrackingIndex({ journals, filters, users }) {
     const [searchQuery, setSearchQuery] = useState(filters?.search || '');
@@ -280,8 +281,8 @@ export default function TrackingIndex({ journals, filters, users }) {
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-5 py-3 text-[12px] text-[var(--text-secondary)] whitespace-nowrap">
-                                                {journal.last_updated_at ? new Date(journal.last_updated_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '-'}
+                                            <td className="px-5 py-3 text-[12px] text-[var(--text-secondary)] whitespace-nowrap font-medium">
+                                                {formatDateTime(journal.last_updated_at)}
                                             </td>
                                             <td className="px-5 py-3">
                                                 <div className="flex items-center justify-center">

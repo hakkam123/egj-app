@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { STATUS_COLORS } from '@/constants/statusColors';
+import { formatFullDate, formatDateTime } from '@/utils/dateFormat';
 
 export default function ApprovalShow({ journal }) {
     const { auth } = usePage().props;
@@ -157,7 +158,7 @@ export default function ApprovalShow({ journal }) {
                                 <div>
                                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Journal Date</span>
                                     <p className="font-bold text-slate-800 mt-0.5">
-                                        {journal.journal_date ? new Date(journal.journal_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}
+                                        {formatFullDate(journal.journal_date)}
                                     </p>
                                 </div>
 
@@ -243,7 +244,7 @@ export default function ApprovalShow({ journal }) {
                                                 {a.approved_at && (
                                                     <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
                                                         <Calendar size={11} />
-                                                        {new Date(a.approved_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                        {formatDateTime(a.approved_at)}
                                                     </p>
                                                 )}
 

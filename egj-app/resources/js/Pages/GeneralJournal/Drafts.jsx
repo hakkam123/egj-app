@@ -24,6 +24,7 @@ import {
     Loader2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { formatDate, formatDateTime } from '@/utils/dateFormat';
 
 export default function Drafts({ drafts, filters, stats }) {
     const [selectedIds, setSelectedIds] = useState([]);
@@ -449,7 +450,7 @@ export default function Drafts({ drafts, filters, stats }) {
 
                                             {/* Journal Date */}
                                             <td className="py-3 px-3 font-medium text-slate-700">
-                                                {journal.journal_date ? new Date(journal.journal_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'}
+                                                {formatDate(journal.journal_date)}
                                             </td>
 
                                             {/* Reference */}
@@ -492,8 +493,8 @@ export default function Drafts({ drafts, filters, stats }) {
                                             </td>
 
                                             {/* Last Updated */}
-                                            <td className="py-3 px-3 text-slate-500 text-[11px] font-mono">
-                                                {journal.last_updated_at ? new Date(journal.last_updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+                                            <td className="py-3 px-3 text-slate-500 text-[11px] font-medium whitespace-nowrap">
+                                                {formatDateTime(journal.last_updated_at)}
                                             </td>
 
                                             {/* Actions */}

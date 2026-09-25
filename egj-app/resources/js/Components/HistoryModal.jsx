@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Clock, CheckCircle, XCircle, FileText, Send, RefreshCw, X, AlertCircle } from 'lucide-react';
+import { formatDateTime } from '@/utils/dateFormat';
 
 export default function HistoryModal({ open, journalId, onClose }) {
     const [history, setHistory] = useState([]);
@@ -109,7 +110,7 @@ export default function HistoryModal({ open, journalId, onClose }) {
                                                 <span className={`text-[13px] font-bold ${actionColor(h.action)}`}>
                                                     {actionLabel(h.action)}
                                                 </span>
-                                                <span className="text-[11px] text-[var(--text-muted)]">• {new Date(h.created_at).toLocaleString('en-US')}</span>
+                                                <span className="text-[11px] text-[var(--text-muted)]">• {formatDateTime(h.created_at)}</span>
                                             </div>
                                             <p className="text-[13px] font-semibold text-[var(--text-primary)] mt-1">
                                                 {h.actor?.name}

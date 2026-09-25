@@ -20,6 +20,7 @@ import {
     Clock
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { formatDateTime } from '@/utils/dateFormat';
 
 export default function ErrorMonitoringIndex({ logs, filters, stats }) {
     const [searchQuery, setSearchQuery] = useState(filters?.search || '');
@@ -327,8 +328,8 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                                 ) : (
                                     logs?.data?.map(log => (
                                         <tr key={log.id} className="hover:bg-[#f9fafb] transition-colors">
-                                            <td className="px-5 py-3 text-[12px] text-[var(--text-secondary)] whitespace-nowrap">
-                                                {log.created_at ? new Date(log.created_at).toLocaleString('en-US') : '-'}
+                                            <td className="px-5 py-3 text-[12px] text-[var(--text-secondary)] whitespace-nowrap font-medium">
+                                                {formatDateTime(log.created_at, true)}
                                             </td>
                                             <td className="px-5 py-3 whitespace-nowrap">
                                                 <div className="flex items-center gap-1.5">
@@ -446,7 +447,7 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
                                     </h3>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                                    <Clock size={13} /> {selectedLog.created_at ? new Date(selectedLog.created_at).toLocaleString('en-US') : '-'}
+                                    <Clock size={13} /> {formatDateTime(selectedLog.created_at, true)}
                                 </p>
                             </div>
                             <button
