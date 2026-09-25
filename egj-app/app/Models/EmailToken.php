@@ -12,6 +12,15 @@ class EmailToken extends Model
 
     public $timestamps = false;
 
+    protected static function booted()
+    {
+        static::creating(function ($token) {
+            if (!$token->created_at) {
+                $token->created_at = now();
+            }
+        });
+    }
+
     protected $fillable = [
         'general_journal_id',
         'token',

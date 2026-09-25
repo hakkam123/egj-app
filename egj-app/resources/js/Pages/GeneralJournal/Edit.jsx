@@ -118,7 +118,7 @@ export default function Edit({ journal }) {
         const newErrs = {};
         if (!docSuffix.trim()) newErrs.document_number = 'Document Number is required.';
         if (!data.journal_date) newErrs.journal_date = 'Journal Date is required.';
-        if (!data.reference.trim()) newErrs.reference = 'Reference / Description is required.';
+        if (!data.reference.trim()) newErrs.reference = 'Reference is required.';
 
         if (Object.keys(newErrs).length > 0) {
             setClientErrors(newErrs);
@@ -144,7 +144,7 @@ export default function Edit({ journal }) {
         const newErrs = {};
         if (!docSuffix.trim()) newErrs.document_number = 'Document Number is required.';
         if (!data.journal_date) newErrs.journal_date = 'Journal Date is required.';
-        if (!data.reference.trim()) newErrs.reference = 'Reference / Description is required.';
+        if (!data.reference.trim()) newErrs.reference = 'Reference is required.';
         if (!existingGjFile && !data.general_journal_file) {
             newErrs.general_journal_file = 'General Journal PDF document is required before submitting for approval.';
         }
@@ -174,7 +174,7 @@ export default function Edit({ journal }) {
     // Resubmit revised document
     const handleConfirmResubmit = () => {
         const newErrs = {};
-        if (!data.reference.trim()) newErrs.reference = 'Reference / Description is required.';
+        if (!data.reference.trim()) newErrs.reference = 'Reference is required.';
         if (!existingGjFile && !data.general_journal_file) {
             newErrs.general_journal_file = 'General Journal PDF document is required to resubmit.';
         }
@@ -355,7 +355,7 @@ export default function Edit({ journal }) {
                                     {/* Reference / Remarks */}
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-                                            Reference / Description <span className="text-red-500">*</span>
+                                            Reference <span className="text-red-500">*</span>
                                         </label>
                                         <textarea
                                             value={data.reference}
@@ -438,8 +438,8 @@ export default function Edit({ journal }) {
                                                         return;
                                                     }
                                                     if (!data.reference.trim()) {
-                                                        setClientErrors(prev => ({ ...prev, reference: 'Reference / Description is required.' }));
-                                                        toast.error('Reference / Description is required.');
+                                                        setClientErrors(prev => ({ ...prev, reference: 'Reference is required.' }));
+                                                        toast.error('Reference is required.');
                                                         return;
                                                     }
                                                     setResubmitModalOpen(true);

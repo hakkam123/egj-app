@@ -147,7 +147,7 @@ export default function ApprovalIndex({ journals, filters }) {
                                     <th className="py-3 px-3 min-w-[130px]">Date</th>
                                     <th className="py-3 px-3 min-w-[160px]">Reference</th>
                                     <th className="py-3 px-3 min-w-[130px]">Status</th>
-                                    <th className="py-3 px-3 min-w-[150px]">Created by</th>
+                                    <th className="py-3 px-3 min-w-[150px]">Person Request</th>
                                     <th className="py-3 px-3 min-w-[150px]">Created At</th>
                                     <th className="py-3 px-3 text-center min-w-[100px]">Actions</th>
                                 </tr>
@@ -233,7 +233,7 @@ export default function ApprovalIndex({ journals, filters }) {
                                             />
                                             <input
                                                 type="text"
-                                                placeholder="Search Requester..."
+                                                placeholder="Search Person Request..."
                                                 value={requester}
                                                 onChange={(e) => setRequester(e.target.value)}
                                                 className="w-full pl-7 pr-2 py-1 text-[11px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 placeholder:text-slate-400"

@@ -152,7 +152,7 @@ class GeneralJournalController extends Controller
             'document_number.unique' => 'This Document Number has already been used.',
             'journal_date.required' => 'Journal Date is required.',
             'journal_date.date' => 'Journal Date must be a valid date.',
-            'reference.required' => 'Reference / Description is required.',
+            'reference.required' => 'Reference is required.',
             'general_journal_file.required' => 'General Journal PDF document is required to submit for approval.',
             'general_journal_file.mimes' => 'The General Journal must be a valid PDF file.',
             'general_journal_file.max' => 'The General Journal PDF file cannot exceed 10 MB.',
@@ -176,7 +176,7 @@ class GeneralJournalController extends Controller
             $submittedAt = $isSubmit ? now() : null;
 
             if ($isSubmit) {
-                $currentAssignTo = $user->hasRole('Staff') ? $sectionHead?->id : $deptHead?->id;
+                $currentAssignTo = $user->hasRole('Section Head') ? $deptHead?->id : $sectionHead?->id;
             }
 
             $journal = GeneralJournal::create([
@@ -302,7 +302,8 @@ class GeneralJournalController extends Controller
                     continue;
                 }
 
-                $currentAssignTo = $user->hasRole('Staff') ? $sectionHead?->id : $deptHead?->id;
+                $requester = $journal->requester ?? $user;
+                $currentAssignTo = $requester->hasRole('Section Head') ? $deptHead?->id : $sectionHead?->id;
 
                 $journal->update([
                     'status' => 'Waiting Approval',
@@ -311,7 +312,7 @@ class GeneralJournalController extends Controller
                     'last_updated_at' => now(),
                 ]);
 
-                $this->setupApprovalChainAndNotify($journal, $journal->requester ?? $user, $sectionHead, $deptHead);
+                $this->setupApprovalChainAndNotify($journal, $requester, $sectionHead, $deptHead);
                 $submittedCount++;
             }
         });
@@ -358,7 +359,7 @@ class GeneralJournalController extends Controller
 
         // Validate required fields
         if (empty($journal->reference)) {
-            return redirect()->back()->with('error', 'Cannot submit draft: Reference / Description is required. Please edit the draft first.');
+            return redirect()->back()->with('error', 'Cannot submit draft: Reference is required. Please edit the draft first.');
         }
 
         if (empty($journal->journal_date)) {
@@ -381,7 +382,8 @@ class GeneralJournalController extends Controller
             ->first();
 
         DB::transaction(function () use ($journal, $user, $sectionHead, $deptHead) {
-            $currentAssignTo = $user->hasRole('Staff') ? $sectionHead?->id : $deptHead?->id;
+            $requester = $journal->requester ?? $user;
+            $currentAssignTo = $requester->hasRole('Section Head') ? $deptHead?->id : $sectionHead?->id;
 
             $journal->update([
                 'status' => 'Waiting Approval',
@@ -390,7 +392,7 @@ class GeneralJournalController extends Controller
                 'last_updated_at' => now(),
             ]);
 
-            $this->setupApprovalChainAndNotify($journal, $journal->requester ?? $user, $sectionHead, $deptHead);
+            $this->setupApprovalChainAndNotify($journal, $requester, $sectionHead, $deptHead);
         });
 
         return redirect()->route('monitoring.index')
@@ -461,7 +463,7 @@ class GeneralJournalController extends Controller
             'document_number.required' => 'Document Number is required.',
             'document_number.unique' => 'This Document Number has already been used.',
             'journal_date.required' => 'Journal Date is required.',
-            'reference.required' => 'Reference / Description is required.',
+            'reference.required' => 'Reference is required.',
             'general_journal_file.mimes' => 'The General Journal must be a valid PDF file.',
             'general_journal_file.max' => 'The General Journal PDF file cannot exceed 10 MB.',
             'supporting_documents.*.max' => 'Each Supporting Document cannot exceed 10 MB.',
@@ -562,7 +564,7 @@ class GeneralJournalController extends Controller
             'supporting_documents.*' => ['file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,xlsx,xls'],
             'reference' => ['required', 'string', 'max:4000'],
         ], [
-            'reference.required' => 'Reference / Description is required to resubmit.',
+            'reference.required' => 'Reference is required to resubmit.',
             'general_journal_file.mimes' => 'The General Journal must be a valid PDF file.',
             'general_journal_file.max' => 'The General Journal PDF file cannot exceed 10 MB.',
             'supporting_documents.*.max' => 'Each Supporting Document cannot exceed 10 MB.',
@@ -580,7 +582,8 @@ class GeneralJournalController extends Controller
             ->first();
 
         DB::transaction(function () use ($request, $journal, $user, $sectionHead, $deptHead) {
-            $currentAssignTo = $user->hasRole('Staff') ? $sectionHead?->id : $deptHead?->id;
+            $requester = $journal->requester ?? $user;
+            $currentAssignTo = $requester->hasRole('Section Head') ? $deptHead?->id : $sectionHead?->id;
             $newVersion = $journal->resubmit_count + 2;
 
             // Handle new General Journal file: old active files replaced
@@ -753,21 +756,48 @@ class GeneralJournalController extends Controller
      */
     private function setupApprovalChainAndNotify(GeneralJournal $journal, User $user, ?User $sectionHead, ?User $deptHead, bool $isResubmit = false): void
     {
+        $requester = $journal->requester ?? $user;
+
         // 1. Accounting: Auto-approved with date matching journal_date
         $accountingApprovedAt = Carbon::parse($journal->journal_date)->setTimeFrom(now());
 
         GeneralJournalApproval::create([
             'general_journal_id' => $journal->id,
             'approval_level' => 'accounting',
-            'assigned_user_id' => $user->id,
-            'approved_by_user_id' => $user->id,
+            'assigned_user_id' => $requester->id,
+            'approved_by_user_id' => $requester->id,
             'status' => 'Approved',
             'approved_at' => $accountingApprovedAt,
-            'notes' => 'Approved ' . Carbon::parse($journal->journal_date)->format('Y-m-d') . ' ' . $user->name,
+            'notes' => 'Approved ' . Carbon::parse($journal->journal_date)->format('Y-m-d') . ' ' . $requester->name,
         ]);
 
-        if ($user->hasRole('Staff')) {
-            // Superior: Section Head
+        if ($requester->hasRole('Section Head')) {
+            $superiorApprovedAt = Carbon::parse($journal->journal_date)->setTimeFrom(now());
+
+            // Superior also auto-approved with date matching journal_date
+            GeneralJournalApproval::create([
+                'general_journal_id' => $journal->id,
+                'approval_level' => 'superior',
+                'assigned_user_id' => $requester->id,
+                'approved_by_user_id' => $requester->id,
+                'status' => 'Approved',
+                'approved_at' => $superiorApprovedAt,
+                'notes' => 'Approved ' . Carbon::parse($journal->journal_date)->format('Y-m-d') . ' ' . $requester->name,
+            ]);
+
+            // Superior of Superior: Dept/Div Head
+            if ($deptHead) {
+                GeneralJournalApproval::create([
+                    'general_journal_id' => $journal->id,
+                    'approval_level' => 'superior_of_superior',
+                    'assigned_user_id' => $deptHead->id,
+                    'status' => 'Pending',
+                ]);
+
+                $this->sendDeptHeadApprovalEmail($journal, $deptHead);
+            }
+        } else {
+            // Requester is Staff / Admin / other: requires Section Head approval
             if ($sectionHead) {
                 GeneralJournalApproval::create([
                     'general_journal_id' => $journal->id,
@@ -788,33 +818,8 @@ class GeneralJournalController extends Controller
             }
 
             // Send email to Section Head
-            if ($sectionHead && $deptHead) {
+            if ($sectionHead) {
                 $this->sendApprovalEmail($journal, $sectionHead);
-            }
-        } elseif ($user->hasRole('Section Head')) {
-            $superiorApprovedAt = Carbon::parse($journal->journal_date)->setTimeFrom(now());
-
-            // Superior also auto-approved with date matching journal_date
-            GeneralJournalApproval::create([
-                'general_journal_id' => $journal->id,
-                'approval_level' => 'superior',
-                'assigned_user_id' => $user->id,
-                'approved_by_user_id' => $user->id,
-                'status' => 'Approved',
-                'approved_at' => $superiorApprovedAt,
-                'notes' => 'Approved ' . Carbon::parse($journal->journal_date)->format('Y-m-d') . ' ' . $user->name,
-            ]);
-
-            // Superior of Superior: Dept/Div Head
-            if ($deptHead) {
-                GeneralJournalApproval::create([
-                    'general_journal_id' => $journal->id,
-                    'approval_level' => 'superior_of_superior',
-                    'assigned_user_id' => $deptHead->id,
-                    'status' => 'Pending',
-                ]);
-
-                $this->sendDeptHeadApprovalEmail($journal, $deptHead);
             }
         }
 
@@ -823,7 +828,7 @@ class GeneralJournalController extends Controller
             'general_journal_id' => $journal->id,
             'action' => $isResubmit ? 'resubmit' : 'submit',
             'actor_user_id' => $user->id,
-            'target_level' => $user->hasRole('Staff') ? 'superior' : 'superior_of_superior',
+            'target_level' => $requester->hasRole('Section Head') ? 'superior_of_superior' : 'superior',
             'notes' => $isResubmit ? 'Resubmitted with revised files' : 'Initial submission',
             'created_at' => now(),
         ]);

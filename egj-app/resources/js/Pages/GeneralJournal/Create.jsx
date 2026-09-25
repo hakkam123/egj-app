@@ -119,7 +119,7 @@ export default function Create() {
         }
 
         if (!data.reference.trim()) {
-            newErrors.reference = 'Reference / Description is required.';
+            newErrors.reference = 'Reference is required.';
         }
 
         if (type === 'submit' && !data.general_journal_file) {
@@ -263,10 +263,10 @@ export default function Create() {
                                         )}
                                     </div>
 
-                                    {/* Reference / Description */}
+                                    {/* Reference */}
                                     <div>
                                         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-                                            Reference / Description <span className="text-red-500">*</span>
+                                            Reference <span className="text-red-500">*</span>
                                         </label>
                                         <textarea
                                             value={data.reference}
@@ -386,8 +386,8 @@ export default function Create() {
                                         <div
                                             onClick={() => gjInputRef.current?.click()}
                                             className={`flex flex-col items-center justify-center p-6 border-2 border-dashed ${mergedErrors.general_journal_file
-                                                    ? 'border-red-400 bg-red-50/30'
-                                                    : 'border-slate-200 hover:border-blue-500/50 hover:bg-blue-50/20'
+                                                ? 'border-red-400 bg-red-50/30'
+                                                : 'border-slate-200 hover:border-blue-500/50 hover:bg-blue-50/20'
                                                 } rounded-2xl cursor-pointer transition-all text-center`}
                                         >
                                             <div className={`w-12 h-12 rounded-2xl ${mergedErrors.general_journal_file ? 'bg-red-100 text-red-600' : 'bg-blue-50 text-blue-600'

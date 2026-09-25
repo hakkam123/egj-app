@@ -612,7 +612,7 @@ export default function Drafts({ drafts, filters, stats }) {
                                         {incompleteTarget.missingRef && (
                                             <div className="flex items-center gap-2">
                                                 <span className="text-red-500 font-bold">✕</span>
-                                                <span>Reference / Description is required</span>
+                                                <span>Reference is required</span>
                                             </div>
                                         )}
                                         {incompleteTarget.missingDate && (

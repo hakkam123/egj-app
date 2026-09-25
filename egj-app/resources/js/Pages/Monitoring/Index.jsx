@@ -11,11 +11,9 @@ import {
     RotateCcw,
     FileEdit,
     AlertTriangle,
-    Paperclip,
     History,
     Calendar
 } from 'lucide-react';
-import FileModal from '@/Components/FileModal';
 import HistoryModal from '@/Components/HistoryModal';
 import { STATUS_COLORS } from '@/constants/statusColors';
 import { formatDate, formatDateTime } from '@/utils/dateFormat';
@@ -30,7 +28,6 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
     const [status, setStatus] = useState(filters?.status || '');
     const [perPage, setPerPage] = useState(filters?.per_page || 10);
 
-    const [fileModal, setFileModal] = useState({ open: false, journalId: null });
     const [historyModal, setHistoryModal] = useState({ open: false, journalId: null });
 
     const isInitialMount = useRef(true);
@@ -178,7 +175,7 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                                     <th className="py-3 px-3 min-w-[160px]">Reference</th>
                                     <th className="py-3 px-3 min-w-[130px]">Status</th>
                                     <th className="py-3 px-3 min-w-[150px]">Assign To</th>
-                                    <th className="py-3 px-3 min-w-[150px]">Created by</th>
+                                    <th className="py-3 px-3 min-w-[150px]">Person Request</th>
                                     <th className="py-3 px-3 min-w-[120px]">Last Updated</th>
                                     <th className="py-3 px-3 text-center min-w-[100px]">Actions</th>
                                 </tr>
@@ -261,13 +258,13 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                                         </div>
                                     </td>
 
-                                    {/* In Search: Requester / Person Request */}
+                                    {/* In Search: Person Request */}
                                     <td className="py-1.5 px-2.5">
                                         <div className="relative">
                                             <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                             <input
                                                 type="text"
-                                                placeholder="Search Requester..."
+                                                placeholder="Search Person Request..."
                                                 value={requester}
                                                 onChange={(e) => setRequester(e.target.value)}
                                                 className="w-full pl-7 pr-2 py-1 text-[11px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 placeholder:text-slate-400"
@@ -358,7 +355,7 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                                                     )}
                                                 </td>
 
-                                                {/* Person Request / Requester */}
+                                                {/* Person Request */}
                                                 <td className="py-3 px-3 whitespace-nowrap">
                                                     <div className="flex items-center gap-1.5">
                                                         <span className="font-semibold text-slate-800">
@@ -382,15 +379,6 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                                                         >
                                                             <Eye size={15} />
                                                         </Link>
-
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setFileModal({ open: true, journalId: journal.id })}
-                                                            title="View Attachments"
-                                                            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
-                                                        >
-                                                            <Paperclip size={15} />
-                                                        </button>
 
                                                         <button
                                                             type="button"
@@ -459,13 +447,6 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
                     </div>
                 </div>
             </div>
-
-            {/* Modal for viewing files */}
-            <FileModal
-                open={fileModal.open}
-                journalId={fileModal.journalId}
-                onClose={() => setFileModal({ open: false, journalId: null })}
-            />
 
             {/* Modal for viewing timeline */}
             <HistoryModal

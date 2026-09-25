@@ -277,7 +277,7 @@ export default function Show({ journal }) {
                                 </div>
 
                                 <div>
-                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Person Request / Requester</span>
+                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Person Request</span>
                                     <div className="flex items-center gap-2 mt-1">
                                         <span className="font-semibold text-slate-800">{journal.requester?.name || '-'}</span>
                                     </div>
@@ -296,14 +296,9 @@ export default function Show({ journal }) {
                                     </div>
                                 </div>
 
-                                <div>
-                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Resubmit Count</span>
-                                    <p className="font-bold text-slate-800 mt-0.5">{journal.resubmit_count || 0}</p>
-                                </div>
-
                                 {journal.reference && (
                                     <div className="pt-3 border-t border-slate-100">
-                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Reference / Description</span>
+                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Reference</span>
                                         <p className="text-slate-600 mt-1 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
                                             {journal.reference}
                                         </p>
