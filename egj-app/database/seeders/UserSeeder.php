@@ -16,7 +16,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Admin JAGO',
                 'email' => 'admin@astra-visteon.com',
-                'npk' => '10001',
+                'npk' => '1001',
                 'password' => 'password123',
                 'role' => 'Admin',
                 'is_active' => true,
@@ -25,7 +25,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Budi Santoso',
                 'email' => 'budi.santoso@astra-visteon.com',
-                'npk' => '10002',
+                'npk' => '1002',
                 'password' => 'password123',
                 'role' => 'Staff',
                 'is_active' => true,
@@ -34,7 +34,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Siti Rahayu',
                 'email' => 'siti.rahayu@astra-visteon.com',
-                'npk' => '10003',
+                'npk' => '1003',
                 'password' => 'password123',
                 'role' => 'Staff',
                 'is_active' => true,
@@ -43,7 +43,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Ahmad Hidayat',
                 'email' => 'devhiraethtys@gmail.com',
-                'npk' => '10004',
+                'npk' => '1004',
                 'password' => 'password123',
                 'role' => 'Section Head',
                 'is_active' => true,
@@ -52,7 +52,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Alisa Wijaya',
                 'email' => 'cokotbara@gmail.com',
-                'npk' => '10005',
+                'npk' => '1005',
                 'password' => 'password123',
                 'role' => 'Dept/Div Head',
                 'is_active' => true,

@@ -67,7 +67,7 @@ export default function Login() {
                                         onChange={(e) => setData('npk', e.target.value)}
                                         className={`${inputClass} pl-10`}
                                         style={inputStyle}
-                                        placeholder="e.g. 10004"
+                                        placeholder="e.g. 1002"
                                         required
                                         autoFocus
                                     />
