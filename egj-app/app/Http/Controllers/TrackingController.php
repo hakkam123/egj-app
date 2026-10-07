@@ -79,6 +79,7 @@ class TrackingController extends Controller
             'histories.actor',
             'approvals.assignedUser',
             'approvals.approvedByUser',
+            'activeFiles', // used by the Drafts page file modal
         ])->findOrFail($id);
 
         return response()->json([

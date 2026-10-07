@@ -102,7 +102,7 @@ export default function Drafts({ drafts, filters, stats }) {
         }, 400);
 
         return () => clearTimeout(timer);
-    }, [docNumber, journalDate, reference, fileName]);
+    }, [docNumber, reference, fileName]);
 
     const handleSelectAll = () => {
         if (allSelected) {
@@ -140,7 +140,6 @@ export default function Drafts({ drafts, filters, stats }) {
                 setDeleteModalOpen(false);
                 setDeleteTargetId(null);
                 setSelectedIds(prev => prev.filter(id => id !== deleteTargetId));
-                toast.success('Draft deleted successfully.');
             },
             onError: () => {
                 setIsDeleting(false);
@@ -179,7 +178,6 @@ export default function Drafts({ drafts, filters, stats }) {
                 setSingleSubmitModalOpen(false);
                 setSingleSubmitTarget(null);
                 setSelectedIds(prev => prev.filter(id => id !== singleSubmitTarget.id));
-                toast.success('Draft submitted successfully for approval.');
             },
             onError: (errs) => {
                 setIsSubmittingSingle(false);
@@ -208,7 +206,6 @@ export default function Drafts({ drafts, filters, stats }) {
                 setIsSubmittingBulk(false);
                 setBulkSubmitModalOpen(false);
                 setSelectedIds([]);
-                toast.success(`${targetIds.length} draft(s) submitted for approval.`);
             },
             onError: (errs) => {
                 setIsSubmittingBulk(false);

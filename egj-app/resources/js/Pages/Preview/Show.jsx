@@ -14,7 +14,7 @@ export default function PreviewShow({ journal, token }) {
                     <div className="max-w-5xl mx-auto px-6 py-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h1 className="text-lg font-bold text-gray-800">Preview Dokumen</h1>
+                                <h1 className="text-lg font-bold text-gray-800">Document Preview</h1>
                                 <p className="text-sm text-gray-500">{journal.document_number}</p>
                             </div>
                             <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">
@@ -33,11 +33,11 @@ export default function PreviewShow({ journal, token }) {
                                 <p className="font-semibold text-gray-800">{journal.document_number}</p>
                             </div>
                             <div>
-                                <span className="text-gray-500">Tanggal Journal</span>
+                                <span className="text-gray-500">Journal Date</span>
                                 <p className="font-semibold text-gray-800">{journal.journal_date?.split('T')[0]}</p>
                             </div>
                             <div>
-                                <span className="text-gray-500">Diajukan oleh</span>
+                                <span className="text-gray-500">Person Request</span>
                                 <p className="font-semibold text-gray-800">{journal.requester?.name}</p>
                             </div>
                             <div>
@@ -98,7 +98,7 @@ export default function PreviewShow({ journal, token }) {
                     {journal.approvals?.length > 0 && (
                         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
                             <div className="px-6 py-4 border-b border-gray-200">
-                                <h3 className="text-sm font-semibold text-gray-700">Status Approval</h3>
+                                <h3 className="text-sm font-semibold text-gray-700">Approval Status</h3>
                             </div>
                             <div className="p-6 space-y-3">
                                 {journal.approvals.map(a => (

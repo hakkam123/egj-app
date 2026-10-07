@@ -10,6 +10,7 @@ import {
     Send,
     ArrowLeft,
     AlertTriangle,
+    AlertCircle,
     XCircle,
     CheckCircle2,
     Clock,
@@ -131,7 +132,6 @@ export default function Edit({ journal }) {
         post(`/general-journals/${journal.id}/update`, {
             forceFormData: true,
             preserveScroll: true,
-            onSuccess: () => toast.success('Draft updated successfully.'),
             onError: (errs) => {
                 const first = Object.values(errs)[0];
                 if (first) toast.error(first);
@@ -157,17 +157,25 @@ export default function Edit({ journal }) {
 
         setClientErrors({});
         setIsSubmittingDraft(true);
-        router.post(`/general-journals/${journal.id}/submit`, {}, {
-            onSuccess: () => {
-                setIsSubmittingDraft(false);
-                toast.success('Draft submitted for approval.');
+
+        const submit = () => router.post(`/general-journals/${journal.id}/submit`, {}, {
+            onError: (errs) => {
+                const first = Object.values(errs)[0];
+                if (first) toast.error(first);
             },
+            onFinish: () => setIsSubmittingDraft(false)
+        });
+
+        // Save the form first so edited fields and a newly attached PDF are not lost
+        post(`/general-journals/${journal.id}/update`, {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: submit,
             onError: (errs) => {
                 setIsSubmittingDraft(false);
                 const first = Object.values(errs)[0];
                 if (first) toast.error(first);
             },
-            onFinish: () => setIsSubmittingDraft(false)
         });
     };
 
@@ -191,7 +199,6 @@ export default function Edit({ journal }) {
             preserveScroll: true,
             onSuccess: () => {
                 setResubmitModalOpen(false);
-                toast.success('Document resubmitted successfully for approval.');
             },
             onError: (errs) => {
                 const first = Object.values(errs)[0];
@@ -202,12 +209,10 @@ export default function Edit({ journal }) {
 
     // Self-reject revised document
     const handleConfirmSelfReject = () => {
-        post(`/general-journals/${journal.id}/self-reject`, {
+        router.post(`/general-journals/${journal.id}/self-reject`, {
             notes: data.notes || 'Document rejected and closed by requester.',
-            onSuccess: () => {
-                setSelfRejectModalOpen(false);
-                toast.success('Document has been rejected and closed.');
-            },
+        }, {
+            onSuccess: () => setSelfRejectModalOpen(false),
         });
     };
 

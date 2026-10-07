@@ -26,8 +26,8 @@ class LoginController extends Controller
             'npk' => ['required', 'string'],
             'password' => ['required', 'string'],
         ], [
-            'npk.required' => 'NPK wajib diisi.',
-            'password.required' => 'Password wajib diisi.',
+            'npk.required' => 'NPK is required.',
+            'password.required' => 'Password is required.',
         ]);
 
         $input = trim($request->input('npk'));
@@ -46,7 +46,7 @@ class LoginController extends Controller
         }
 
         return back()->withErrors([
-            'npk' => 'NPK atau password salah, atau akun tidak aktif.',
+            'npk' => 'Invalid NPK or password, or the account is inactive.',
         ])->onlyInput('npk');
     }
 

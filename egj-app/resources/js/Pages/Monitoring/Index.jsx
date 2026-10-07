@@ -92,6 +92,7 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
     const exportUrl = () => {
         const params = {
             doc_number: docNumber,
+            reference,
             requester,
             assign_to: assignTo,
             date,
@@ -279,7 +280,7 @@ export default function MonitoringIndex({ journals, filters, users, stats }) {
 
                                     {/* Actions */}
                                     <td className="py-1.5 px-2.5 text-center">
-                                        {(docNumber || requester || assignTo || date || status) && (
+                                        {(docNumber || reference || requester || assignTo || date || status) && (
                                             <button
                                                 type="button"
                                                 onClick={handleReset}

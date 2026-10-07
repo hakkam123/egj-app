@@ -23,7 +23,7 @@ use App\Http\Controllers\ErrorMonitoringController;
 */
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login']);
+    Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:login');
 });
 
 /*
@@ -51,12 +51,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('home');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Notifications
-    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
-    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
-    Route::post('/notifications/mark-read-by-journal/{journalId}', [NotificationController::class, 'markReadByJournal'])->name('notifications.mark-read-by-journal');
+    // Notifications — polling dari semua tab aktif, jadi dibatasi 60 req/menit per user
+    Route::middleware('throttle:notifications')->group(function () {
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+        Route::post('/notifications/mark-read-by-journal/{journalId}', [NotificationController::class, 'markReadByJournal'])->name('notifications.mark-read-by-journal');
+    });
 
     // Tutorial / Manual Book
     Route::get('/tutorial', [TutorialController::class, 'index'])->name('tutorial.index');
@@ -70,7 +72,8 @@ Route::middleware('auth')->group(function () {
 
     // Monitoring
     Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring.index');
-    Route::get('/monitoring/export', [MonitoringController::class, 'export'])->name('monitoring.export');
+    // Excel export scan seluruh tabel; batasi 10/menit per user
+    Route::get('/monitoring/export', [MonitoringController::class, 'export'])->middleware('throttle:exports')->name('monitoring.export');
 
     // Drafts Management & Bulk Submit (Staff & Section Head)
     Route::get('/drafts', [GeneralJournalController::class, 'drafts'])->name('drafts.index');
@@ -103,10 +106,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/tracking/{id}', [TrackingController::class, 'show'])->name('tracking.show');
     Route::get('/general-journals/{id}/history', [TrackingController::class, 'show'])->name('general-journals.history');
 
-    // Files
-    Route::get('/files/{id}/download', [FileController::class, 'download'])->name('files.download');
-    Route::get('/files/{id}/preview', [FileController::class, 'preview'])->name('files.preview');
-    Route::get('/files/{id}/verify', [FileController::class, 'verify'])->name('files.verify');
+    // Files — download/preview me-render stempel PDF on-the-fly (100-500ms per request),
+    // jadi dibatasi 60 req/menit per user untuk mencegah amplifier CPU.
+    Route::middleware('throttle:files')->group(function () {
+        Route::get('/files/{id}/download', [FileController::class, 'download'])->name('files.download');
+        Route::get('/files/{id}/preview', [FileController::class, 'preview'])->name('files.preview');
+        Route::get('/files/{id}/verify', [FileController::class, 'verify'])->name('files.verify');
+    });
 
     // Admin Only: User Management, Error Monitoring, Tutorial Management
     Route::middleware('role:Admin')->group(function () {

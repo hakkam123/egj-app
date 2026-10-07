@@ -40,7 +40,7 @@ export default function Reject({ journal, token }) {
     }
 
     const MIN_CHARS = 5;
-    const charCount = data.notes.length;
+    const charCount = data.notes.trim().length;
     const isValid = charCount >= MIN_CHARS;
 
     return (

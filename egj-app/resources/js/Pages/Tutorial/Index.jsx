@@ -38,7 +38,6 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
         uploadForm.post('/tutorial', {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success('Tutorial PDF uploaded successfully.');
                 uploadForm.reset();
                 setUploadModalOpen(false);
             },
@@ -54,7 +53,6 @@ export default function TutorialIndex({ tutorials = [], manualExists }) {
         router.delete(`/tutorial/${id}`, {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success('Tutorial deleted successfully.');
                 setDeleteConfirmId(null);
                 setIsDeleting(false);
             },

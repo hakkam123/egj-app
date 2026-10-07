@@ -31,13 +31,13 @@ class PdfStampRenderService
         }
 
         if (!$file) {
-            abort(404, 'File General Journal tidak ditemukan.');
+            abort(404, 'General Journal file not found.');
         }
 
         $sourceFilePath = Storage::path($file->file_path);
 
         if (!file_exists($sourceFilePath)) {
-            abort(404, 'File fisik General Journal tidak ditemukan.');
+            abort(404, 'General Journal file is missing from storage.');
         }
 
         // 2. Ambil data approval dari general_journal_approvals untuk journal ini

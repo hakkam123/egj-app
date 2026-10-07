@@ -5,16 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\ApprovalHistory;
 use App\Models\EmailToken;
 use App\Models\GeneralJournal;
-use App\Models\GeneralJournalApproval;
 use App\Models\Notification;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use App\Mail\DeptHeadApprovalMail;
 use App\Mail\ApprovalResultMail;
@@ -30,24 +27,8 @@ class ApprovalController extends Controller
 
         $query = GeneralJournal::with(['requester', 'assignee'])
             ->where(function ($q) use ($user) {
-                $q->where('current_assign_to', $user->id);
-                if ($user->hasRole('Dept/Div Head')) {
-                    $q->orWhere(function ($sub) {
-                        $sub->where('status', 'Waiting Approval')
-                            ->whereHas('approvals', function ($app) {
-                                $app->where('approval_level', 'superior_of_superior')
-                                    ->where('status', 'Pending');
-                            });
-                    });
-                } elseif ($user->hasRole('Section Head')) {
-                    $q->orWhere(function ($sub) {
-                        $sub->where('status', 'Waiting Approval')
-                            ->whereHas('approvals', function ($app) {
-                                $app->where('approval_level', 'superior')
-                                    ->where('status', 'Pending');
-                            });
-                    });
-                }
+                $q->where('current_assign_to', $user->id)
+                    ->orWhere(fn ($sub) => $sub->actionableBy($user));
             });
 
         if ($request->filled('doc_number')) {
@@ -97,32 +78,15 @@ class ApprovalController extends Controller
             $query->where('requested_by', $request->requested_by);
         }
 
-        $perPage = $request->input('per_page', 10);
+        $perPage = in_array((int) $request->input('per_page', 10), [10, 25, 50, 100])
+            ? (int) $request->input('per_page', 10)
+            : 10;
         $journals = $query->latest('submitted_at')->paginate($perPage)->withQueryString();
 
         $users = User::where('is_active', true)->get(['id', 'name']);
 
         // Stats counts
-        $waitingCount = GeneralJournal::where(function ($q) use ($user) {
-            $q->where('current_assign_to', $user->id);
-            if ($user->hasRole('Dept/Div Head')) {
-                $q->orWhere(function ($sub) {
-                    $sub->where('status', 'Waiting Approval')
-                        ->whereHas('approvals', function ($app) {
-                            $app->where('approval_level', 'superior_of_superior')
-                                ->where('status', 'Pending');
-                        });
-                });
-            } elseif ($user->hasRole('Section Head')) {
-                $q->orWhere(function ($sub) {
-                    $sub->where('status', 'Waiting Approval')
-                        ->whereHas('approvals', function ($app) {
-                            $app->where('approval_level', 'superior')
-                                ->where('status', 'Pending');
-                        });
-                });
-            }
-        })->where('status', 'Waiting Approval')->count();
+        $waitingCount = GeneralJournal::actionableBy($user)->count();
 
         $approvedCount = GeneralJournal::whereHas('approvals', function ($q) use ($user) {
             $q->where('approved_by_user_id', $user->id)
@@ -175,8 +139,7 @@ class ApprovalController extends Controller
 
         $isCurrentAssignee = $journal->current_assign_to == $user->id;
         $isInApprovalChain = $journal->approvals->contains('assigned_user_id', $user->id);
-        $isEligibleApprover = ($user->hasRole('Dept/Div Head') && $journal->approvals->where('approval_level', 'superior_of_superior')->where('status', 'Pending')->count() > 0)
-            || ($user->hasRole('Section Head') && $journal->approvals->where('approval_level', 'superior')->where('status', 'Pending')->count() > 0);
+        $isEligibleApprover = $journal->canBeActionedBy($user);
 
         if (!$isCurrentAssignee && !$isInApprovalChain && !$isEligibleApprover) {
             abort(403, 'You do not have permission to review this document.');
@@ -192,34 +155,17 @@ class ApprovalController extends Controller
      */
     public function approve(Request $request, string $id)
     {
-        $journal = GeneralJournal::with('approvals')->findOrFail($id);
         $user = Auth::user();
 
-        $isEligibleApprover = ($journal->current_assign_to == $user->id)
-            || ($user->hasRole('Dept/Div Head') && $journal->approvals()->where('approval_level', 'superior_of_superior')->where('status', 'Pending')->exists())
-            || ($user->hasRole('Section Head') && $journal->approvals()->where('approval_level', 'superior')->where('status', 'Pending')->exists());
+        DB::transaction(function () use ($id, $user) {
+            // Lock the journal row so two simultaneous clicks cannot approve the same stage twice
+            $journal = GeneralJournal::lockForUpdate()->findOrFail($id);
 
-        if (!$isEligibleApprover || !$journal->isWaitingApproval()) {
-            abort(403, 'You do not have permission to approve this document.');
-        }
-
-        DB::transaction(function () use ($journal, $user) {
-            // Find the current pending approval for this user/role
-            $currentApproval = $journal->approvals()
-                ->where('status', 'Pending')
-                ->where(function ($q) use ($user) {
-                    $q->where('assigned_user_id', $user->id);
-                    if ($user->hasRole('Dept/Div Head')) {
-                        $q->orWhere('approval_level', 'superior_of_superior');
-                    } elseif ($user->hasRole('Section Head')) {
-                        $q->orWhere('approval_level', 'superior');
-                    }
-                })
-                ->first();
-
-            if (!$currentApproval) {
-                abort(403, 'No pending approval task found for your account.');
+            if (!$journal->canBeActionedBy($user)) {
+                abort(403, 'You do not have permission to approve this document.');
             }
+
+            $currentApproval = $journal->currentPendingApproval();
 
             // Approve current level
             $currentApproval->update([
@@ -240,11 +186,11 @@ class ApprovalController extends Controller
                 'created_at' => now(),
             ]);
 
+            // Links already emailed for this journal must not be usable any more
+            EmailToken::revokeFor($journal->id);
+
             // Check if next pending approval exists
-            $nextPending = $journal->approvals()
-                ->where('status', 'Pending')
-                ->orderByRaw("CASE approval_level WHEN 'accounting' THEN 1 WHEN 'superior' THEN 2 WHEN 'superior_of_superior' THEN 3 END")
-                ->first();
+            $nextPending = $journal->currentPendingApproval();
 
             if ($nextPending) {
                 $nextUser = User::find($nextPending->assigned_user_id);
@@ -274,8 +220,8 @@ class ApprovalController extends Controller
 
                 if ($nextUser) {
                     try {
-                        $approvalToken = $this->createEmailToken($journal, $nextUser->email, 'approval');
-                        $reviseToken = $this->createEmailToken($journal, $nextUser->email, 'rejection');
+                        $approvalToken = EmailToken::issue($journal, $nextUser->email, 'approval');
+                        $reviseToken = EmailToken::issue($journal, $nextUser->email, 'rejection');
 
                         Mail::to($nextUser->email)->send(
                             new DeptHeadApprovalMail(
@@ -334,39 +280,24 @@ class ApprovalController extends Controller
             'notes.min' => 'Revision notes must be at least 5 characters.',
         ]);
 
-        $journal = GeneralJournal::with('approvals')->findOrFail($id);
         $user = Auth::user();
 
-        $isEligibleApprover = ($journal->current_assign_to == $user->id)
-            || ($user->hasRole('Dept/Div Head') && $journal->approvals()->where('approval_level', 'superior_of_superior')->where('status', 'Pending')->exists())
-            || ($user->hasRole('Section Head') && $journal->approvals()->where('approval_level', 'superior')->where('status', 'Pending')->exists());
+        DB::transaction(function () use ($request, $id, $user) {
+            $journal = GeneralJournal::lockForUpdate()->findOrFail($id);
 
-        if (!$isEligibleApprover || !$journal->isWaitingApproval()) {
-            abort(403, 'You do not have permission to request revision for this document.');
-        }
-
-        DB::transaction(function () use ($request, $journal, $user) {
-            $currentApproval = $journal->approvals()
-                ->where('status', 'Pending')
-                ->where(function ($q) use ($user) {
-                    $q->where('assigned_user_id', $user->id);
-                    if ($user->hasRole('Dept/Div Head')) {
-                        $q->orWhere('approval_level', 'superior_of_superior');
-                    } elseif ($user->hasRole('Section Head')) {
-                        $q->orWhere('approval_level', 'superior');
-                    }
-                })
-                ->first();
-
-            if ($currentApproval) {
-                $currentApproval->update([
-                    'status' => 'Revised',
-                    'assigned_user_id' => $user->id,
-                    'approved_by_user_id' => $user->id,
-                    'approved_at' => now(),
-                    'notes' => $request->notes,
-                ]);
+            if (!$journal->canBeActionedBy($user)) {
+                abort(403, 'You do not have permission to request revision for this document.');
             }
+
+            $currentApproval = $journal->currentPendingApproval();
+
+            $currentApproval->update([
+                'status' => 'Revised',
+                'assigned_user_id' => $user->id,
+                'approved_by_user_id' => $user->id,
+                'approved_at' => now(),
+                'notes' => $request->notes,
+            ]);
 
             // Update journal status to Revised and assign back to requester
             $journal->update([
@@ -375,12 +306,15 @@ class ApprovalController extends Controller
                 'last_updated_at' => now(),
             ]);
 
+            // Links already emailed for this journal must not be usable any more
+            EmailToken::revokeFor($journal->id);
+
             // Record history
             ApprovalHistory::create([
                 'general_journal_id' => $journal->id,
                 'action' => 'revise',
                 'actor_user_id' => $user->id,
-                'target_level' => $currentApproval ? $currentApproval->approval_level : 'superior',
+                'target_level' => $currentApproval->approval_level,
                 'notes' => $request->notes,
                 'created_at' => now(),
             ]);
@@ -417,20 +351,5 @@ class ApprovalController extends Controller
     public function reject(Request $request, string $id)
     {
         return $this->revise($request, $id);
-    }
-
-    /**
-     * Create an email token with 3 days (72 hours) expiry.
-     */
-    private function createEmailToken(GeneralJournal $journal, string $email, string $purpose): EmailToken
-    {
-        return EmailToken::create([
-            'general_journal_id' => $journal->id,
-            'token' => Str::uuid()->toString(),
-            'email' => $email,
-            'purpose' => $purpose,
-            'expires_at' => Carbon::now()->addDays(3),
-            'created_at' => now(),
-        ]);
     }
 }

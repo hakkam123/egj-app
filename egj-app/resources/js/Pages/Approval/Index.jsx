@@ -60,7 +60,7 @@ export default function ApprovalIndex({ journals, filters }) {
         }, 400);
 
         return () => clearTimeout(timer);
-    }, [docNumber, journalDate, reference, requester]);
+    }, [docNumber, reference, requester]);
 
     const handleReset = () => {
         setDocNumber('');

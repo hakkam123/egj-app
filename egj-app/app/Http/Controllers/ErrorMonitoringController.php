@@ -76,7 +76,7 @@ class ErrorMonitoringController extends Controller
         $log = ErrorLog::findOrFail($id);
         $log->update(['status' => $request->status]);
 
-        return back()->with('success', "Status error log diubah menjadi {$request->status}.");
+        return back()->with('success', "Error log status changed to {$request->status}.");
     }
 
     /**
@@ -87,7 +87,7 @@ class ErrorMonitoringController extends Controller
         $log = ErrorLog::findOrFail($id);
         $log->delete();
 
-        return back()->with('success', 'Error log berhasil dihapus.');
+        return back()->with('success', 'Error log deleted successfully.');
     }
 }
 

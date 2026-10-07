@@ -28,7 +28,6 @@ export default function EditProfile({ user }) {
         e.preventDefault();
         profileForm.put('/profile', {
             preserveScroll: true,
-            onSuccess: () => toast.success('Profile updated successfully.'),
         });
     };
 
@@ -38,7 +37,6 @@ export default function EditProfile({ user }) {
             preserveScroll: true,
             onSuccess: () => {
                 passwordForm.reset();
-                toast.success('Password changed successfully.');
             },
         });
     };

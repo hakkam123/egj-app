@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Console\Commands\DispatchApprovalReminders;
 use App\Mail\DeptHeadApprovalMail;
 use App\Models\EmailToken;
 use App\Models\GeneralJournal;
@@ -14,7 +15,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 class SendApprovalReminderJob implements ShouldQueue
 {
@@ -25,96 +25,59 @@ class SendApprovalReminderJob implements ShouldQueue
 
     public function __construct(
         public string $journalId,
-        public int $reminderNumber // 1 atau 2
+        public int $reminderNumber
     ) {}
 
     public function handle(): void
     {
-        $journal = GeneralJournal::with([
-            'approvals.approvedBy',
-            'requester',
-            'files',
-        ])->find($this->journalId);
+        $journal = GeneralJournal::with(['requester'])->find($this->journalId);
 
-        // Skip jika sudah approved/rejected atau tidak ada
+        // Skip if the journal is gone or no longer waiting
         if (!$journal || $journal->status !== 'Waiting Approval') {
             Log::info("Reminder skipped for journal {$this->journalId}: status = " . ($journal?->status ?? 'not found'));
             return;
         }
 
-        // Cek apakah superior_of_superior masih Pending
-        $pendingFinal = $journal->approvals()
-            ->where('approval_level', 'superior_of_superior')
-            ->where('status', 'Pending')
-            ->first();
+        // Only remind while the journal is at the Dept/Div Head stage
+        $pendingFinal = $journal->currentPendingApproval();
 
-        if (!$pendingFinal) {
-            Log::info("Reminder skipped for journal {$this->journalId}: no pending final approval");
+        if (!$pendingFinal || $pendingFinal->approval_level !== 'superior_of_superior') {
+            Log::info("Reminder skipped for journal {$this->journalId}: not at final approval stage");
             return;
         }
 
-        // Ambil Dept Head
-        $deptHead = User::where('role', 'Dept/Div Head')->where('is_active', true)->first();
+        $deptHead = User::where('id', $pendingFinal->assigned_user_id)->where('is_active', true)->first()
+            ?? User::where('role', 'Dept/Div Head')->where('is_active', true)->first();
         if (!$deptHead) return;
 
-        // Expire semua token lama untuk journal ini
-        EmailToken::where('general_journal_id', $journal->id)
-            ->where('email', $deptHead->email)
-            ->whereNull('used_at')
-            ->update(['expires_at' => now()->subSecond()]);
+        // Old links stop working; the reminder carries fresh ones valid for EmailToken::TTL_DAYS
+        EmailToken::revokeFor($journal->id, $deptHead->email);
 
-        // Generate token baru:
-        // - Reminder 1 (hari ke-3): token berlaku 72 jam (3 hari) sampai Reminder 2 di hari ke-5
-        // - Reminder 2 (hari ke-5): token berlaku 168 jam (7 hari) agar Dept Head leluasa approve via email
-        $tokenHours = ($this->reminderNumber === 1) ? 72 : 168;
-
-        $approveToken = EmailToken::create([
-            'general_journal_id' => $journal->id,
-            'email'              => $deptHead->email,
-            'token'              => Str::random(64),
-            'purpose'            => 'approval',
-            'expires_at'         => now()->addHours($tokenHours),
-            'created_at'         => now(),
-        ]);
-
-        $rejectToken = EmailToken::create([
-            'general_journal_id' => $journal->id,
-            'email'              => $deptHead->email,
-            'token'              => Str::random(64),
-            'purpose'            => 'rejection',
-            'expires_at'         => now()->addHours($tokenHours),
-            'created_at'         => now(),
-        ]);
+        $approveToken = EmailToken::issue($journal, $deptHead->email, 'approval');
+        $reviseToken = EmailToken::issue($journal, $deptHead->email, 'rejection');
 
         $approveUrl = route('email.approve', ['token' => $approveToken->token]);
-        $rejectUrl  = route('email.reject',  ['token' => $rejectToken->token]);
+        $reviseUrl  = route('email.revise', ['token' => $reviseToken->token]);
 
-        // Kirim email reminder ke Dept Head
+        $daysPending = (int) DispatchApprovalReminders::stageStartedAt($journal)->copy()->startOfDay()->diffInDays(today());
+
         try {
             Mail::to($deptHead->email)->send(
-                new DeptHeadApprovalMail($journal, $deptHead, $approveUrl, $rejectUrl, $this->reminderNumber)
+                new DeptHeadApprovalMail($journal, $deptHead, $approveUrl, $reviseUrl, $this->reminderNumber, $daysPending)
             );
             Log::info("Reminder #{$this->reminderNumber} sent for journal {$journal->document_number} to {$deptHead->email}");
         } catch (\Throwable $e) {
             Log::error("Failed sending reminder for journal {$journal->id}: " . $e->getMessage());
-            throw $e; // re-throw agar job di-retry
+            throw $e; // re-throw so the job is retried
         }
 
-        // Notifikasi ke requester bahwa dokumen masih pending
-        $alreadyNotified = Notification::where('general_journal_id', $journal->id)
-            ->where('user_id', $journal->requested_by)
-            ->where('type', 'reminder_pending')
-            ->where('created_at', '>=', now()->subDay())
-            ->exists();
-
-        if (!$alreadyNotified) {
-            Notification::create([
-                'user_id'            => $journal->requested_by,
-                'general_journal_id' => $journal->id,
-                'type'               => 'reminder_pending',
-                'message'            => "Dokumen {$journal->document_number} masih menunggu persetujuan akhir (reminder #{$this->reminderNumber}).",
-                'created_at'         => now(),
-            ]);
-        }
+        // Also records that this reminder was sent (the dispatcher counts these per round)
+        Notification::create([
+            'user_id'            => $journal->requested_by,
+            'general_journal_id' => $journal->id,
+            'type'               => 'reminder_pending',
+            'message'            => "Document {$journal->document_number} is still waiting for final approval (reminder #{$this->reminderNumber}).",
+            'created_at'         => now(),
+        ]);
     }
 }

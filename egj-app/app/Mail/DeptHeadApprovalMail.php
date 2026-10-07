@@ -18,19 +18,30 @@ class DeptHeadApprovalMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public array $overLimitFiles = [];
+    /**
+     * Total size of attachments allowed in one email (bytes).
+     */
+    public const ATTACHMENT_LIMIT = 20 * 1024 * 1024;
+
+    /**
+     * Attachment plan, built once and shared by content() and attachments().
+     * Laravel hydrates content() BEFORE attachments(), so the plan must not be
+     * produced inside attachments() or the "over limit" list never reaches the view.
+     */
+    private ?array $plan = null;
 
     public function __construct(
         public GeneralJournal $journal,
         public User $approver,
         public string $approveUrl,
         public string $rejectUrl,
-        public int $reminderNumber = 0, // 0 = email pertama, 1 = reminder 1, 2 = reminder 2
+        public int $reminderNumber = 0, // 0 = first email, 1..n = reminder number
+        public int $daysPending = 0,
     ) {}
 
     public function envelope(): Envelope
     {
-        $subjectPrefix = $this->reminderNumber > 0 ? "[Pengingat #{$this->reminderNumber}] " : '';
+        $subjectPrefix = $this->reminderNumber > 0 ? "[Reminder #{$this->reminderNumber}] " : '';
         return new Envelope(
             subject: "{$subjectPrefix}Approval Required: General Journal {$this->journal->document_number}",
         );
@@ -46,35 +57,51 @@ class DeptHeadApprovalMail extends Mailable
                 'approveUrl'     => $this->approveUrl,
                 'rejectUrl'      => $this->rejectUrl,
                 'reminderNumber' => $this->reminderNumber,
-                'overLimitFiles' => $this->overLimitFiles,
+                'daysPending'    => $this->daysPending,
+                'overLimitFiles' => $this->plan()['overLimit'],
             ],
         );
     }
 
     public function attachments(): array
     {
-        $attachments = [];
-        $totalSize = 0;
-        $overLimitFiles = [];
+        $plan = $this->plan();
 
-        // Render GJ PDF on-the-fly
-        $gjPdfBinary = app(PdfStampRenderService::class)->render($this->journal);
-        $gjSize = strlen($gjPdfBinary);
-        $totalSize += $gjSize;
+        // GJ is always attached (rendered with stamps)
+        $attachments = [
+            Attachment::fromData(
+                fn () => $plan['gjPdf'],
+                'GJ_' . $this->journal->document_number . '.pdf'
+            )->withMime('application/pdf'),
+        ];
 
-        // GJ selalu di-attach
-        $attachments[] = Attachment::fromData(
-            fn () => $gjPdfBinary,
-            'GJ_' . $this->journal->document_number . '.pdf'
-        )->withMime('application/pdf');
+        foreach ($plan['attach'] as $file) {
+            $attachments[] = Attachment::fromPath(Storage::path($file->file_path))
+                ->as($file->file_name)
+                ->withMime($file->mime_type ?? 'application/octet-stream');
+        }
 
-        // Ambil semua supporting documents
+        return $attachments;
+    }
+
+    /**
+     * Decide which supporting documents fit in the email and which become download links.
+     */
+    private function plan(): array
+    {
+        if ($this->plan !== null) {
+            return $this->plan;
+        }
+
+        $gjPdf = app(PdfStampRenderService::class)->render($this->journal);
+        $totalSize = strlen($gjPdf);
+        $attach = [];
+        $overLimit = [];
+
         $supportingFiles = GeneralJournalFile::where('general_journal_id', $this->journal->id)
             ->where('category', 'supporting_document')
             ->where('is_active', true)
             ->get();
-
-        $LIMIT = 20 * 1024 * 1024; // 20MB dalam bytes
 
         foreach ($supportingFiles as $file) {
             $filePath = Storage::path($file->file_path);
@@ -82,21 +109,14 @@ class DeptHeadApprovalMail extends Mailable
 
             $fileSize = filesize($filePath);
 
-            if (($totalSize + $fileSize) <= $LIMIT) {
-                // Masih dalam batas — attach
+            if (($totalSize + $fileSize) <= self::ATTACHMENT_LIMIT) {
                 $totalSize += $fileSize;
-                $attachments[] = Attachment::fromPath($filePath)
-                    ->as($file->file_name)
-                    ->withMime($file->mime_type ?? 'application/octet-stream');
+                $attach[] = $file;
             } else {
-                // Melebihi batas — jadikan link
-                $overLimitFiles[] = $file;
+                $overLimit[] = $file;
             }
         }
 
-        // Simpan file over limit ke property agar bisa diakses di blade
-        $this->overLimitFiles = $overLimitFiles;
-
-        return $attachments;
+        return $this->plan = ['gjPdf' => $gjPdf, 'attach' => $attach, 'overLimit' => $overLimit];
     }
 }

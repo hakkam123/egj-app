@@ -99,7 +99,7 @@ class DashboardController extends Controller
                 ->get()
                 ->map(function ($journal) {
                     $submittedDate = $journal->submitted_at ?? $journal->created_at ?? $journal->journal_date;
-                    $daysWaiting = $submittedDate ? (int) floor(now()->floatDiffInDays($submittedDate)) : 0;
+                    $daysWaiting = $submittedDate ? (int) floor($submittedDate->floatDiffInDays(now())) : 0;
 
                     return [
                         'id' => $journal->id,

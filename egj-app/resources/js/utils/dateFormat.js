@@ -1,26 +1,26 @@
 /**
- * Indonesian Date and Time Formatting Utilities
- * Provides 24-hour time format and standardized Indonesian date formatting.
+ * Date and Time Formatting Utilities
+ * Provides 24-hour time format and standardized English date formatting.
  */
 
-const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTHS_FULL = [
-    'Januari',
-    'Februari',
-    'Maret',
+    'January',
+    'February',
+    'March',
     'April',
-    'Mei',
-    'Juni',
-    'Juli',
-    'Agustus',
+    'May',
+    'June',
+    'July',
+    'August',
     'September',
-    'Oktober',
+    'October',
     'November',
-    'Desember'
+    'December'
 ];
 
 /**
- * Format date to standard Indonesian date (e.g., "21 Sep 2026")
+ * Format date to standard date (e.g., "21 Sep 2026")
  * @param {string|Date} dateString
  * @returns {string}
  */
@@ -39,7 +39,7 @@ export function formatDate(dateString) {
 }
 
 /**
- * Format date to full Indonesian date (e.g., "21 September 2026")
+ * Format date to full date (e.g., "21 September 2026")
  * @param {string|Date} dateString
  * @returns {string}
  */
@@ -58,7 +58,7 @@ export function formatFullDate(dateString) {
 }
 
 /**
- * Format date and time to Indonesian 24-hour format (e.g., "25 Sep 2026, 13:45")
+ * Format date and time to 24-hour format (e.g., "25 Sep 2026, 13:45")
  * @param {string|Date} dateString
  * @param {boolean} includeSeconds
  * @returns {string}

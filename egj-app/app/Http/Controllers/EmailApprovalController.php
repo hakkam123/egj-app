@@ -95,14 +95,11 @@ class EmailApprovalController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($journal, $approver, $emailToken) {
-            $currentApproval = $journal->approvals()
-                ->where('approval_level', 'superior_of_superior')
-                ->where('status', 'Pending')
-                ->first();
+        $processed = DB::transaction(function () use (&$journal, $approver, $emailToken) {
+            $currentApproval = $this->lockFinalStage($journal, $emailToken);
 
             if (!$currentApproval) {
-                abort(403);
+                return false;
             }
 
             $currentApproval->update([
@@ -151,7 +148,15 @@ class EmailApprovalController extends Controller
                     Log::error("Failed sending ApprovalResultMail in email approval for journal {$journal->id}: " . $e->getMessage());
                 }
             }
+
+            return true;
         });
+
+        if (!$processed) {
+            return Inertia::render('EmailApproval/Invalid', [
+                'message' => 'This document is no longer pending approval.',
+            ]);
+        }
 
         return Inertia::render('EmailApproval/Success', [
             'journal' => $journal->fresh(['requester']),
@@ -244,14 +249,11 @@ class EmailApprovalController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($journal, $approver, $emailToken, $request) {
-            $currentApproval = $journal->approvals()
-                ->where('approval_level', 'superior_of_superior')
-                ->where('status', 'Pending')
-                ->first();
+        $processed = DB::transaction(function () use (&$journal, $approver, $emailToken, $request) {
+            $currentApproval = $this->lockFinalStage($journal, $emailToken);
 
             if (!$currentApproval) {
-                abort(403);
+                return false;
             }
 
             $currentApproval->update([
@@ -300,13 +302,41 @@ class EmailApprovalController extends Controller
                     Log::error("Failed sending ApprovalResultMail in email revise for journal {$journal->id}: " . $e->getMessage());
                 }
             }
+
+            return true;
         });
+
+        if (!$processed) {
+            return Inertia::render('EmailApproval/Invalid', [
+                'message' => 'This document is no longer pending approval.',
+            ]);
+        }
 
         return Inertia::render('EmailApproval/Success', [
             'journal' => $journal->fresh(['requester']),
             'action' => 'revised',
             'notes' => $request->notes,
         ]);
+    }
+
+    /**
+     * Re-read the journal under a row lock and return its pending final-level approval,
+     * or null when the journal moved on (already processed, token used meanwhile, or
+     * still waiting on the Section Head).
+     */
+    private function lockFinalStage(GeneralJournal &$journal, EmailToken $emailToken): ?GeneralJournalApproval
+    {
+        $journal = GeneralJournal::lockForUpdate()->findOrFail($journal->id);
+        $pending = $journal->currentPendingApproval();
+
+        if (!$journal->isWaitingApproval()
+            || !$pending
+            || $pending->approval_level !== 'superior_of_superior'
+            || !$emailToken->fresh()->isValid()) {
+            return null;
+        }
+
+        return $pending;
     }
 
     /**

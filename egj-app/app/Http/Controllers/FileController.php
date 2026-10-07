@@ -24,14 +24,11 @@ class FileController extends Controller
 
             $pdfBinary = app(PdfStampRenderService::class)->render($journal, true);
 
-            return response($pdfBinary, 200, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="GJ_' . $journal->document_number . '_stamped.pdf"',
-            ]);
+            return $this->fileResponse($pdfBinary, 'application/pdf', 'GJ_' . $journal->document_number . '_stamped.pdf', true);
         }
 
         if (!Storage::exists($file->file_path)) {
-            abort(404, 'File tidak ditemukan.');
+            abort(404, 'File not found.');
         }
 
         return Storage::download($file->file_path, $file->file_name);
@@ -52,19 +49,14 @@ class FileController extends Controller
 
             $pdfBinary = app(PdfStampRenderService::class)->render($journal, false);
 
-            return response($pdfBinary, 200, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . $file->file_name . '"',
-            ]);
+            return $this->fileResponse($pdfBinary, 'application/pdf', $file->file_name);
         }
 
         if (!Storage::exists($file->file_path)) {
-            abort(404, 'File tidak ditemukan.');
+            abort(404, 'File not found.');
         }
 
-        return response(Storage::get($file->file_path))
-            ->header('Content-Type', $file->mime_type)
-            ->header('Content-Disposition', 'inline; filename="' . $file->file_name . '"');
+        return $this->fileResponse(Storage::get($file->file_path), $file->mime_type, $file->file_name);
     }
 
     /**
@@ -103,7 +95,7 @@ class FileController extends Controller
 
         $journal = $file->generalJournal;
         if (!$journal) {
-            abort(404, 'Dokumen tidak ditemukan.');
+            abort(404, 'Document not found.');
         }
 
         // Requester can always access
@@ -121,6 +113,6 @@ class FileController extends Controller
             return;
         }
 
-        abort(403, 'Anda tidak memiliki akses ke file ini.');
+        abort(403, 'You do not have access to this file.');
     }
 }

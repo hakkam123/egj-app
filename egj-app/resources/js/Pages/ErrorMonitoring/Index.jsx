@@ -111,7 +111,6 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
         router.patch(`/error-monitoring/${id}/status`, { status: newStatus }, {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success(`Error log status changed to ${newStatus}`);
                 if (selectedLog && selectedLog.id === id) {
                     setSelectedLog(prev => ({ ...prev, status: newStatus }));
                 }
@@ -123,7 +122,6 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
         router.delete(`/error-monitoring/${id}`, {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success('Error log deleted successfully');
                 if (selectedLog && selectedLog.id === id) {
                     setSelectedLog(null);
                 }
@@ -133,10 +131,29 @@ export default function ErrorMonitoringIndex({ logs, filters, stats }) {
 
     const copyStackTrace = () => {
         if (!selectedLog?.stack_trace) return;
-        navigator.clipboard.writeText(selectedLog.stack_trace);
-        setCopied(true);
-        toast.success('Stack trace copied to clipboard');
-        setTimeout(() => setCopied(false), 2000);
+
+        const done = () => {
+            setCopied(true);
+            toast.success('Stack trace copied to clipboard');
+            setTimeout(() => setCopied(false), 2000);
+        };
+
+        // navigator.clipboard only exists on HTTPS / localhost; fall back for plain-HTTP intranet
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(selectedLog.stack_trace).then(done, () => toast.error('Could not copy stack trace.'));
+            return;
+        }
+
+        const area = document.createElement('textarea');
+        area.value = selectedLog.stack_trace;
+        area.setAttribute('readonly', '');
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        const ok = document.execCommand && document.execCommand('copy');
+        document.body.removeChild(area);
+        ok ? done() : toast.error('Could not copy stack trace.');
     };
 
     const statusBadge = (s) => {

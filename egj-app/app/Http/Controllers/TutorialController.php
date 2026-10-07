@@ -35,7 +35,7 @@ class TutorialController extends Controller
     public function store(Request $request)
     {
         if (!Auth::user()->hasRole('Admin')) {
-            abort(403, 'Hanya Admin yang dapat mengunggah tutorial.');
+            abort(403, 'Only Admin can upload tutorials.');
         }
 
         $request->validate([
@@ -56,7 +56,7 @@ class TutorialController extends Controller
             'uploaded_by' => Auth::id(),
         ]);
 
-        return back()->with('success', 'Tutorial PDF berhasil diunggah.');
+        return back()->with('success', 'Tutorial PDF uploaded successfully.');
     }
 
     /**
@@ -67,12 +67,10 @@ class TutorialController extends Controller
         $tutorial = Tutorial::findOrFail($id);
 
         if (!Storage::disk('local')->exists($tutorial->file_path)) {
-            abort(404, 'File tutorial tidak ditemukan di server.');
+            abort(404, 'Tutorial file not found on the server.');
         }
 
-        return response(Storage::disk('local')->get($tutorial->file_path))
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="' . $tutorial->file_name . '"');
+        return $this->fileResponse(Storage::disk('local')->get($tutorial->file_path), 'application/pdf', $tutorial->file_name);
     }
 
     /**
@@ -83,7 +81,7 @@ class TutorialController extends Controller
         if ($id) {
             $tutorial = Tutorial::findOrFail($id);
             if (!Storage::disk('local')->exists($tutorial->file_path)) {
-                abort(404, 'File tutorial tidak ditemukan.');
+                abort(404, 'Tutorial file not found.');
             }
             return Storage::disk('local')->download($tutorial->file_path, $tutorial->file_name);
         }
@@ -102,7 +100,7 @@ class TutorialController extends Controller
             return Storage::disk('local')->download('manuals/user_manual.pdf', 'User_Manual_JAGO.pdf');
         }
 
-        return back()->with('error', 'Belum ada file tutorial yang diunggah.');
+        return back()->with('error', 'No tutorial file has been uploaded yet.');
     }
 
     /**
@@ -111,7 +109,7 @@ class TutorialController extends Controller
     public function destroy(string $id)
     {
         if (!Auth::user()->hasRole('Admin')) {
-            abort(403, 'Hanya Admin yang dapat menghapus tutorial.');
+            abort(403, 'Only Admin can delete tutorials.');
         }
 
         $tutorial = Tutorial::findOrFail($id);
@@ -122,6 +120,6 @@ class TutorialController extends Controller
 
         $tutorial->delete();
 
-        return back()->with('success', 'Tutorial berhasil dihapus.');
+        return back()->with('success', 'Tutorial deleted successfully.');
     }
 }

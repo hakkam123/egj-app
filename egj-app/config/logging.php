@@ -1,5 +1,6 @@
 <?php
 
+use Monolog\Handler\DeduplicationHandler;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -71,6 +72,24 @@ return [
             'level' => env('LOG_LEVEL', 'debug'),
             'max_files' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
+        ],
+
+        // Channel ini men-dedup error identik dalam window 60 detik.
+        // Berguna agar outage Redis / SMTP tidak membanjiri log dengan stack trace yang sama persis.
+        // Aktifkan dengan LOG_CHANNEL=dedup atau LOG_STACK=dedup.
+        'dedup' => [
+            'driver' => 'monolog',
+            'level' => env('LOG_LEVEL', 'warning'),
+            'handler' => DeduplicationHandler::class,
+            'handler_with' => [
+                'handler' => new Monolog\Handler\RotatingFileHandler(
+                    storage_path('logs/laravel.log'),
+                    (int) env('LOG_DAILY_DAYS', 14)
+                ),
+                'deduplicationStore' => storage_path('logs/dedup.log'),
+                'deduplicationLevel' => \Monolog\Level::Error,
+                'time' => 60,
+            ],
         ],
 
         'monthly' => [

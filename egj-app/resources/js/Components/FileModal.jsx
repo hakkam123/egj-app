@@ -8,20 +8,26 @@ export default function FileModal({ open, journalId, onClose }) {
     useEffect(() => {
         if (open && journalId) {
             setLoading(true);
-            fetch(`/general-journals/${journalId}`, {
-                headers: { 
-                    'Accept': 'application/json', 
+            // JSON timeline endpoint: an X-Inertia request without the asset version header is
+            // answered with 409 in production, which made this modal always show "No files"
+            fetch(`/tracking/${journalId}`, {
+                headers: {
+                    'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
-                    'X-Inertia': 'true'
                 },
             })
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return res.json();
+                })
                 .then(data => {
-                    const journal = data.props?.journal || data.journal || data;
-                    setFiles(journal?.active_files || journal?.files?.filter(f => f.is_active) || []);
+                    setFiles(data.journal?.active_files || []);
                     setLoading(false);
                 })
-                .catch(() => setLoading(false));
+                .catch(() => {
+                    setFiles([]);
+                    setLoading(false);
+                });
         }
     }, [open, journalId]);
 

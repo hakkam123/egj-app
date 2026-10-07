@@ -85,7 +85,9 @@ class GeneralJournalController extends Controller
             $query->whereDate('journal_date', $request->date);
         }
 
-        $perPage = $request->input('per_page', 10);
+        $perPage = in_array((int) $request->input('per_page', 10), [10, 25, 50, 100])
+            ? (int) $request->input('per_page', 10)
+            : 10;
         $drafts = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
 
         $stats = [
@@ -650,6 +652,7 @@ class GeneralJournalController extends Controller
 
             // Reset approval chain
             $journal->approvals()->delete();
+            EmailToken::revokeFor($journal->id);
             $this->setupApprovalChainAndNotify($journal, $journal->requester ?? $user, $sectionHead, $deptHead, true);
         });
 
@@ -681,6 +684,8 @@ class GeneralJournalController extends Controller
                 'current_assign_to' => null,
                 'last_updated_at' => now(),
             ]);
+
+            EmailToken::revokeFor($journal->id);
 
             ApprovalHistory::create([
                 'general_journal_id' => $journal->id,
@@ -851,7 +856,7 @@ class GeneralJournalController extends Controller
     private function sendApprovalEmail(GeneralJournal $journal, User $sectionHead): void
     {
         try {
-            $previewToken = $this->createEmailToken($journal, $sectionHead->email, 'preview');
+            $previewToken = EmailToken::issue($journal, $sectionHead->email, 'preview');
 
             Mail::to($sectionHead->email)->send(
                 new ApprovalRequestMail($journal, $sectionHead, $previewToken)
@@ -867,8 +872,8 @@ class GeneralJournalController extends Controller
     private function sendDeptHeadApprovalEmail(GeneralJournal $journal, User $deptHead): void
     {
         try {
-            $approvalToken = $this->createEmailToken($journal, $deptHead->email, 'approval');
-            $reviseToken = $this->createEmailToken($journal, $deptHead->email, 'rejection');
+            $approvalToken = EmailToken::issue($journal, $deptHead->email, 'approval');
+            $reviseToken = EmailToken::issue($journal, $deptHead->email, 'rejection');
 
             Mail::to($deptHead->email)->send(
                 new DeptHeadApprovalMail(
@@ -894,20 +899,5 @@ class GeneralJournalController extends Controller
             return 'JOT ' . ($suffix !== '' ? $suffix : $cleaned);
         }
         return 'JOT ' . $cleaned;
-    }
-
-    /**
-     * Create an email token with 3 days (72 hours) expiry.
-     */
-    private function createEmailToken(GeneralJournal $journal, string $email, string $purpose): EmailToken
-    {
-        return EmailToken::create([
-            'general_journal_id' => $journal->id,
-            'token' => Str::uuid()->toString(),
-            'email' => $email,
-            'purpose' => $purpose,
-            'expires_at' => Carbon::now()->addDays(3),
-            'created_at' => now(),
-        ]);
     }
 }

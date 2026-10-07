@@ -35,7 +35,7 @@
                     <tr>
                         <td style="background-color:#fffbeb;border-bottom:1px solid #fef3c7;padding:12px 32px;text-align:center;">
                             <span style="color:#b45309;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;font-family:'Plus Jakarta Sans','Poppins',sans-serif;">
-                                ⏰ APPROVAL REMINDER #{{ $reminderNumber }} (Pending for {{ $reminderNumber === 1 ? '3' : '5' }} Days)
+                                ⏰ APPROVAL REMINDER #{{ $reminderNumber }} (Pending for {{ $daysPending }} {{ $daysPending === 1 ? 'Day' : 'Days' }})
                             </span>
                         </td>
                     </tr>

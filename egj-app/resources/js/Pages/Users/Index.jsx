@@ -163,7 +163,6 @@ export default function UsersIndex({ users, filters }) {
                 preserveScroll: true,
                 onSuccess: () => {
                     setShowModal(false);
-                    toast.success('User updated successfully.');
                 },
                 onError: () => {
                     toast.error('Failed to update user. Please check form errors.');
@@ -175,7 +174,6 @@ export default function UsersIndex({ users, filters }) {
                 onSuccess: () => {
                     setShowModal(false);
                     userForm.reset();
-                    toast.success('New user created successfully.');
                 },
                 onError: () => {
                     toast.error('Failed to create user. Please check form errors.');
@@ -200,7 +198,6 @@ export default function UsersIndex({ users, filters }) {
                 setShowDeleteModal(false);
                 setUserToDelete(null);
                 setIsDeactivating(false);
-                toast.success('User deactivated successfully.');
             },
             onError: () => {
                 setIsDeactivating(false);

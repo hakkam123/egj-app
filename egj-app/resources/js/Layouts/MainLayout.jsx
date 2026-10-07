@@ -20,6 +20,7 @@ import {
     FilePlus
 } from 'lucide-react';
 import { formatDateTime } from '@/utils/dateFormat';
+import { csrfHeaders } from '@/utils/csrf';
 
 export default function MainLayout({ children, title }) {
     const { auth, flash } = usePage().props;
@@ -64,27 +65,67 @@ export default function MainLayout({ children, title }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Polling for unread notification count
+    // Polling notifikasi: hanya saat tab aktif, dan dengan exponential backoff saat gagal
+    // (misalnya server down atau rate limiter aktif). Ini mencegah polling membanjiri
+    // server saat Redis mati / internal API bermasalah.
     const fetchUnreadCount = () => {
-        fetch('/notifications/unread-count', {
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+        return fetch('/notifications/unread-count', {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
             .then(data => {
                 if (data && typeof data.unread_count === 'number') {
                     setUnreadCount(data.unread_count);
                 }
+                return true;
             })
-            .catch(() => { });
+            .catch(() => false);
     };
 
     useEffect(() => {
-        fetchUnreadCount();
-        const interval = setInterval(fetchUnreadCount, 30000); // Poll every 30 seconds
-        return () => clearInterval(interval);
+        let timeoutId;
+        let failures = 0;
+
+        const schedule = (delay) => {
+            timeoutId = setTimeout(tick, delay);
+        };
+
+        const tick = async () => {
+            // Skip jika tab tidak aktif — hemat request dan baterai
+            if (document.hidden) {
+                schedule(60000);
+                return;
+            }
+            const ok = await fetchUnreadCount();
+            if (ok) {
+                failures = 0;
+                schedule(30000);
+            } else {
+                // Exponential backoff: 60s → 120s → 240s → 300s (max)
+                failures += 1;
+                schedule(Math.min(60000 * Math.pow(2, failures - 1), 300000));
+            }
+        };
+
+        fetchUnreadCount(); // first call segera
+        schedule(30000);
+
+        const onVisible = () => {
+            if (!document.hidden) {
+                clearTimeout(timeoutId);
+                failures = 0;
+                tick();
+            }
+        };
+        document.addEventListener('visibilitychange', onVisible);
+
+        return () => {
+            clearTimeout(timeoutId);
+            document.removeEventListener('visibilitychange', onVisible);
+        };
     }, []);
 
     // Fetch notifications list when dropdown opens
@@ -113,15 +154,12 @@ export default function MainLayout({ children, title }) {
     const handleMarkAsRead = (id, journalId) => {
         fetch(`/notifications/${id}/read`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        }).then(() => {
+            headers: csrfHeaders(),
+        }).then((res) => {
+            if (!res.ok) return;
             fetchUnreadCount();
             setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
-        });
+        }).catch(() => { });
 
         if (journalId) {
             setNotifDropdownOpen(false);
@@ -136,16 +174,16 @@ export default function MainLayout({ children, title }) {
     const handleMarkAllRead = () => {
         fetch('/notifications/read-all', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                'X-Requested-With': 'XMLHttpRequest'
+            headers: csrfHeaders(),
+        }).then((res) => {
+            if (!res.ok) {
+                toast.error('Could not mark notifications as read. Please refresh the page.');
+                return;
             }
-        }).then(() => {
             setUnreadCount(0);
             setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
             toast.success('All notifications marked as read.');
-        });
+        }).catch(() => { });
     };
 
     // Navigation Menu Items in English

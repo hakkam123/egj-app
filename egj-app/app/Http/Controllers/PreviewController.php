@@ -20,13 +20,13 @@ class PreviewController extends Controller
 
         if (!$emailToken) {
             return Inertia::render('Preview/Invalid', [
-                'message' => 'Token tidak valid.',
+                'message' => 'Invalid token.',
             ]);
         }
 
         if ($emailToken->isExpired()) {
             return Inertia::render('Preview/Invalid', [
-                'message' => 'Token sudah kedaluwarsa.',
+                'message' => 'This preview link has expired.',
             ]);
         }
 

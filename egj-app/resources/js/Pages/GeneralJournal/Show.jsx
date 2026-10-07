@@ -23,6 +23,8 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { STATUS_COLORS } from '@/constants/statusColors';
 import { formatFullDate, formatDateTime } from '@/utils/dateFormat';
+import { csrfHeaders } from '@/utils/csrf';
+import { canActOnJournal } from '@/utils/approval';
 
 export default function Show({ journal }) {
     const { auth } = usePage().props;
@@ -35,11 +37,8 @@ export default function Show({ journal }) {
     const isApproved = journal.status === 'Approved';
 
     // Approver permission check
-    const isCurrentApprover = (
-        String(journal.current_assign_to) === String(user?.id) ||
-        (user?.role === 'Dept/Div Head' && journal.approvals?.some(a => a.approval_level === 'superior_of_superior' && a.status === 'Pending')) ||
-        (user?.role === 'Section Head' && journal.approvals?.some(a => a.approval_level === 'superior' && a.status === 'Pending'))
-    ) && journal.status === 'Waiting Approval';
+    // Same rule as the server: only the role of the journal's current stage may act
+    const isCurrentApprover = canActOnJournal(journal, user);
 
     // Modals
     const [approveModalOpen, setApproveModalOpen] = useState(false);
@@ -56,15 +55,10 @@ export default function Show({ journal }) {
     const [pdfLoading, setPdfLoading] = useState(true);
 
     const markNotifRead = (journalId) => {
-        const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
         fetch(`/notifications/mark-read-by-journal/${journalId}`, {
             method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': csrf || '',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            }
-        });
+            headers: csrfHeaders(),
+        }).catch(() => { });
     };
 
     const confirmApprove = () => {
@@ -131,7 +125,6 @@ export default function Show({ journal }) {
             onSuccess: () => {
                 setSingleSubmitModalOpen(false);
                 setIsSubmittingSingle(false);
-                toast.success('Draft submitted for approval.');
             },
             onError: (errs) => {
                 setIsSubmittingSingle(false);
@@ -209,14 +202,14 @@ export default function Show({ journal }) {
                                     href={`/general-journals/${journal.id}/edit`}
                                     className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl shadow-2xs transition-colors"
                                 >
-                                    <FileEdit size={14} /> Edit Draft
+                                    Edit Draft
                                 </Link>
                                 <button
                                     type="button"
                                     onClick={() => setSingleSubmitModalOpen(true)}
                                     className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition-all"
                                 >
-                                    <Send size={14} /> Submit Draft
+                                    Submit Draft
                                 </button>
                             </>
                         )}

@@ -35,7 +35,7 @@ class ProfileController extends Controller
 
         $user->update($validated);
 
-        return redirect()->route('profile.edit')->with('success', 'Profil berhasil diperbarui.');
+        return redirect()->route('profile.edit')->with('success', 'Profile updated successfully.');
     }
 
     /**
@@ -51,14 +51,14 @@ class ProfileController extends Controller
         ]);
 
         if (!Hash::check($request->current_password, $user->password)) {
-            return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai.']);
+            return back()->withErrors(['current_password' => 'The current password is incorrect.']);
         }
 
         $user->update([
             'password' => Hash::make($request->new_password),
         ]);
 
-        return redirect()->route('profile.edit')->with('success', 'Password berhasil diubah.');
+        return redirect()->route('profile.edit')->with('success', 'Password changed successfully.');
     }
 }
 

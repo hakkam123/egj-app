@@ -95,6 +95,64 @@ class GeneralJournal extends Model
     }
 
     /**
+     * Which role acts on each approval level (accounting is always auto-approved).
+     */
+    public const LEVEL_ROLES = [
+        'superior' => 'Section Head',
+        'superior_of_superior' => 'Dept/Div Head',
+    ];
+
+    /**
+     * The earliest approval level that is still Pending, i.e. the stage the journal is at.
+     */
+    public function currentPendingApproval(): ?GeneralJournalApproval
+    {
+        return $this->approvals()
+            ->where('status', 'Pending')
+            ->orderByRaw("CASE approval_level WHEN 'accounting' THEN 1 WHEN 'superior' THEN 2 WHEN 'superior_of_superior' THEN 3 END")
+            ->first();
+    }
+
+    /**
+     * Whether the user may approve / request revision at the journal's current stage.
+     * The assigned user can always act; otherwise any user holding the stage's role can.
+     */
+    public function canBeActionedBy(User $user): bool
+    {
+        if (!$this->isWaitingApproval()) {
+            return false;
+        }
+
+        $pending = $this->currentPendingApproval();
+        if (!$pending) {
+            return false;
+        }
+
+        return $pending->assigned_user_id === $user->id
+            || (self::LEVEL_ROLES[$pending->approval_level] ?? null) === $user->role;
+    }
+
+    /**
+     * Journals waiting at a stage the given approver can act on.
+     */
+    public function scopeActionableBy($query, User $user)
+    {
+        return $query->where('status', 'Waiting Approval')->where(function ($q) use ($user) {
+            $q->where('current_assign_to', $user->id);
+
+            if ($user->hasRole('Dept/Div Head')) {
+                // Only once the Superior level is done — never ahead of the Section Head
+                $q->orWhere(function ($sub) {
+                    $sub->whereHas('approvals', fn ($a) => $a->where('approval_level', 'superior_of_superior')->where('status', 'Pending'))
+                        ->whereDoesntHave('approvals', fn ($a) => $a->where('approval_level', 'superior')->where('status', 'Pending'));
+                });
+            } elseif ($user->hasRole('Section Head')) {
+                $q->orWhereHas('approvals', fn ($a) => $a->where('approval_level', 'superior')->where('status', 'Pending'));
+            }
+        });
+    }
+
+    /**
      * Check if the journal is in draft status.
      */
     public function isDraft(): bool

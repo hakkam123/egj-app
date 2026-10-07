@@ -88,7 +88,7 @@ class UserController extends Controller
         ]);
 
         return redirect()->route('users.index')
-            ->with('success', 'User berhasil ditambahkan.');
+            ->with('success', 'User created successfully.');
     }
 
     /**
@@ -132,7 +132,7 @@ class UserController extends Controller
         $user->update($data);
 
         return redirect()->route('users.index')
-            ->with('success', 'User berhasil diperbarui.');
+            ->with('success', 'User updated successfully.');
     }
 
     /**
@@ -146,6 +146,6 @@ class UserController extends Controller
         $user->update(['is_active' => false]);
 
         return redirect()->route('users.index')
-            ->with('success', 'User berhasil dinonaktifkan.');
+            ->with('success', 'User deactivated successfully.');
     }
 }

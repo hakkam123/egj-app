@@ -5,10 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Prunable;
+use Illuminate\Support\Str;
 
 class EmailToken extends Model
 {
     use HasUlids, Prunable;
+
+    /**
+     * Every emailed approval/revision/preview link is valid for at most this many days.
+     */
+    public const TTL_DAYS = 5;
 
     public $timestamps = false;
 
@@ -47,6 +53,34 @@ class EmailToken extends Model
     public function prunable()
     {
         return static::where('expires_at', '<', now()->subDays(7));
+    }
+
+    /**
+     * Issue a new random token for a journal, valid for TTL_DAYS.
+     */
+    public static function issue(GeneralJournal $journal, string $email, string $purpose): self
+    {
+        return static::create([
+            'general_journal_id' => $journal->id,
+            'token' => Str::random(64),
+            'email' => $email,
+            'purpose' => $purpose,
+            'expires_at' => now()->addDays(self::TTL_DAYS),
+            'created_at' => now(),
+        ]);
+    }
+
+    /**
+     * Expire every outstanding (unused, unexpired) token of a journal so old email links
+     * can no longer act on it. Optionally limited to one recipient.
+     */
+    public static function revokeFor(string $journalId, ?string $email = null): void
+    {
+        static::where('general_journal_id', $journalId)
+            ->when($email, fn ($q) => $q->where('email', $email))
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->update(['expires_at' => now()->subSecond()]);
     }
 
     /**

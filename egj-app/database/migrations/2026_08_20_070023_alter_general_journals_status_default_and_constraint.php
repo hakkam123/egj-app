@@ -27,7 +27,9 @@ return new class extends Migration
         });
 
         // 3. Add the CHECK constraint (SQL Server syntax)
-        DB::statement("ALTER TABLE general_journals ADD CONSTRAINT chk_general_journals_status CHECK (status IN ('Waiting Approval', 'Approved', 'Rejected'))");
+        if (DB::getDriverName() === 'sqlsrv') {
+            DB::statement("ALTER TABLE general_journals ADD CONSTRAINT chk_general_journals_status CHECK (status IN ('Waiting Approval', 'Approved', 'Rejected'))");
+        }
     }
 
     /**
@@ -35,8 +37,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE general_journals DROP CONSTRAINT chk_general_journals_status");
-        
+        if (DB::getDriverName() === 'sqlsrv') {
+            DB::statement("ALTER TABLE general_journals DROP CONSTRAINT chk_general_journals_status");
+        }
+
         Schema::table('general_journals', function (Blueprint $table) {
             $table->string('status', 20)->default('Draft')->change();
         });
