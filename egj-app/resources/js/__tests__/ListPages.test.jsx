@@ -46,6 +46,32 @@ describe('Drafts page', () => {
         expect(screen.getByText('JOT 1').closest('a')).toHaveAttribute('href', '/general-journals/d1/edit');
     });
 
+    it('regression: Submit button is hidden for drafts without a PDF', () => {
+        renderDrafts();
+
+        // Draft lengkap → tombol Submit tampil
+        expect(within(rowOf('JOT 1')).queryByRole('button', { name: 'Submit' })).toBeInTheDocument();
+        // Draft tanpa PDF → tombol Submit tidak boleh ada
+        expect(within(rowOf('JOT 2')).queryByRole('button', { name: 'Submit' })).not.toBeInTheDocument();
+        // Edit tetap ada supaya user bisa melengkapi
+        expect(within(rowOf('JOT 2')).getByRole('link', { name: /Edit/ })).toBeInTheDocument();
+    });
+
+    it('regression: bulk Submit Selected banner only shows the ready-count button', async () => {
+        const user = userEvent.setup();
+        renderDrafts();
+
+        // Pilih hanya draft yang tidak lengkap
+        await user.click(within(rowOf('JOT 2')).getAllByRole('button')[0]);
+        expect(screen.queryByRole('button', { name: /Submit \d+ Ready/ })).not.toBeInTheDocument();
+        expect(screen.getByText('(1 incomplete)')).toBeInTheDocument();
+
+        // Tambah draft yang lengkap
+        await user.click(within(rowOf('JOT 1')).getAllByRole('button')[0]);
+        const submitBtn = screen.getByRole('button', { name: /Submit 1 Ready of 2/ });
+        expect(submitBtn).toBeInTheDocument();
+    });
+
     it('row numbers continue across pages', () => {
         loginAs('Staff');
         render(<Drafts drafts={paginate([ready], { current_page: 3, per_page: 10 })} filters={{}} stats={{}} />);
@@ -58,15 +84,10 @@ describe('Drafts page', () => {
         expect(screen.getByText('You do not have any saved draft documents at the moment.')).toBeInTheDocument();
     });
 
-    it('submitting an incomplete draft explains what is missing instead of sending it', async () => {
-        const user = userEvent.setup();
+    it('draft tanpa PDF tidak bisa disubmit dari baris — tombol Submit tidak ada', () => {
         renderDrafts();
 
-        await user.click(within(rowOf('JOT 2')).getByRole('button', { name: 'Submit' }));
-
-        expect(screen.getByText('Cannot Submit Incomplete Draft')).toBeInTheDocument();
-        expect(screen.getByText('General Journal PDF document is missing')).toBeInTheDocument();
-        expect(screen.getByText(/Edit Draft & Complete/).closest('a')).toHaveAttribute('href', '/general-journals/d2/edit');
+        expect(within(rowOf('JOT 2')).queryByRole('button', { name: 'Submit' })).not.toBeInTheDocument();
         expect(visits()).toHaveLength(0);
     });
 
@@ -87,8 +108,9 @@ describe('Drafts page', () => {
 
         await user.click(screen.getByTitle('Select All'));
         expect(screen.getByText('3 draft documents selected')).toBeInTheDocument();
+        expect(screen.getByText('(1 incomplete)')).toBeInTheDocument();
 
-        await user.click(screen.getByRole('button', { name: 'Submit Selected (3)' }));
+        await user.click(screen.getByRole('button', { name: /Submit 2 Ready of 3/ }));
         expect(screen.getByText('Bulk Submit Drafts (3 Selected)')).toBeInTheDocument();
         expect(screen.getByText('Missing PDF Document')).toBeInTheDocument();
 
@@ -96,16 +118,14 @@ describe('Drafts page', () => {
         expect(lastVisit()).toMatchObject({ url: '/general-journals/bulk-submit', method: 'post', data: { ids: ['d1', 'd3'] } });
     });
 
-    it('bulk submit with nothing ready only offers Close', async () => {
+    it('tidak ada tombol Submit Selected kalau semua pilihan tidak lengkap', async () => {
         const user = userEvent.setup();
         renderDrafts([noPdf]);
 
         await user.click(within(rowOf('JOT 2')).getAllByRole('button')[0]);
-        await user.click(screen.getByRole('button', { name: 'Submit Selected (1)' }));
-
-        expect(screen.getByText(/None of the selected drafts are ready/)).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: /Ready Drafts/ })).not.toBeInTheDocument();
-        await user.click(screen.getByRole('button', { name: 'Close' }));
+        expect(screen.queryByRole('button', { name: /Submit/ })).not.toBeInTheDocument();
+        expect(screen.getByText('1 draft document selected')).toBeInTheDocument();
+        expect(screen.getByText('(1 incomplete)')).toBeInTheDocument();
         expect(visits()).toHaveLength(0);
     });
 

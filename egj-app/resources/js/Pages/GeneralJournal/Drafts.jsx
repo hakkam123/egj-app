@@ -260,6 +260,11 @@ export default function Drafts({ drafts, filters, stats }) {
                     <div className="flex items-center gap-2.5">
                         <p className="text-xs font-semibold text-[var(--text-primary)]">
                             {selectedIds.length} {selectedIds.length === 1 ? 'draft document selected' : 'draft documents selected'}
+                            {incompleteSelectedDrafts.length > 0 && (
+                                <span className="ml-2 text-amber-700 font-medium">
+                                    ({incompleteSelectedDrafts.length} incomplete)
+                                </span>
+                            )}
                         </p>
                     </div>
 
@@ -271,13 +276,17 @@ export default function Drafts({ drafts, filters, stats }) {
                         >
                             Deselect
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => setBulkSubmitModalOpen(true)}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                            Submit Selected ({selectedIds.length})
-                        </button>
+                        {/* Tombol Submit Selected hanya tampil kalau ada minimal 1 draft yang lengkap */}
+                        {readySelectedDrafts.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => setBulkSubmitModalOpen(true)}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors cursor-pointer"
+                            >
+                                Submit {readySelectedDrafts.length} Ready
+                                {readySelectedDrafts.length !== selectedIds.length && ` of ${selectedIds.length}`}
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
@@ -505,17 +514,18 @@ export default function Drafts({ drafts, filters, stats }) {
                                                         Edit
                                                     </Link>
 
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRowSubmitClick(journal)}
-                                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${gjFile && journal.reference
-                                                            ? 'bg-slate-900 hover:bg-slate-800 text-white cursor-pointer'
-                                                            : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 cursor-pointer'
-                                                            }`}
-                                                        title={gjFile && journal.reference ? 'Submit for Approval' : 'Incomplete draft - click to view details'}
-                                                    >
-                                                        Submit
-                                                    </button>
+                                                    {/* Tombol Submit hanya tampil kalau draft sudah lengkap (ada PDF + Reference + Journal Date).
+                                                        Kalau belum lengkap, user diarahkan ke Edit terlebih dulu. */}
+                                                    {gjFile && journal.reference && journal.journal_date && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRowSubmitClick(journal)}
+                                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors cursor-pointer"
+                                                            title="Submit for Approval"
+                                                        >
+                                                            Submit
+                                                        </button>
+                                                    )}
 
                                                     <button
                                                         type="button"
