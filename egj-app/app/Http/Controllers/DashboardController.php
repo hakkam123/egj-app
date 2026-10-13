@@ -2,18 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\GeneralJournal;
 use App\Models\ApprovalHistory;
+use App\Models\GeneralJournal;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
     /**
-     * Display role-based dashboard.
+     * Dashboard per role, mengikuti aturan RBAC visibility:
+     *   - Staff          : hanya journal buatannya sendiri
+     *   - Section Head   : journal buatannya + buatan Staff
+     *   - Dept/Div Head  : semua journal (lintas role)
+     *   - Admin          : semua journal + statistik system
+     *
+     * Approver (Section Head, Dept/Div Head) juga mendapat tambahan info personal:
+     * antrian pending di meja mereka, dan jumlah approve/revise yang pernah dilakukan.
      */
     public function index()
     {
@@ -25,51 +30,15 @@ class DashboardController extends Controller
         $recentData = [];
         $actionQuery = null;
 
-        if ($role === 'Staff') {
+        if ($role === 'Admin') {
             $stats = [
-                'total' => GeneralJournal::where('requested_by', $user->id)->count(),
-                'draft' => GeneralJournal::where('requested_by', $user->id)->where('status', 'Draft')->count(),
-                'waiting' => GeneralJournal::where('requested_by', $user->id)->where('status', 'Waiting Approval')->count(),
-                'revised' => GeneralJournal::where('requested_by', $user->id)->where('status', 'Revised')->count(),
-                'approved' => GeneralJournal::where('requested_by', $user->id)->where('status', 'Approved')->count(),
-                'rejected' => GeneralJournal::where('requested_by', $user->id)->where('status', 'Rejected')->count(),
-            ];
-
-            $recentData = GeneralJournal::with(['assignee'])
-                ->where('requested_by', $user->id)
-                ->orderBy('last_updated_at', 'desc')
-                ->limit(5)
-                ->get();
-        } elseif ($role === 'Section Head' || $role === 'Dept/Div Head') {
-            $stats = [
-                'pending_approval' => GeneralJournal::where('current_assign_to', $user->id)->where('status', 'Waiting Approval')->count(),
-                'draft' => GeneralJournal::where('requested_by', $user->id)->where('status', 'Draft')->count(),
-                'revised' => GeneralJournal::where('requested_by', $user->id)->where('status', 'Revised')->count(),
-                'total_approved' => ApprovalHistory::where('actor_user_id', $user->id)->where('action', 'approve')->count(),
-                'total_revised' => ApprovalHistory::where('actor_user_id', $user->id)->where('action', 'revise')->count(),
-                'total_submitted_by_me' => GeneralJournal::where('requested_by', $user->id)->count(),
-            ];
-
-            $recentData = GeneralJournal::with(['requester'])
-                ->where('current_assign_to', $user->id)
-                ->where('status', 'Waiting Approval')
-                ->orderBy('last_updated_at', 'desc')
-                ->limit(5)
-                ->get();
-
-            $actionQuery = GeneralJournal::with(['requester', 'assignee'])
-                ->where('current_assign_to', $user->id)
-                ->where('status', 'Waiting Approval');
-
-        } elseif ($role === 'Admin') {
-            $stats = [
-                'total_users' => User::count(),
-                'total_journals' => GeneralJournal::count(),
-                'draft' => GeneralJournal::where('status', 'Draft')->count(),
-                'waiting' => GeneralJournal::where('status', 'Waiting Approval')->count(),
-                'revised' => GeneralJournal::where('status', 'Revised')->count(),
-                'approved' => GeneralJournal::where('status', 'Approved')->count(),
-                'rejected' => GeneralJournal::where('status', 'Rejected')->count(),
+                'total_users'     => User::count(),
+                'total_journals'  => GeneralJournal::count(),
+                'draft'           => GeneralJournal::where('status', 'Draft')->count(),
+                'waiting'         => GeneralJournal::where('status', 'Waiting Approval')->count(),
+                'revised'         => GeneralJournal::where('status', 'Revised')->count(),
+                'approved'        => GeneralJournal::where('status', 'Approved')->count(),
+                'rejected'        => GeneralJournal::where('status', 'Rejected')->count(),
             ];
 
             $recentData = GeneralJournal::with(['requester', 'assignee'])
@@ -79,9 +48,43 @@ class DashboardController extends Controller
 
             $actionQuery = GeneralJournal::with(['requester', 'assignee'])
                 ->where('status', 'Waiting Approval');
+        } else {
+            // Non-admin: ringkasan berbasis RBAC visibility
+            $visible = GeneralJournal::visibleTo($user);
+
+            $stats = [
+                'total'    => (clone $visible)->count(),
+                'draft'    => (clone $visible)->where('status', 'Draft')->count(),
+                'waiting'  => (clone $visible)->where('status', 'Waiting Approval')->count(),
+                'revised'  => (clone $visible)->where('status', 'Revised')->count(),
+                'approved' => (clone $visible)->where('status', 'Approved')->count(),
+                'rejected' => (clone $visible)->where('status', 'Rejected')->count(),
+            ];
+
+            // Info personal untuk Approver (Section Head, Dept/Div Head)
+            if ($user->isApprover()) {
+                $stats['pending_approval']       = GeneralJournal::where('current_assign_to', $user->id)
+                    ->where('status', 'Waiting Approval')->count();
+                $stats['total_approved']         = ApprovalHistory::where('actor_user_id', $user->id)
+                    ->where('action', 'approve')->count();
+                $stats['total_revised']          = ApprovalHistory::where('actor_user_id', $user->id)
+                    ->where('action', 'revise')->count();
+                $stats['total_submitted_by_me']  = GeneralJournal::where('requested_by', $user->id)->count();
+            }
+
+            $recentData = (clone $visible)->with(['requester', 'assignee'])
+                ->orderBy('last_updated_at', 'desc')
+                ->limit(5)
+                ->get();
+
+            if ($user->isApprover()) {
+                $actionQuery = GeneralJournal::with(['requester', 'assignee'])
+                    ->where('current_assign_to', $user->id)
+                    ->where('status', 'Waiting Approval');
+            }
         }
 
-        // Calculate Action Required Documents (Waiting >= thresholdDays)
+        // Documents Requiring Action: dokumen yang menanti user tersebut lebih dari thresholdDays
         $actionRequiredDocs = [];
         if ($actionQuery) {
             $thresholdDate = now()->subDays($thresholdDays);
@@ -102,27 +105,32 @@ class DashboardController extends Controller
                     $daysWaiting = $submittedDate ? (int) floor($submittedDate->floatDiffInDays(now())) : 0;
 
                     return [
-                        'id' => $journal->id,
+                        'id'              => $journal->id,
                         'document_number' => $journal->document_number,
-                        'journal_date' => $journal->journal_date ? $journal->journal_date->format('Y-m-d') : null,
-                        'submitted_at' => $journal->submitted_at ? $journal->submitted_at->format('Y-m-d H:i') : ($journal->created_at ? $journal->created_at->format('Y-m-d H:i') : null),
-                        'reference' => $journal->reference,
-                        'status' => $journal->status,
-                        'requester' => $journal->requester ? ['id' => $journal->requester->id, 'name' => $journal->requester->name] : null,
-                        'assignee' => $journal->assignee ? ['id' => $journal->assignee->id, 'name' => $journal->assignee->name] : null,
-                        'days_waiting' => $daysWaiting,
-                        'is_overdue' => true,
+                        'journal_date'    => $journal->journal_date?->format('Y-m-d'),
+                        'submitted_at'    => $journal->submitted_at?->format('Y-m-d H:i')
+                                             ?? $journal->created_at?->format('Y-m-d H:i'),
+                        'reference'       => $journal->reference,
+                        'status'          => $journal->status,
+                        'requester'       => $journal->requester
+                                             ? ['id' => $journal->requester->id, 'name' => $journal->requester->name]
+                                             : null,
+                        'assignee'        => $journal->assignee
+                                             ? ['id' => $journal->assignee->id, 'name' => $journal->assignee->name]
+                                             : null,
+                        'days_waiting'    => $daysWaiting,
+                        'is_overdue'      => true,
                     ];
                 })
                 ->all();
         }
 
         return Inertia::render('Dashboard/Index', [
-            'role' => $role,
-            'stats' => $stats,
-            'recentData' => $recentData,
+            'role'               => $role,
+            'stats'              => $stats,
+            'recentData'         => $recentData,
             'actionRequiredDocs' => $actionRequiredDocs,
-            'thresholdDays' => $thresholdDays,
+            'thresholdDays'      => $thresholdDays,
         ]);
     }
 }

@@ -157,23 +157,36 @@ class GeneralJournalTest extends TestCase
 
     // ---------- Drafts ----------
 
-    public function test_drafts_page_lists_only_own_drafts(): void
+    public function test_drafts_page_follows_rbac_visibility(): void
     {
-        $mine = $this->createJournal($this->staff, 'draft');
+        $myDraft = $this->createJournal($this->staff, 'draft');
         $otherStaff = \App\Models\User::factory()->staff()->create();
-        $this->createJournal($otherStaff, 'draft');
-        $this->createJournal($this->staff, 'submit');
+        $otherStaffDraft = $this->createJournal($otherStaff, 'draft');
+        $this->createJournal($this->staff, 'submit'); // not a draft
 
+        // Staff: hanya draftnya sendiri
         $this->actingAs($this->staff)->get('/drafts')
             ->assertInertia(fn (Assert $p) => $p->component('GeneralJournal/Drafts')
                 ->has('drafts.data', 1)
-                ->where('drafts.data.0.id', $mine->id)
+                ->where('drafts.data.0.id', $myDraft->id)
                 ->where('stats.total_drafts', 1));
 
-        $this->actingAs($this->admin)->get('/drafts')
-            ->assertInertia(fn (Assert $p) => $p->has('drafts.data', 2));
+        // Section Head: draftnya sendiri + semua Staff
+        $sectionHeadOwnDraft = $this->createJournal($this->sectionHead, 'draft');
+        $this->actingAs($this->sectionHead)->get('/drafts')
+            ->assertInertia(fn (Assert $p) => $p->has('drafts.data', 3)
+                ->where('stats.total_drafts', 3));
 
+        // Admin tetap lihat semua
+        $this->actingAs($this->admin)->get('/drafts')
+            ->assertInertia(fn (Assert $p) => $p->has('drafts.data', 3));
+
+        // Dept Head tidak punya menu Create Journal — route tetap 403
         $this->actingAs($this->deptHead)->get('/drafts')->assertForbidden();
+
+        // Section Head tetap tidak bisa submit draft Staff (write ownership separate dari visibility)
+        $this->actingAs($this->sectionHead)->post("/general-journals/{$otherStaffDraft->id}/submit")
+            ->assertForbidden();
     }
 
     public function test_drafts_filters_work(): void

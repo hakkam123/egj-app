@@ -17,8 +17,8 @@ function respond(routes) {
 
 describe('MainLayout navigation', () => {
     it.each([
-        ['Staff', ['Dashboard', 'Monitoring', 'Draft Documents']],
-        ['Section Head', ['Dashboard', 'Monitoring', 'Approval', 'Draft Documents']],
+        ['Staff', ['Dashboard', 'Monitoring', 'Create Journal']],
+        ['Section Head', ['Dashboard', 'Monitoring', 'Approval', 'Create Journal']],
         ['Dept/Div Head', ['Dashboard', 'Monitoring', 'Approval']],
         ['Admin', ['Dashboard', 'Monitoring', 'Error Monitoring', 'User Management']],
     ])('%s sees only their menu items', (role, expected) => {

@@ -66,6 +66,7 @@ class AuthAndDashboardTest extends TestCase
         $this->createJournal($this->staff, 'draft');
         $old->update(['submitted_at' => now()->subDays(4)]);
 
+        // Staff: hanya journal miliknya (RBAC)
         $this->actingAs($this->staff)->get('/dashboard')
             ->assertInertia(fn (Assert $p) => $p->component('Dashboard/Index')
                 ->where('role', 'Staff')
@@ -74,14 +75,20 @@ class AuthAndDashboardTest extends TestCase
                 ->where('stats.waiting', 1)
                 ->has('recentData', 2));
 
+        // Section Head: RBAC = journal miliknya + Staff. 2 dokumen Staff → stats.total = 2
         $this->actingAs($this->sectionHead)->get('/dashboard')
             ->assertInertia(fn (Assert $p) => $p->where('role', 'Section Head')
+                ->where('stats.total', 2)
+                ->where('stats.draft', 1)
+                ->where('stats.waiting', 1)
                 ->where('stats.pending_approval', 1)
                 ->has('actionRequiredDocs', 1)
                 ->where('actionRequiredDocs.0.days_waiting', 4));
 
+        // Dept/Div Head: RBAC = semua. Juga 2 total
         $this->actingAs($this->deptHead)->get('/dashboard')
-            ->assertInertia(fn (Assert $p) => $p->where('stats.pending_approval', 0));
+            ->assertInertia(fn (Assert $p) => $p->where('stats.total', 2)
+                ->where('stats.pending_approval', 0));
 
         $this->actingAs($this->admin)->get('/')
             ->assertInertia(fn (Assert $p) => $p->where('role', 'Admin')

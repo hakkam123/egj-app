@@ -18,5 +18,8 @@ export default defineConfig({
         restoreMocks: true,
         // The default "forks" pool fails to start workers on this Windows setup
         pool: 'threads',
+        // jsdom + userEvent kadang lambat saat worker paralel, naikkan ke 15s
+        // supaya test tidak flaky karena dropdown/modal belum ter-render pas assert
+        testTimeout: 15000,
     },
 });

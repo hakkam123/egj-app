@@ -153,6 +153,32 @@ class GeneralJournal extends Model
     }
 
     /**
+     * RBAC visibility untuk Monitoring, Dashboard, dan halaman Create Journal (ex-Drafts).
+     * Aturan:
+     *   - Staff: hanya journal yang dia buat sendiri.
+     *   - Section Head: journal buatan dirinya + journal buatan semua Staff.
+     *   - Dept/Div Head: semua journal (lintas role).
+     *   - Admin: semua journal (unchanged dari sebelumnya).
+     */
+    public function scopeVisibleTo($query, User $user)
+    {
+        // Dept/Div Head & Admin tidak difilter — mereka memonitor semua
+        if ($user->hasAnyRole(['Admin', 'Dept/Div Head'])) {
+            return $query;
+        }
+
+        $visibleUserIds = collect([$user->id]);
+        if ($user->hasRole('Section Head')) {
+            // Tambahkan semua Staff aktif (dan juga Staff tidak aktif supaya histori tetap kelihatan)
+            $visibleUserIds = $visibleUserIds->merge(
+                User::where('role', 'Staff')->pluck('id')
+            )->unique();
+        }
+
+        return $query->whereIn('requested_by', $visibleUserIds);
+    }
+
+    /**
      * Check if the journal is in draft status.
      */
     public function isDraft(): bool

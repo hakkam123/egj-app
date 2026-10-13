@@ -36,13 +36,14 @@ class GeneralJournalController extends Controller
             abort(403, 'Access denied.');
         }
 
+        // RBAC visibility:
+        //   Staff        -> drafts milik sendiri
+        //   Section Head -> drafts milik sendiri + semua Staff
+        //   Dept Head    -> semua drafts (walau menu ini tidak biasanya diakses)
+        //   Admin        -> semua drafts
         $query = GeneralJournal::with(['requester', 'activeFiles'])
-            ->where('status', 'Draft');
-
-        // Non-admin users only see their own drafts
-        if (!$user->hasRole('Admin')) {
-            $query->where('requested_by', $user->id);
-        }
+            ->where('status', 'Draft')
+            ->visibleTo($user);
 
         if ($request->filled('search')) {
             $search = trim($request->search);
@@ -90,9 +91,10 @@ class GeneralJournalController extends Controller
             : 10;
         $drafts = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
 
+        // Count mengikuti RBAC visibleTo supaya cocok dengan isi daftar yang di-render
         $stats = [
             'total_drafts' => GeneralJournal::where('status', 'Draft')
-                ->when(!$user->hasRole('Admin'), fn($q) => $q->where('requested_by', $user->id))
+                ->visibleTo($user)
                 ->count(),
         ];
 

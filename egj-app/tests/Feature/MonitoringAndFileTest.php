@@ -19,6 +19,7 @@ class MonitoringAndFileTest extends TestCase
         $this->createJournal($this->staff, 'submit', ['document_number' => '1002', 'reference' => 'Rent']);
         $this->createJournal($this->sectionHead, 'submit', ['document_number' => '1003', 'reference' => 'Tax']);
 
+        // Dept/Div Head: RBAC "lihat semua" → 3 dokumen
         $this->actingAs($this->deptHead)->get('/monitoring')
             ->assertInertia(fn (Assert $p) => $p->component('Monitoring/Index')
                 ->has('journals.data', 3)
@@ -27,8 +28,46 @@ class MonitoringAndFileTest extends TestCase
                 ->where('stats.waiting', 2)
                 ->where('stats.approved', 0));
 
+        // Staff: RBAC "hanya miliknya" → 2 dokumen (2001, 1002), bukan 1003 milik Section Head
+        $this->actingAs($this->staff)->get('/monitoring')
+            ->assertInertia(fn (Assert $p) => $p->has('journals.data', 2)
+                ->where('stats.total', 2));
         $this->actingAs($this->staff)->get('/monitoring?status=Draft')
-            ->assertInertia(fn (Assert $p) => $p->has('journals.data', 1)->where('stats.total', 3));
+            ->assertInertia(fn (Assert $p) => $p->has('journals.data', 1)->where('stats.total', 2));
+
+        // Section Head: RBAC "miliknya + Staff" → semua 3 (karena 2 milik Staff + 1 miliknya)
+        $this->actingAs($this->sectionHead)->get('/monitoring')
+            ->assertInertia(fn (Assert $p) => $p->has('journals.data', 3)
+                ->where('stats.total', 3));
+    }
+
+    public function test_monitoring_rbac_section_head_cannot_see_journals_requested_by_dept_head(): void
+    {
+        // Dept Head biasanya tidak membuat journal (controller create() memblokir).
+        // Tapi secara data, kalau ada journal dengan requested_by = Dept Head id,
+        // Section Head seharusnya tidak melihatnya. Kita bypass controller supaya
+        // tes ini fokus pada aturan scopeVisibleTo.
+        $this->createJournal($this->staff, 'submit', ['document_number' => '7001']);
+        \App\Models\GeneralJournal::create([
+            'document_number'   => 'JOT 7002',
+            'journal_date'      => '2026-10-01',
+            'reference'         => 'Simulated Dept Head journal',
+            'status'            => 'Approved',
+            'requested_by'      => $this->deptHead->id,
+            'current_assign_to' => null,
+            'resubmit_count'    => 0,
+            'submitted_at'      => now(),
+            'last_updated_at'   => now(),
+        ]);
+
+        $this->actingAs($this->sectionHead)->get('/monitoring')
+            ->assertInertia(fn (Assert $p) => $p->has('journals.data', 1)
+                ->where('journals.data.0.document_number', 'JOT 7001')
+                ->where('stats.total', 1));
+
+        // Dept Head memang lihat semuanya
+        $this->actingAs($this->deptHead)->get('/monitoring')
+            ->assertInertia(fn (Assert $p) => $p->has('journals.data', 2));
     }
 
     public function test_monitoring_in_column_filters(): void
@@ -49,12 +88,13 @@ class MonitoringAndFileTest extends TestCase
             [['search' => 'nothing-matches'], 0],
         ];
 
+        // Dijalankan sebagai Dept Head supaya RBAC tidak membatasi filter test
         foreach ($cases as [$filter, $count]) {
-            $this->actingAs($this->staff)->get('/monitoring?' . http_build_query($filter))
+            $this->actingAs($this->deptHead)->get('/monitoring?' . http_build_query($filter))
                 ->assertInertia(fn (Assert $p) => $p->has('journals.data', $count));
         }
 
-        $this->actingAs($this->staff)->get('/monitoring?per_page=5000')
+        $this->actingAs($this->deptHead)->get('/monitoring?per_page=5000')
             ->assertInertia(fn (Assert $p) => $p->where('journals.per_page', 10));
     }
 

@@ -191,7 +191,7 @@ export default function MainLayout({ children, title }) {
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['Admin', 'Staff', 'Section Head', 'Dept/Div Head'] },
         { name: 'Monitoring', href: '/monitoring', icon: Monitor, roles: ['Admin', 'Staff', 'Section Head', 'Dept/Div Head'] },
         { name: 'Approval', href: '/approval', icon: CheckCircle, roles: ['Section Head', 'Dept/Div Head'] },
-        { name: 'Draft Documents', href: '/drafts', icon: FileEdit, roles: ['Staff', 'Section Head'] },
+        { name: 'Create Journal', href: '/drafts', icon: FileEdit, roles: ['Staff', 'Section Head'] },
         { name: 'Error Monitoring', href: '/error-monitoring', icon: AlertTriangle, roles: ['Admin'] },
         { name: 'User Management', href: '/users', icon: Users, roles: ['Admin'] },
     ];

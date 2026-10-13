@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Konfigurasi IIS Salah</title>
+    <style>
+        body { font-family: -apple-system, Segoe UI, sans-serif; max-width: 640px; margin: 80px auto; padding: 32px; color: #1a2540; }
+        h1 { font-size: 20px; color: #b8433c; }
+        code { background: #f1f5f9; padding: 2px 6px; border-radius: 3px; }
+        .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; background: #f8fafc; margin: 16px 0; }
+    </style>
+</head>
+<body>
+    <h1>⚠️ Konfigurasi IIS Salah</h1>
+    <p>IIS site menunjuk ke folder <strong>root project</strong>, bukan ke folder <strong><code>public/</code></strong>.</p>
+    <p>Ini masalah keamanan — file <code>.env</code> dan source code bisa terbaca user kalau tidak diperbaiki.</p>
+
+    <div class="box">
+        <strong>Perbaikan:</strong>
+        <ol>
+            <li>Buka IIS Manager</li>
+            <li>Pilih site JAGO</li>
+            <li>Klik <em>Basic Settings</em> → ubah <em>Physical Path</em> dari:<br>
+                <code>C:\...\jago\egj-app</code><br>
+                menjadi:<br>
+                <code>C:\...\jago\egj-app\public</code></li>
+            <li>Klik OK, lalu jalankan <code>iisreset</code> di PowerShell admin</li>
+        </ol>
+    </div>
+
+    <p style="color: #64748b; font-size: 13px;">
+        Kalau Anda user biasa yang melihat halaman ini, hubungi tim IT dan tunjukkan pesan ini.
+    </p>
+</body>
+</html>

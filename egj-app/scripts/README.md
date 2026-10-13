@@ -113,7 +113,11 @@ JAGO berjalan di IIS dengan setup standar Laravel on Windows:
    - **Physical Path:** `C:\path\to\jago\egj-app\public`
    - **Binding:** HTTP port 80 atau HTTPS 443
 
-3. **web.config** di dalam `public/` untuk URL rewrite (Laravel default sudah ada).
+3. **web.config** sudah disiapkan di dua tempat:
+   - [`public/web.config`](../public/web.config) → URL rewrite + security headers + MIME types (dibaca IIS saat site di-point ke `public/`)
+   - [`web.config`](../web.config) di root → fail-safe kalau admin IT salah point ke root project; blokir semua akses dengan pesan jelas supaya bisa diperbaiki
+
+   **TIDAK perlu diedit** — tinggal dicopy saat deploy.
 
 4. **Permission folder:**
    - Beri IIS user (`IIS_IUSRS`) **Modify** access ke:

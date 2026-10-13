@@ -16,7 +16,10 @@ class MonitoringController extends Controller
      */
     public function index(Request $request)
     {
-        $query = GeneralJournal::with(['requester', 'assignee']);
+        // RBAC: Staff lihat miliknya saja, Section Head lihat miliknya + Staff,
+        // Dept/Div Head & Admin lihat semua.
+        $query = GeneralJournal::with(['requester', 'assignee'])
+            ->visibleTo($request->user());
 
         // In-column filter: Document Number
         if ($request->filled('doc_number')) {
@@ -138,7 +141,10 @@ class MonitoringController extends Controller
      */
     public function export(Request $request)
     {
-        $query = GeneralJournal::with(['requester', 'assignee']);
+        // RBAC yang sama dengan index — supaya export tidak bisa dipakai untuk
+        // mem-bypass filter visibility.
+        $query = GeneralJournal::with(['requester', 'assignee'])
+            ->visibleTo($request->user());
 
         if ($request->filled('doc_number')) {
             $query->where('document_number', 'like', "%{$request->doc_number}%");

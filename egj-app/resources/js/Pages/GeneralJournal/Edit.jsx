@@ -231,7 +231,7 @@ export default function Edit({ journal }) {
                             href={isDraft ? "/drafts" : "/monitoring"}
                             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors mb-2"
                         >
-                            <ArrowLeft size={14} /> Back to {isDraft ? "Drafts" : "Monitoring"}
+                            <ArrowLeft size={14} /> Back to {isDraft ? "Create Journal" : "Monitoring"}
                         </Link>
                         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
                             {isRevised ? `Revise Document: ${journal.document_number}` : `Edit Draft: ${journal.document_number}`}

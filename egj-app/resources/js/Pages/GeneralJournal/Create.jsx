@@ -159,7 +159,7 @@ export default function Create() {
                             href="/drafts"
                             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors mb-2"
                         >
-                            <ArrowLeft size={14} /> Back to Drafts
+                            <ArrowLeft size={14} /> Back to Create Journal
                         </Link>
                         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
                             Create General Journal
