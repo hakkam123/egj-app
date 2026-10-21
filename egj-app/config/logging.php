@@ -78,18 +78,12 @@ return [
         // Berguna agar outage Redis / SMTP tidak membanjiri log dengan stack trace yang sama persis.
         // Aktifkan dengan LOG_CHANNEL=dedup atau LOG_STACK=dedup.
         'dedup' => [
-            'driver' => 'monolog',
+            'driver' => 'custom',
+            'via' => \App\Logging\DedupLoggerFactory::class,
             'level' => env('LOG_LEVEL', 'warning'),
-            'handler' => DeduplicationHandler::class,
-            'handler_with' => [
-                'handler' => new Monolog\Handler\RotatingFileHandler(
-                    storage_path('logs/laravel.log'),
-                    (int) env('LOG_DAILY_DAYS', 14)
-                ),
-                'deduplicationStore' => storage_path('logs/dedup.log'),
-                'deduplicationLevel' => \Monolog\Level::Error,
-                'time' => 60,
-            ],
+            'days' => (int) env('LOG_DAILY_DAYS', 14),
+            'path' => storage_path('logs/laravel.log'),
+            'dedup_store' => storage_path('logs/dedup.log'),
         ],
 
         'monthly' => [
