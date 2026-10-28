@@ -41,8 +41,8 @@ return [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),
             'url' => env('MAIL_URL'),
-            'host' => env('MAIL_HOST', '127.0.0.1'),
-            'port' => env('MAIL_PORT', 2525),
+            'host' => env('MAIL_HOST', 'astra-visteon.net'),
+            'port' => env('MAIL_PORT', 25),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
             'timeout' => 15,
@@ -50,11 +50,12 @@ return [
             // Internal mail server (astra-visteon.net) pakai self-signed/internal CA cert.
             // verify_peer=false hanya saat MAIL_VERIFY_PEER=false di .env — jangan false-kan untuk SMTP publik.
             'stream' => [
-                'ssl' => [
+                'ssl' => array_filter([
                     'verify_peer' => env('MAIL_VERIFY_PEER', true),
                     'verify_peer_name' => env('MAIL_VERIFY_PEER', true),
                     'allow_self_signed' => (bool) env('MAIL_ALLOW_SELF_SIGNED', false),
-                ],
+                    'cafile' => env('MAIL_CAFILE'),
+                ], fn ($value) => $value !== null),
             ],
         ],
 
@@ -64,10 +65,6 @@ return [
 
         'postmark' => [
             'transport' => 'postmark',
-            // 'message_stream_id' => env('POSTMARK_MESSAGE_STREAM_ID'),
-            // 'client' => [
-            //     'timeout' => 5,
-            // ],
         ],
 
         'resend' => [
