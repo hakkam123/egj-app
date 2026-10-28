@@ -47,8 +47,6 @@ return [
             'password' => env('MAIL_PASSWORD'),
             'timeout' => 15,
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
-            // Internal mail server (astra-visteon.net) pakai self-signed/internal CA cert.
-            // verify_peer=false hanya saat MAIL_VERIFY_PEER=false di .env — jangan false-kan untuk SMTP publik.
             'stream' => [
                 'ssl' => array_filter([
                     'verify_peer' => env('MAIL_VERIFY_PEER', true),

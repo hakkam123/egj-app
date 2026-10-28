@@ -4,8 +4,11 @@ namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Mail\MailManager;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Symfony\Component\Mailer\Transport\Smtp\Stream\SocketStream;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,6 +25,27 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Laravel tidak meneruskan config mail.mailers.smtp.stream ke koneksi SMTP.
+        // Padahal opsi SSL (verify_peer, cafile) harus sampai ke koneksi STARTTLS.
+        // Jadi transport SMTP dibuat seperti biasa, lalu opsi stream dipasang di sini.
+        Mail::extend('smtp', function (array $config) {
+            $manager = $this->app['mail.manager'];
+
+            $transport = \Closure::bind(
+                fn () => $manager->createSmtpTransport($config),
+                $manager,
+                MailManager::class
+            )();
+
+            $stream = $transport->getStream();
+
+            if ($stream instanceof SocketStream && ! empty($config['stream'])) {
+                $stream->setStreamOptions($config['stream']);
+            }
+
+            return $transport;
+        });
+
         // Brute-force protection: 5 login attempts per minute per NPK + IP
         RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(5)
