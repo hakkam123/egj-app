@@ -8,6 +8,7 @@ use Illuminate\Mail\MailManager;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 use Symfony\Component\Mailer\Transport\Smtp\Stream\SocketStream;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,9 +26,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Laravel tidak meneruskan config mail.mailers.smtp.stream ke koneksi SMTP.
-        // Padahal opsi SSL (verify_peer, cafile) harus sampai ke koneksi STARTTLS.
-        // Jadi transport SMTP dibuat seperti biasa, lalu opsi stream dipasang di sini.
         Mail::extend('smtp', function (array $config) {
             $manager = $this->app['mail.manager'];
 
@@ -41,6 +39,14 @@ class AppServiceProvider extends ServiceProvider
 
             if ($stream instanceof SocketStream && ! empty($config['stream'])) {
                 $stream->setStreamOptions($config['stream']);
+            }
+
+            // Mail server internal bisa minta kirim TANPA STARTTLS (MAIL_AUTO_TLS=false).
+            // Default true = perilaku normal (naik ke TLS kalau server menawarkan).
+            if ($transport instanceof EsmtpTransport
+                && array_key_exists('auto_tls', $config)
+                && $config['auto_tls'] === false) {
+                $transport->setAutoTls(false);
             }
 
             return $transport;
