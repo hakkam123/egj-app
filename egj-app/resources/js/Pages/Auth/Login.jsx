@@ -44,9 +44,6 @@ export default function Login() {
                             <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
                                 Sign In
                             </h1>
-                            <p className="mt-1 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-                                Please sign in with your corporate account
-                            </p>
                         </div>
 
                         {/* Form */}
@@ -54,7 +51,7 @@ export default function Login() {
                             {/* NPK */}
                             <div>
                                 <label htmlFor="npk" className={labelClass} style={labelStyle}>
-                                    Employee ID (NPK) <span style={{ color: '#e05c5c' }}>*</span>
+                                    NPK(Nomor Pokok Karyawan) <span style={{ color: '#e05c5c' }}>*</span>
                                 </label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">

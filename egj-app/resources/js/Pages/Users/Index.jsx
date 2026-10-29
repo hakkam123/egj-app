@@ -503,7 +503,7 @@ export default function UsersIndex({ users, filters }) {
 
                                 {/* NPK */}
                                 <div>
-                                    <label className={labelClass}>Employee ID (NPK)</label>
+                                    <label className={labelClass}>NPK(Nomor Pokok Karyawan)</label>
                                     <input
                                         type="text"
                                         value={userForm.data.npk}
