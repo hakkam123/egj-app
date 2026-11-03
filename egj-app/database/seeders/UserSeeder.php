@@ -8,7 +8,7 @@ use Illuminate\Database\Seeder;
 class UserSeeder extends Seeder
 {
     /**
-     * Seed sample users for all roles.
+     * Seed akun Admin JAGO.
      */
     public function run(): void
     {
@@ -21,42 +21,6 @@ class UserSeeder extends Seeder
                 'role' => 'Admin',
                 'is_active' => true,
                 'is_default_approver' => false,
-            ],
-            [
-                'name' => 'Budi Santoso',
-                'email' => 'budi.santoso@astra-visteon.com',
-                'npk' => '1002',
-                'password' => 'password123',
-                'role' => 'Staff',
-                'is_active' => true,
-                'is_default_approver' => false,
-            ],
-            [
-                'name' => 'Siti Rahayu',
-                'email' => 'siti.rahayu@astra-visteon.com',
-                'npk' => '1003',
-                'password' => 'password123',
-                'role' => 'Staff',
-                'is_active' => true,
-                'is_default_approver' => false,
-            ],
-            [
-                'name' => 'Ahmad Hidayat',
-                'email' => 'devhiraethtys@gmail.com',
-                'npk' => '1004',
-                'password' => 'password123',
-                'role' => 'Section Head',
-                'is_active' => true,
-                'is_default_approver' => true,
-            ],
-            [
-                'name' => 'Alisa Wijaya',
-                'email' => 'cokotbara@gmail.com',
-                'npk' => '1005',
-                'password' => 'password123',
-                'role' => 'Dept/Div Head',
-                'is_active' => true,
-                'is_default_approver' => true,
             ],
         ];
 

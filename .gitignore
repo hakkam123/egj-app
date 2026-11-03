@@ -1,3 +1,11 @@
-# Dokumen rancangan alpha testing (tidak dibagikan lewat repo)
+# Dokumen internal (tidak dibagikan lewat repo / tidak perlu masuk server)
 RANCANGAN_ALPHA_TESTING.md
 RANCANGAN_ALPHA_TESTING.pdf
+DATABASE.md
+DEPLOYMENT.md
+DO_AND_DONTS.md
+FUNCTIONAL_FEATURE.md
+PANDUAN_PENGGUNA.md
+PRD.md
+ROUTE_CONTROLLER.md
+UI_MOCKUP.md
