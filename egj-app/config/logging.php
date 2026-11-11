@@ -66,11 +66,13 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Rotasi PER BULAN (laravel-2026-11.log), bukan per hari. Simpan 2 file (bulan ini + bulan lalu).
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
-            'level' => env('LOG_LEVEL', 'debug'),
-            'max_files' => env('LOG_DAILY_DAYS', 14),
+            'level' => env('LOG_LEVEL', 'warning'),
+            'max_files' => env('LOG_MAX_MONTHS', 2),
+            'tap' => [App\Logging\MonthlyFileName::class],
             'replace_placeholders' => true,
         ],
 
@@ -84,14 +86,6 @@ return [
             'days' => (int) env('LOG_DAILY_DAYS', 14),
             'path' => storage_path('logs/laravel.log'),
             'dedup_store' => storage_path('logs/dedup.log'),
-        ],
-
-        'monthly' => [
-            'driver' => 'monthly',
-            'path' => storage_path('logs/laravel.log'),
-            'level' => env('LOG_LEVEL', 'debug'),
-            'max_files' => 3,
-            'replace_placeholders' => true,
         ],
 
         'slack' => [

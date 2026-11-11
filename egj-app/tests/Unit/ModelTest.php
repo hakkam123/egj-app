@@ -126,14 +126,17 @@ class ModelTest extends TestCase
 
         $resolved = ErrorLog::create(['message' => 'x', 'exception_class' => 'E', 'status' => 'Resolved']);
         $resolved->forceFill(['created_at' => now()->subDays(31)])->save();
-        $new = ErrorLog::create(['message' => 'y', 'exception_class' => 'E', 'status' => 'New']);
-        $new->forceFill(['created_at' => now()->subDays(31)])->save();
+        $oldNew = ErrorLog::create(['message' => 'y', 'exception_class' => 'E', 'status' => 'New']);
+        $oldNew->forceFill(['created_at' => now()->subDays(31)])->save();
+        $recentNew = ErrorLog::create(['message' => 'z', 'exception_class' => 'E', 'status' => 'New']);
+        $recentNew->forceFill(['created_at' => now()->subDays(10)])->save();
 
         $this->artisan('model:prune', ['--model' => [Notification::class, ErrorLog::class]]);
 
         $this->assertModelMissing($oldRead);
         $this->assertModelExists($oldUnread);
         $this->assertModelMissing($resolved);
-        $this->assertModelExists($new);
+        $this->assertModelMissing($oldNew);
+        $this->assertModelExists($recentNew);
     }
 }

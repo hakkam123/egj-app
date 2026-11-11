@@ -26,12 +26,14 @@ class ErrorLog extends Model
 
     /**
      * Get the prunable model query.
-     * Prune resolved or ignored error logs older than 30 days.
+     * Resolved/Ignored > 7 hari, atau semua error > 30 hari.
      */
     public function prunable()
     {
-        return static::whereIn('status', ['Resolved', 'Ignored'])
-            ->where('created_at', '<', now()->subDays(30));
+        return static::where(function ($q) {
+            $q->whereIn('status', ['Resolved', 'Ignored'])
+              ->where('updated_at', '<', now()->subDays(7));
+        })->orWhere('created_at', '<', now()->subDays(30));
     }
 
     public function user()
