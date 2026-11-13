@@ -7,6 +7,7 @@ use App\Models\GeneralJournalFile;
 use App\Models\User;
 use App\Services\PdfStampRenderService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
@@ -14,9 +15,13 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
 
-class DeptHeadApprovalMail extends Mailable
+// Queued: rendering the stamped PDF + SMTP upload is the slowest part of submit/approve
+class DeptHeadApprovalMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
+
+    public int $tries = 3;
+    public int $backoff = 60;
 
     /**
      * Total size of attachments allowed in one email (bytes).
@@ -37,7 +42,10 @@ class DeptHeadApprovalMail extends Mailable
         public string $rejectUrl,
         public int $reminderNumber = 0, // 0 = first email, 1..n = reminder number
         public int $daysPending = 0,
-    ) {}
+    ) {
+        // Callers queue this inside DB::transaction; wait for the commit so the worker sees the rows
+        $this->afterCommit();
+    }
 
     public function envelope(): Envelope
     {

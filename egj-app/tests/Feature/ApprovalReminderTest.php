@@ -19,7 +19,7 @@ class ApprovalReminderTest extends TestCase
 
     private function reminderMails(): int
     {
-        return Mail::sent(DeptHeadApprovalMail::class, fn ($m) => $m->reminderNumber > 0)->count();
+        return Mail::queued(DeptHeadApprovalMail::class, fn ($m) => $m->reminderNumber > 0)->count();
     }
 
     public function test_no_reminder_before_three_days(): void
@@ -40,7 +40,7 @@ class ApprovalReminderTest extends TestCase
         $this->travel(3)->days();
         $this->runReminders();
 
-        Mail::assertSent(DeptHeadApprovalMail::class, fn ($m) => $m->reminderNumber === 1
+        Mail::assertQueued(DeptHeadApprovalMail::class, fn ($m) => $m->reminderNumber === 1
             && $m->daysPending === 3
             && $m->hasTo($this->deptHead->email)
             && str_starts_with($m->envelope()->subject, '[Reminder #1]'));
@@ -73,7 +73,7 @@ class ApprovalReminderTest extends TestCase
         $this->travel(1)->days();
         $this->runReminders();
         $this->assertSame(2, $this->reminderMails());
-        Mail::assertSent(DeptHeadApprovalMail::class, fn ($m) => $m->reminderNumber === 2 && $m->daysPending === 6);
+        Mail::assertQueued(DeptHeadApprovalMail::class, fn ($m) => $m->reminderNumber === 2 && $m->daysPending === 6);
 
         $this->travel(10)->days();
         $this->runReminders();
@@ -141,7 +141,8 @@ class ApprovalReminderTest extends TestCase
         $events = collect(app(\Illuminate\Console\Scheduling\Schedule::class)->events())
             ->map(fn ($e) => [$e->command, $e->expression]);
 
-        $this->assertTrue($events->contains(fn ($e) => str_contains($e[0], 'jago:dispatch-reminders') && $e[1] === '0 8 * * *'));
+        $this->assertTrue($events->contains(fn ($e) => str_contains($e[0], 'jago:dispatch-reminders') && $e[1] === '30 7 * * *'));
+        $this->assertTrue($events->contains(fn ($e) => str_contains($e[0], 'queue:work') && $e[1] === '30 7 * * *'));
         $this->assertTrue($events->contains(fn ($e) => str_contains($e[0], 'model:prune')));
     }
 }

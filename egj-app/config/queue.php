@@ -15,6 +15,10 @@ return [
 
     'default' => env('QUEUE_CONNECTION', 'database'),
 
+    // PHP CLI used by App\Support\QueueKicker to start the on-demand worker.
+    // Leave empty to auto-detect; set it if the web server runs php-cgi / mod_php.
+    'php_binary' => env('PHP_CLI_BINARY'),
+
     /*
     |--------------------------------------------------------------------------
     | Queue Connections

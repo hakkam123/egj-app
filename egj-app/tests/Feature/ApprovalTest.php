@@ -88,7 +88,7 @@ class ApprovalTest extends TestCase
         $this->assertSame('Approved', $superior->status);
         $this->assertSame($this->sectionHead->id, $superior->approved_by_user_id);
 
-        Mail::assertSent(DeptHeadApprovalMail::class, fn ($m) => $m->hasTo($this->deptHead->email) && $m->reminderNumber === 0);
+        Mail::assertQueued(DeptHeadApprovalMail::class, fn ($m) => $m->hasTo($this->deptHead->email) && $m->reminderNumber === 0);
         $this->assertTrue(EmailToken::where('purpose', 'approval')->firstOrFail()->isValid());
         $this->assertTrue($previewToken->fresh()->isExpired(), 'old links revoked');
         $this->assertDatabaseHas('notifications', ['user_id' => $this->deptHead->id, 'type' => 'approval_request']);
@@ -118,7 +118,7 @@ class ApprovalTest extends TestCase
         $this->assertTrue($journal->approvals->every(fn ($a) => $a->status === 'Approved'));
         $this->assertTrue($token->fresh()->isExpired(), 'emailed link no longer usable after portal approval');
 
-        Mail::assertSent(ApprovalResultMail::class, fn ($m) => $m->hasTo($this->staff->email) && $m->result === 'approved');
+        Mail::assertQueued(ApprovalResultMail::class, fn ($m) => $m->hasTo($this->staff->email) && $m->result === 'approved');
         $this->assertDatabaseHas('notifications', ['user_id' => $this->staff->id, 'type' => 'approved']);
 
         // Cannot approve twice
@@ -151,7 +151,7 @@ class ApprovalTest extends TestCase
         $this->assertSame('Revised', $journal->status);
         $this->assertSame($this->staff->id, $journal->current_assign_to);
         $this->assertSame('Revised', $journal->approvals->firstWhere('approval_level', 'superior')->status);
-        Mail::assertSent(ApprovalResultMail::class, fn ($m) => $m->result === 'revised' && $m->notes === 'Amount does not match');
+        Mail::assertQueued(ApprovalResultMail::class, fn ($m) => $m->result === 'revised' && $m->notes === 'Amount does not match');
         $this->assertDatabaseHas('approval_histories', ['general_journal_id' => $journal->id, 'action' => 'revise', 'target_level' => 'superior']);
     }
 

@@ -39,7 +39,7 @@ class EmailApprovalTest extends TestCase
         $this->assertSame($this->deptHead->id, $journal->approvals()->where('approval_level', 'superior_of_superior')->value('approved_by_user_id'));
         $this->assertTrue($approve->fresh()->isUsed());
         $this->assertTrue($revise->fresh()->isUsed(), 'sibling revise link is consumed too');
-        Mail::assertSent(ApprovalResultMail::class, fn ($m) => $m->result === 'approved');
+        Mail::assertQueued(ApprovalResultMail::class, fn ($m) => $m->result === 'approved');
 
         // Re-using the link fails
         $this->post("/approve-email/{$approve->token}")
@@ -63,7 +63,7 @@ class EmailApprovalTest extends TestCase
         $journal->refresh();
         $this->assertSame('Revised', $journal->status);
         $this->assertSame($this->staff->id, $journal->current_assign_to);
-        Mail::assertSent(ApprovalResultMail::class, fn ($m) => $m->result === 'revised' && $m->notes === 'Attach the invoice');
+        Mail::assertQueued(ApprovalResultMail::class, fn ($m) => $m->result === 'revised' && $m->notes === 'Attach the invoice');
 
         // Legacy /reject-email route still resolves (and is now used)
         $this->get("/reject-email/{$revise->token}")->assertInertia(fn (Assert $p) => $p->component('EmailApproval/Invalid'));

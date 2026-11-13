@@ -83,10 +83,12 @@ class PdfStampRenderService
                         ? $approval->approved_at->format('Y-m-d') 
                         : now()->format('Y-m-d');
 
-                    $approverName = $approval->approvedByUser?->name 
-                        ?? $approval->approvedBy?->name 
-                        ?? $approval->assignedUser?->name 
-                        ?? '';
+                    $approverName = $this->shortName(
+                        $approval->approvedByUser?->name
+                        ?? $approval->approvedBy?->name
+                        ?? $approval->assignedUser?->name
+                        ?? ''
+                    );
 
                     // Blok atas: Approved + tanggal
                     $htmlTop = '<div style="font-size:8pt;font-family:Arial,sans-serif;text-align:center;width:100%;">'
@@ -105,6 +107,38 @@ class PdfStampRenderService
 
         // 5. Return string PDF binary
         return $mpdf->Output('', Destination::STRING_RETURN);
+    }
+
+    /**
+     * Max characters that fit the ~23-29mm stamp column at 7pt without mPDF shrinking the font.
+     */
+    private const STAMP_NAME_MAX = 20;
+
+    /**
+     * Shorten long names for the stamp column, e.g.
+     * "Esther Gabriela Rachel Lintang" -> "Esther Gabriela R L",
+     * "Destya Ardi Wijayanti" -> "Destya Ardi W", "Rio Qodro" stays as is.
+     */
+    public function shortName(string $name): string
+    {
+        $words = preg_split('/\s+/', trim($name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if (mb_strlen(implode(' ', $words)) <= self::STAMP_NAME_MAX || count($words) <= 2) {
+            return implode(' ', $words);
+        }
+
+        $initials = array_map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)), array_slice($words, 2));
+        $short = implode(' ', [$words[0], $words[1], ...$initials]);
+
+        // Still too long (very long first/second word): keep only the first word in full
+        if (mb_strlen($short) > self::STAMP_NAME_MAX) {
+            $short = implode(' ', [$words[0], ...array_map(
+                fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)),
+                array_slice($words, 1)
+            )]);
+        }
+
+        return $short;
     }
 
     /**

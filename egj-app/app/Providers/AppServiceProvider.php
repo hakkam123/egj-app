@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Support\QueueKicker;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Queue\Events\JobQueued;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Http\Request;
 use Illuminate\Mail\MailManager;
 use Illuminate\Support\Facades\Mail;
@@ -51,6 +54,10 @@ class AppServiceProvider extends ServiceProvider
 
             return $transport;
         });
+
+        // Email di-queue supaya submit/approve tidak menunggu SMTP. Worker dinyalakan hanya
+        // saat ada job baru (lalu mati sendiri) — tanpa worker permanen / schedule tiap menit.
+        Event::listen(JobQueued::class, fn () => QueueKicker::kickAfterResponse());
 
         // Brute-force protection: 5 login attempts per minute per NPK + IP
         RateLimiter::for('login', function (Request $request) {

@@ -43,6 +43,7 @@ class GeneralJournalTest extends TestCase
         $this->assertNull($journal->current_assign_to);
         $this->assertCount(0, $journal->approvals);
         Mail::assertNothingSent();
+        Mail::assertNothingQueued();
     }
 
     #[DataProvider('documentNumbers')]
@@ -123,7 +124,7 @@ class GeneralJournalTest extends TestCase
             Storage::assertExists($file->file_path);
         }
 
-        Mail::assertSent(ApprovalRequestMail::class, fn ($m) => $m->hasTo($this->sectionHead->email));
+        Mail::assertQueued(ApprovalRequestMail::class, fn ($m) => $m->hasTo($this->sectionHead->email));
         $preview = EmailToken::where('purpose', 'preview')->firstOrFail();
         $this->assertTrue($preview->expires_at->between(now()->addDays(5)->subMinute(), now()->addDays(5)->addMinute()));
 
@@ -140,7 +141,7 @@ class GeneralJournalTest extends TestCase
         $this->assertSame('Approved', $approvals['superior']->status);
         $this->assertSame('Pending', $approvals['superior_of_superior']->status);
 
-        Mail::assertSent(DeptHeadApprovalMail::class, fn ($m) => $m->hasTo($this->deptHead->email));
+        Mail::assertQueued(DeptHeadApprovalMail::class, fn ($m) => $m->hasTo($this->deptHead->email));
         $this->assertSame(1, EmailToken::where('purpose', 'approval')->count());
         $this->assertSame(1, EmailToken::where('purpose', 'rejection')->count());
     }
