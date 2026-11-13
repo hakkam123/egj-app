@@ -7,9 +7,7 @@ use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Seed akun Admin JAGO.
-     */
+
     public function run(): void
     {
         $users = [
@@ -17,7 +15,7 @@ class UserSeeder extends Seeder
                 'name' => 'Admin JAGO',
                 'email' => 'admin@astra-visteon.com',
                 'npk' => '1001',
-                'password' => 'password123',
+                'password' => 'Avi12345!',
                 'role' => 'Admin',
                 'is_active' => true,
                 'is_default_approver' => false,
